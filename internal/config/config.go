@@ -13,6 +13,8 @@ type Config struct {
 	DatabaseURL string // DSN PostgreSQL
 	AppKey      []byte // clé AES-256 (32 octets) pour chiffrer les secrets
 	Env         string // "production" ou "development"
+	// TrustProxy : faire confiance à X-Forwarded-For / X-Real-IP (uniquement derrière un proxy maîtrisé).
+	TrustProxy bool
 }
 
 func Load() (*Config, error) {
@@ -20,6 +22,7 @@ func Load() (*Config, error) {
 		Addr:        getenv("NODRA_ADDR", ":8000"),
 		DatabaseURL: os.Getenv("NODRA_DATABASE_URL"),
 		Env:         getenv("NODRA_ENV", "production"),
+		TrustProxy:  os.Getenv("NODRA_TRUST_PROXY") == "true",
 	}
 	if c.DatabaseURL == "" {
 		return nil, errors.New("NODRA_DATABASE_URL est requis")

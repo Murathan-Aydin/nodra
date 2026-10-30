@@ -2,6 +2,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io/fs"
 	"log/slog"
@@ -12,21 +13,78 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"github.com/murathanaydin/nodra/internal/store"
+	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/store"
 )
+
+// Mailer envoie les e-mails transactionnels (implémenté avec le module de notifications).
+type Mailer interface {
+	PasswordReset(ctx context.Context, to, token string)
+}
 
 type Server struct {
 	Store *store.Store
 	Log   *slog.Logger
 	Web   fs.FS // build du front (web/dist)
+	Box   *crypto.Box
+	// SecureCookies active l'attribut Secure (désactivé en développement HTTP).
+	SecureCookies bool
+	Mailer        Mailer
+	// TrustProxy : utiliser l'IP transmise par le proxy (sinon contournement de la limite de tentatives).
+	TrustProxy bool
+	// AuthRateLimit : tentatives d'authentification par IP et par minute (10 par défaut).
+	AuthRateLimit int
 }
 
 func (s *Server) Router() http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.RequestID, middleware.RealIP, s.logRequests, middleware.Recoverer)
+	r.Use(middleware.RequestID)
+	if s.TrustProxy {
+		r.Use(middleware.RealIP)
+	}
+	r.Use(s.logRequests, middleware.Recoverer)
+
+	limit := s.AuthRateLimit
+	if limit == 0 {
+		limit = 10
+	}
+	authLimit := newRateLimiter(limit, time.Minute)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", s.health)
+
+		r.Group(func(r chi.Router) {
+			r.Use(csrfGuard, s.authenticate)
+
+			r.Route("/auth", func(r chi.Router) {
+				r.With(authLimit.middleware).Post("/register", s.register)
+				r.With(authLimit.middleware).Post("/login", s.login)
+				r.With(authLimit.middleware).Post("/login/2fa", s.loginTwoFactor)
+				r.With(authLimit.middleware).Post("/password/forgot", s.forgotPassword)
+				r.With(authLimit.middleware).Post("/password/reset", s.resetPassword)
+				r.Post("/logout", s.logout)
+			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(requireUser)
+				r.Get("/me", s.me)
+
+				// Gestion du compte : session interactive uniquement.
+				r.Group(func(r chi.Router) {
+					r.Use(requireSession)
+					r.Patch("/me", s.updateProfile)
+					r.Post("/me/password", s.changePassword)
+					r.Post("/me/2fa/setup", s.setupTwoFactor)
+					r.Post("/me/2fa/enable", s.enableTwoFactor)
+					r.Post("/me/2fa/disable", s.disableTwoFactor)
+					r.Get("/me/sessions", s.listSessions)
+					r.Delete("/me/sessions/{id}", s.revokeSession)
+					r.Get("/me/tokens", s.listTokens)
+					r.Post("/me/tokens", s.createToken)
+					r.Delete("/me/tokens/{id}", s.deleteToken)
+				})
+			})
+		})
 	})
 	r.Handle("/*", spa(s.Web))
 	return r
@@ -62,6 +120,15 @@ func spa(webFS fs.FS) http.Handler {
 		}
 		http.ServeFileFS(w, r, webFS, "index.html")
 	})
+}
+
+func writeError(w http.ResponseWriter, status int, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg})
+}
+
+func (s *Server) internal(w http.ResponseWriter, err error) {
+	s.Log.Error("erreur interne", "err", err)
+	writeError(w, http.StatusInternalServerError, "erreur interne")
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

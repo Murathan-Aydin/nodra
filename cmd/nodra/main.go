@@ -11,10 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/murathanaydin/nodra/internal/api"
-	"github.com/murathanaydin/nodra/internal/config"
-	"github.com/murathanaydin/nodra/internal/store"
-	"github.com/murathanaydin/nodra/web"
+	"github.com/Murathan-Aydin/nodra/internal/api"
+	"github.com/Murathan-Aydin/nodra/internal/config"
+	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/store"
+	"github.com/Murathan-Aydin/nodra/web"
 )
 
 func main() {
@@ -57,9 +58,14 @@ func run(cmd string, log *slog.Logger) error {
 }
 
 func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.Logger) error {
+	box, err := crypto.New(cfg.AppKey)
+	if err != nil {
+		return err
+	}
+	go cleanupLoop(ctx, st, log)
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           (&api.Server{Store: st, Log: log, Web: web.FS()}).Router(),
+		Handler:           (&api.Server{Store: st, Log: log, Web: web.FS(), Box: box, SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}).Router(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	errc := make(chan error, 1)
@@ -78,5 +84,21 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 		defer cancel()
 		log.Info("arrêt gracieux")
 		return srv.Shutdown(shutCtx)
+	}
+}
+
+// cleanupLoop purge les sessions expirées (remplacé par un job River à l'étape 14).
+func cleanupLoop(ctx context.Context, st *store.Store, log *slog.Logger) {
+	t := time.NewTicker(time.Hour)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			if err := st.DeleteExpiredSessions(ctx); err != nil {
+				log.Error("purge des sessions", "err", err)
+			}
+		}
 	}
 }
