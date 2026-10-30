@@ -76,6 +76,7 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	defer pool.Close()
 	svc := &servers.Service{Store: st, Box: box, SSH: pool, Log: log}
 	runner := &deploy.Runner{Store: st, Box: box, SSH: pool, Servers: svc, Log: log}
+	svc.Tasks = runner.DatabaseTasks()
 	apiSrv := &api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Deployer: runner,
 		SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}
 	runner.OnFinish = apiSrv.DeploymentFinished // avant le démarrage des workers

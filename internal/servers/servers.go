@@ -54,7 +54,12 @@ type Service struct {
 	Box   *crypto.Box
 	SSH   *ssh.Pool
 	Log   *slog.Logger
+	// Tasks : types de tâches fournis par d'autres modules (actions sur les bases de données…).
+	Tasks map[string]TaskFunc
 }
+
+// TaskFunc exécute une tâche fournie par un autre module ; out reçoit la sortie enregistrée avec la tâche.
+type TaskFunc func(ctx context.Context, task *store.ServerTask, sv *store.Server, t ssh.Target, out io.Writer) error
 
 // Target construit la cible SSH d'un serveur (clé privée déchiffrée).
 func (s *Service) Target(ctx context.Context, sv *store.Server) (ssh.Target, error) {
@@ -110,6 +115,9 @@ func (s *Service) RunTask(ctx context.Context, id string) error {
 	r := &taskRun{svc: s, task: task, out: newOutputWriter(s.Store, id)}
 	err = func() error {
 		h := handlers[task.Kind]
+		if fn := s.Tasks[task.Kind]; h == nil && fn != nil {
+			h = func(ctx context.Context, r *taskRun) error { return fn(ctx, r.task, r.server, r.target, r.out) }
+		}
 		if h == nil {
 			return fmt.Errorf("type de tâche inconnu : %s", task.Kind)
 		}

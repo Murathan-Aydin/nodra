@@ -35,6 +35,8 @@ type Runner struct {
 	Servers *servers.Service
 	Log     *slog.Logger
 	AppsDir string // dossier des applications sur les serveurs (AppsDir par défaut)
+	// DatabasesDir : dossier des bases sur les serveurs (DatabasesDir par défaut).
+	DatabasesDir string
 	// OnFinish est appelé à la fin de chaque déploiement (commentaires de PR, notifications).
 	OnFinish func(ctx context.Context, d *store.Deployment)
 }
@@ -986,8 +988,8 @@ func (p *pipe) waitCompose(ctx context.Context, base string) error {
 
 // --- Actions hors déploiement ---
 
-func (r *Runner) target(ctx context.Context, a *store.Application) (ssh.Target, *store.ResourceLocation, error) {
-	loc, err := r.Store.ResourceLocation(ctx, a.ID)
+func (r *Runner) target(ctx context.Context, resourceID string) (ssh.Target, *store.ResourceLocation, error) {
+	loc, err := r.Store.ResourceLocation(ctx, resourceID)
 	if err != nil {
 		return ssh.Target{}, nil, err
 	}
@@ -1013,7 +1015,7 @@ func (r *Runner) run(ctx context.Context, t ssh.Target, script string) (string, 
 
 // Stop arrête et supprime les conteneurs de l'application (les images et volumes sont conservés).
 func (r *Runner) Stop(ctx context.Context, a *store.Application, pr int) error {
-	t, _, err := r.target(ctx, a)
+	t, _, err := r.target(ctx, a.ID)
 	if err != nil {
 		return err
 	}
@@ -1038,7 +1040,7 @@ func (r *Runner) Stop(ctx context.Context, a *store.Application, pr int) error {
 // Teardown supprime conteneurs, images et fichiers de l'application sur le serveur (volumes si demandé).
 // Un serveur injoignable n'empêche pas la suppression (les restes sont signalés dans les logs).
 func (r *Runner) Teardown(ctx context.Context, a *store.Application, deleteVolumes bool) error {
-	t, _, err := r.target(ctx, a)
+	t, _, err := r.target(ctx, a.ID)
 	if err != nil {
 		r.Log.Warn("suppression : serveur inaccessible", "application", a.ID, "err", err)
 		return nil
@@ -1067,7 +1069,7 @@ func (r *Runner) Teardown(ctx context.Context, a *store.Application, deleteVolum
 
 // ContainerLogs renvoie les dernières lignes de logs des conteneurs de l'application.
 func (r *Runner) ContainerLogs(ctx context.Context, a *store.Application, pr, lines int) (string, error) {
-	t, _, err := r.target(ctx, a)
+	t, _, err := r.target(ctx, a.ID)
 	if err != nil {
 		return "", err
 	}
@@ -1088,7 +1090,7 @@ type Image struct {
 
 // Images liste les images de l'application disponibles pour un retour arrière.
 func (r *Runner) Images(ctx context.Context, a *store.Application) ([]Image, error) {
-	t, _, err := r.target(ctx, a)
+	t, _, err := r.target(ctx, a.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -236,6 +236,14 @@ func nilIfEmpty(s string) *string {
 	return &s
 }
 
+const limitsError = "limits : valeurs invalides (ex. memory \"512m\", cpus \"1.5\")"
+
+func validLimits(lim store.Limits) bool {
+	return sizeRe.MatchString(lim.Memory) && sizeRe.MatchString(lim.MemorySwap) && sizeRe.MatchString(lim.MemoryReservation) &&
+		cpuRe.MatchString(lim.CPUs) && cpusetRe.MatchString(lim.CPUSet) && lim.MemorySwappiness >= 0 && lim.MemorySwappiness <= 100 &&
+		lim.CPUShares >= 0
+}
+
 func validateApp(a *store.Application) string {
 	hc, lim, st := a.HealthCheck, a.Limits, a.Settings
 	needsRepo := !(a.BuildPack == "dockerimage" || (a.BuildPack == "dockerfile" && strings.TrimSpace(a.Dockerfile) != "") ||
@@ -280,9 +288,8 @@ func validateApp(a *store.Application) string {
 	case hc.Port != "" && !validPorts(hc.Port, false), !strings.HasPrefix(hc.Path, "/"), hc.Interval < 1, hc.Timeout < 1, hc.Retries < 1, hc.StartPeriod < 0,
 		hc.ReturnCode < 100 || hc.ReturnCode > 599, hc.Type == "cmd" && hc.Command == "", !hostnameRe.MatchString(hc.Host):
 		return "health_check : valeurs invalides"
-	case !sizeRe.MatchString(lim.Memory) || !sizeRe.MatchString(lim.MemorySwap) || !sizeRe.MatchString(lim.MemoryReservation),
-		!cpuRe.MatchString(lim.CPUs), !cpusetRe.MatchString(lim.CPUSet), lim.MemorySwappiness < 0 || lim.MemorySwappiness > 100, lim.CPUShares < 0:
-		return "limits : valeurs invalides (ex. memory \"512m\", cpus \"1.5\")"
+	case !validLimits(lim):
+		return limitsError
 	case st.ImagesToKeep < 0 || st.ImagesToKeep > 50, st.StopGracePeriod < 0 || st.StopGracePeriod > 3600:
 		return "settings : docker_images_to_keep (0-50) ou stop_grace_period (0-3600) invalide"
 	case st.CustomInternalName != "" && !serviceRe.MatchString(st.CustomInternalName):
@@ -691,10 +698,12 @@ func (s *Server) setApplicationTags(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, tags)
 }
 
-// Deployer pilote les conteneurs des applications (implémenté par deploy.Runner).
+// Deployer pilote les conteneurs des applications et des bases (implémenté par deploy.Runner).
 type Deployer interface {
 	Teardown(ctx context.Context, a *store.Application, deleteVolumes bool) error
 	Stop(ctx context.Context, a *store.Application, pr int) error
 	ContainerLogs(ctx context.Context, a *store.Application, pr, lines int) (string, error)
 	Images(ctx context.Context, a *store.Application) ([]deploy.Image, error)
+	TeardownDatabase(ctx context.Context, db *store.Database, deleteVolumes bool) error
+	DatabaseLogs(ctx context.Context, db *store.Database, lines int) (string, error)
 }

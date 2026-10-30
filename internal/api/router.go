@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
@@ -59,9 +60,9 @@ func (s *Server) Router() http.Handler {
 		"server.delete":      s.execDeleteServer,
 		"project.delete":     s.execDeleteProject,
 		"environment.delete": s.execDeleteEnvironment,
-		"resource.delete":    s.execDeleteApplication,
+		"resource.delete":    s.execDeleteResource,
 		"resource.env.write": s.execEnvWrite,
-		"resource.deploy":    s.execDeploy,
+		"resource.deploy":    s.execResourceDeploy,
 	} {
 		if _, ok := s.Executors[action]; !ok {
 			s.Executors[action] = exec
@@ -282,6 +283,29 @@ func (s *Server) Router() http.Handler {
 						r.Post("/storages", s.createStorage(s.appLoader))
 						r.Patch("/storages/{storage}", s.updateStorage(s.appLoader))
 						r.Delete("/storages/{storage}", s.deleteStorage(s.appLoader))
+					})
+
+					r.Get("/databases", s.listDatabases)
+					r.Post("/databases", s.createDatabase)
+					r.Route("/databases/{db}", func(r chi.Router) {
+						r.Get("/", s.getDatabase)
+						r.Patch("/", s.updateDatabase)
+						r.Delete("/", s.deleteDatabase)
+						r.Put("/tags", s.setDatabaseTags)
+						r.Post("/start", s.databaseAction(deploy.TaskDatabaseStart))
+						r.Post("/stop", s.databaseAction(deploy.TaskDatabaseStop))
+						r.Post("/restart", s.databaseAction(deploy.TaskDatabaseRestart))
+						r.Get("/tasks", s.databaseTasks)
+						r.Get("/logs", s.databaseLogs)
+						r.Get("/envs", s.listEnvs(s.dbLoader))
+						r.Post("/envs", s.createEnv(s.dbLoader))
+						r.Post("/envs/bulk", s.bulkEnvs(s.dbLoader))
+						r.Patch("/envs/{env}", s.updateEnv(s.dbLoader))
+						r.Delete("/envs/{env}", s.deleteEnv(s.dbLoader))
+						r.Get("/storages", s.listStorages(s.dbLoader))
+						r.Post("/storages", s.createStorage(s.dbLoader))
+						r.Patch("/storages/{storage}", s.updateStorage(s.dbLoader))
+						r.Delete("/storages/{storage}", s.deleteStorage(s.dbLoader))
 					})
 
 					r.Get("/tags", s.listTags)

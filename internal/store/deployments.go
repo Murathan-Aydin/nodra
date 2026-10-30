@@ -183,22 +183,26 @@ func (s *Store) DeploymentLogs(ctx context.Context, deploymentID string, after i
 
 // --- Statut des conteneurs ---
 
-// SetResourceStatuses met à jour le statut des applications d'un serveur (hors PR) ;
-// celles absentes de statuses passent à « stopped » si elles n'étaient pas en déploiement.
+// SetResourceStatuses met à jour le statut des applications et des bases d'un serveur (hors PR) ;
+// celles absentes de statuses passent à « stopped ».
 func (s *Store) SetResourceStatuses(ctx context.Context, serverID string, statuses map[string]string) error {
-	rows, err := s.Pool.Query(ctx, `SELECT a.id::text, a.status FROM applications a JOIN destinations d ON d.id = a.destination_id
-		WHERE d.server_id = $1`, serverID)
+	rows, err := s.Pool.Query(ctx, `SELECT x.id::text, x.status, x.kind FROM (
+			SELECT id, status, destination_id, 'applications' AS kind FROM applications
+			UNION ALL SELECT id, status, destination_id, 'databases' FROM databases
+		) x JOIN destinations d ON d.id = x.destination_id WHERE d.server_id = $1`, serverID)
 	if err != nil {
 		return err
 	}
-	current := map[string]string{}
+	type row struct{ status, table string }
+	current := map[string]row{}
 	for rows.Next() {
-		var id, st string
-		if err := rows.Scan(&id, &st); err != nil {
+		var id string
+		var r row
+		if err := rows.Scan(&id, &r.status, &r.table); err != nil {
 			rows.Close()
 			return err
 		}
-		current[id] = st
+		current[id] = r
 	}
 	rows.Close()
 	for id, old := range current {
@@ -206,8 +210,9 @@ func (s *Store) SetResourceStatuses(ctx context.Context, serverID string, status
 		if !ok {
 			st = "stopped"
 		}
-		if st != old {
-			if err := s.SetApplicationStatus(ctx, id, st); err != nil {
+		if st != old.status {
+			// table : constante de la requête ci-dessus
+			if _, err := s.Pool.Exec(ctx, `UPDATE `+old.table+` SET status = $2 WHERE id = $1`, id, st); err != nil {
 				return err
 			}
 		}

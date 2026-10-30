@@ -79,6 +79,7 @@ func newTestEnv(t *testing.T) *testEnv {
 	pool := ssh.NewPool()
 	env := &testEnv{mailer: &fakeMailer{}, st: st, svc: &servers.Service{Store: st, Box: box, SSH: pool, Log: log}}
 	env.runner = &deploy.Runner{Store: st, Box: box, SSH: pool, Servers: env.svc, Log: log}
+	env.svc.Tasks = env.runner.DatabaseTasks()
 	jq, err := jobs.New(st, env.svc, env.runner, log, jobs.Options{})
 	if err != nil {
 		t.Fatal(err)
