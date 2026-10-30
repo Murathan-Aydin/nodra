@@ -34,7 +34,10 @@ func (s *Store) Close() { s.Pool.Close() }
 func (s *Store) Migrate(ctx context.Context) error {
 	db := stdlib.OpenDBFromPool(s.Pool)
 	defer db.Close()
-	return migrate(ctx, db)
+	if err := migrate(ctx, db); err != nil {
+		return err
+	}
+	return s.SyncSystemRoles(ctx)
 }
 
 func migrate(ctx context.Context, db *sql.DB) error {

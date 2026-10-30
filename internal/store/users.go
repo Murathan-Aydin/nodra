@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -60,6 +61,15 @@ func (s *Store) CreateUser(ctx context.Context, email, name, hash string) (*User
 			INSERT INTO users (email, name, password_hash, is_instance_admin)
 			VALUES ($1, $2, $3, NOT EXISTS (SELECT 1 FROM users))
 			RETURNING `+userCols, email, name, hash))
+		if err != nil {
+			return err
+		}
+		// Chaque utilisateur reçoit une équipe personnelle dont il est propriétaire.
+		display := name
+		if display == "" {
+			display, _, _ = strings.Cut(email, "@")
+		}
+		_, err = createTeamTx(ctx, tx, "Équipe de "+display, "", nil, true, u.ID)
 		return err
 	})
 	if isUniqueViolation(err) {

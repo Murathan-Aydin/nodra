@@ -11,6 +11,7 @@ import (
 type APIToken struct {
 	ID         string     `json:"id"`
 	UserID     string     `json:"-"`
+	TeamID     *string    `json:"team_id"`
 	Name       string     `json:"name"`
 	TokenHash  string     `json:"-"`
 	Scopes     []string   `json:"scopes"`
@@ -19,11 +20,11 @@ type APIToken struct {
 	CreatedAt  time.Time  `json:"created_at"`
 }
 
-const tokenCols = `id::text, user_id::text, name, token_hash, scopes, expires_at, last_used_at, created_at`
+const tokenCols = `id::text, user_id::text, team_id::text, name, token_hash, scopes, expires_at, last_used_at, created_at`
 
 func scanToken(row pgx.Row) (*APIToken, error) {
 	t := &APIToken{}
-	err := row.Scan(&t.ID, &t.UserID, &t.Name, &t.TokenHash, &t.Scopes, &t.ExpiresAt, &t.LastUsedAt, &t.CreatedAt)
+	err := row.Scan(&t.ID, &t.UserID, &t.TeamID, &t.Name, &t.TokenHash, &t.Scopes, &t.ExpiresAt, &t.LastUsedAt, &t.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -31,8 +32,8 @@ func scanToken(row pgx.Row) (*APIToken, error) {
 }
 
 func (s *Store) CreateAPIToken(ctx context.Context, t *APIToken) (*APIToken, error) {
-	return scanToken(s.Pool.QueryRow(ctx, `INSERT INTO api_tokens (user_id, name, token_hash, scopes, expires_at)
-		VALUES ($1, $2, $3, $4, $5) RETURNING `+tokenCols, t.UserID, t.Name, t.TokenHash, t.Scopes, t.ExpiresAt))
+	return scanToken(s.Pool.QueryRow(ctx, `INSERT INTO api_tokens (user_id, team_id, name, token_hash, scopes, expires_at)
+		VALUES ($1, $2, $3, $4, $5, $6) RETURNING `+tokenCols, t.UserID, t.TeamID, t.Name, t.TokenHash, t.Scopes, t.ExpiresAt))
 }
 
 // APITokenByHash renvoie un jeton valide et met à jour sa date de dernière utilisation.

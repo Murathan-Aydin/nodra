@@ -17,16 +17,31 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Murathan-Aydin/nodra/internal/auth"
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/rbac"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
 
 // Les tests d'intégration nécessitent NODRA_TEST_DATABASE_URL (ex. la base du docker-compose.dev.yml).
 // Une base temporaire est créée puis supprimée à chaque exécution.
+type testEnv struct {
+	srv      *httptest.Server
+	mailer   *fakeMailer
+	st       *store.Store
+	api      *Server
+	executed []*store.ApprovalRequest
+}
+
 func testServer(t *testing.T) (*httptest.Server, *fakeMailer, *store.Store) {
+	e := newTestEnv(t)
+	return e.srv, e.mailer, e.st
+}
+
+func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
 	base := os.Getenv("NODRA_TEST_DATABASE_URL")
 	if base == "" {
@@ -51,24 +66,53 @@ func testServer(t *testing.T) (*httptest.Server, *fakeMailer, *store.Store) {
 		t.Fatal(err)
 	}
 	box, _ := crypto.New(make([]byte, 32))
-	mailer := &fakeMailer{}
-	srv := httptest.NewServer((&Server{
-		Store: st, Box: box, Mailer: mailer, AuthRateLimit: 1000,
+	env := &testEnv{mailer: &fakeMailer{}, st: st}
+	env.api = &Server{
+		Store: st, Box: box, Mailer: env.mailer, AuthRateLimit: 1000,
 		Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Web: fstest.MapFS{"index.html": {Data: []byte("spa")}},
-	}).Router())
+		Executors: map[string]Executor{"resource.deploy": func(_ context.Context, req *store.ApprovalRequest) error {
+			env.executed = append(env.executed, req)
+			return nil
+		}},
+	}
+	mux := env.api.Router().(*chi.Mux)
+	// Route de test : une action soumise à la porte d'approbation (comme le futur déploiement).
+	mux.With(csrfGuard, env.api.authenticate, requireUser).Route("/test/teams/{team}", func(r chi.Router) {
+		r.Use(env.api.withTeam)
+		r.Post("/deploy", func(w http.ResponseWriter, r *http.Request) {
+			if !env.api.authorize(w, r, "resource.deploy", rbac.Scope{}) {
+				return
+			}
+			req, err := env.api.gate(r, "resource.deploy", rbac.Scope{}, "Déploiement de test", map[string]string{"ref": "main"})
+			if err != nil {
+				env.api.fail(w, err)
+				return
+			}
+			if req != nil {
+				respondPending(w, req)
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]bool{"executed": true})
+		})
+	})
+	srv := httptest.NewServer(mux)
+	env.srv = srv
 	t.Cleanup(func() {
 		srv.Close()
 		st.Close()
 		_, _ = admin.Exec(ctx, "DROP DATABASE "+name+" WITH (FORCE)")
 		admin.Close(ctx)
 	})
-	return srv, mailer, st
+	return env
 }
 
-type fakeMailer struct{ lastToken string }
+type fakeMailer struct{ lastToken, lastInvite string }
 
 func (f *fakeMailer) PasswordReset(_ context.Context, _, token string) { f.lastToken = token }
+func (f *fakeMailer) TeamInvitation(_ context.Context, _, _, token string) {
+	f.lastInvite = token
+}
 
 type client struct {
 	t      *testing.T
@@ -80,6 +124,14 @@ type client struct {
 func newClient(t *testing.T, srv *httptest.Server) *client {
 	jar, _ := cookiejar.New(nil)
 	return &client{t: t, base: srv.URL + "/api/v1", http: &http.Client{Jar: jar}}
+}
+
+// raw envoie une requête sur une URL absolue (hors /api/v1).
+func (c *client) raw(method, url string, body any, out any) int {
+	saved := c.base
+	c.base = url
+	defer func() { c.base = saved }()
+	return c.do(method, "", body, out)
 }
 
 // do envoie une requête JSON et décode la réponse dans out (si non nil). Renvoie le statut.

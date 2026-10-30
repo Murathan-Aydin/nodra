@@ -27,4 +27,5 @@ const (
 	PrefixSession  = "nds_"
 	PrefixAPIToken = "ndt_"
 	PrefixReset    = "ndr_"
+	PrefixInvite   = "ndi_"
 )

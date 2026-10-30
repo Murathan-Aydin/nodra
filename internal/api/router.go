@@ -20,6 +20,7 @@ import (
 // Mailer envoie les e-mails transactionnels (implémenté avec le module de notifications).
 type Mailer interface {
 	PasswordReset(ctx context.Context, to, token string)
+	TeamInvitation(ctx context.Context, to, teamName, token string)
 }
 
 type Server struct {
@@ -32,6 +33,8 @@ type Server struct {
 	Mailer        Mailer
 	// TrustProxy : utiliser l'IP transmise par le proxy (sinon contournement de la limite de tentatives).
 	TrustProxy bool
+	// Executors : exécuteurs des actions soumises à approbation, par action (ex. "resource.deploy").
+	Executors map[string]Executor
 	// AuthRateLimit : tentatives d'authentification par IP et par minute (10 par défaut).
 	AuthRateLimit int
 }
@@ -82,6 +85,59 @@ func (s *Server) Router() http.Handler {
 					r.Get("/me/tokens", s.listTokens)
 					r.Post("/me/tokens", s.createToken)
 					r.Delete("/me/tokens/{id}", s.deleteToken)
+					r.Post("/invitations/preview", s.previewInvitation)
+					r.Post("/invitations/accept", s.acceptInvitation)
+				})
+
+				r.Get("/permissions", s.listPermissions)
+				r.Get("/teams", s.listTeams)
+				r.Post("/teams", s.createTeam)
+
+				r.Route("/teams/{team}", func(r chi.Router) {
+					r.Use(s.withTeam)
+					r.Get("/", s.getTeam)
+					r.Patch("/", s.updateTeam)
+					r.Delete("/", s.deleteTeam)
+					r.Get("/permissions", s.myPermissions)
+					r.Post("/leave", s.leaveTeam)
+					r.Post("/transfer-ownership", s.transferOwnership)
+
+					r.Get("/members", s.listMembers)
+					r.Post("/members", s.addMember)
+					r.Delete("/members/{user}", s.removeMember)
+
+					r.Get("/invitations", s.listInvitations)
+					r.Post("/invitations", s.createInvitation)
+					r.Delete("/invitations/{id}", s.deleteInvitation)
+
+					r.Get("/roles", s.listRoles)
+					r.Post("/roles", s.createRole)
+					r.Patch("/roles/{id}", s.updateRole)
+					r.Delete("/roles/{id}", s.deleteRole)
+
+					r.Get("/role-assignments", s.listAssignments)
+					r.Post("/role-assignments", s.createAssignment)
+					r.Delete("/role-assignments/{id}", s.deleteAssignment)
+
+					r.Get("/groups", s.listGroups)
+					r.Post("/groups", s.createGroup)
+					r.Patch("/groups/{id}", s.updateGroup)
+					r.Delete("/groups/{id}", s.deleteGroup)
+					r.Put("/groups/{id}/members/{user}", s.addGroupMember)
+					r.Delete("/groups/{id}/members/{user}", s.removeGroupMember)
+
+					r.Get("/audit", s.listAudit)
+					r.Get("/audit/export", s.exportAudit)
+
+					r.Get("/approval-rules", s.listApprovalRules)
+					r.Post("/approval-rules", s.createApprovalRule)
+					r.Patch("/approval-rules/{id}", s.updateApprovalRule)
+					r.Delete("/approval-rules/{id}", s.deleteApprovalRule)
+					r.Get("/approvals", s.listApprovalRequests)
+					r.Get("/approvals/{id}", s.getApprovalRequest)
+					r.Post("/approvals/{id}/approve", s.voteApproval("approve"))
+					r.Post("/approvals/{id}/reject", s.voteApproval("reject"))
+					r.Post("/approvals/{id}/cancel", s.cancelApproval)
 				})
 			})
 		})

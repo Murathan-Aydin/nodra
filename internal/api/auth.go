@@ -1,16 +1,19 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/mail"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/Murathan-Aydin/nodra/internal/auth"
+	"github.com/Murathan-Aydin/nodra/internal/rbac"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
 
@@ -66,6 +69,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.audit(withUser(r, u), nil, "auth.registered", "user", u.ID, nil)
 	writeJSON(w, http.StatusCreated, u)
 }
 
@@ -84,10 +88,14 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if ok, _ := auth.VerifyPassword(in.Password, u.PasswordHash); !ok {
+		s.audit(withUser(r, u), nil, "auth.login.failed", "user", u.ID, nil)
 		writeError(w, http.StatusUnauthorized, "identifiants invalides")
 		return
 	}
 	mfa := u.TwoFactorEnabled()
+	if !mfa {
+		s.audit(withUser(r, u), nil, "auth.login", "user", u.ID, nil)
+	}
 	if err := s.startSession(w, r, u.ID, mfa); err != nil {
 		s.internal(w, err)
 		return
@@ -130,9 +138,11 @@ func (s *Server) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		ok = s.checkTOTP(u, in.Code)
 	}
 	if !ok {
+		s.audit(withUser(r, u), nil, "auth.login.2fa_failed", "user", u.ID, nil)
 		writeError(w, http.StatusUnauthorized, "code invalide")
 		return
 	}
+	s.audit(withUser(r, u), nil, "auth.login", "user", u.ID, map[string]any{"two_factor": true, "recovery_code": in.RecoveryCode != ""})
 	// Nouvelle session complète (rotation du jeton après élévation).
 	_ = s.Store.DeleteSession(ctx, sess.TokenHash)
 	if err := s.startSession(w, r, u.ID, false); err != nil {
@@ -195,6 +205,7 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.audit(r, nil, "auth.password.changed", "user", u.ID, nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -251,6 +262,7 @@ func (s *Server) resetPassword(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.audit(r, nil, "auth.password.reset", "user", uid, nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -300,6 +312,7 @@ func (s *Server) enableTwoFactor(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.audit(r, nil, "auth.2fa.enabled", "user", u.ID, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"recovery_codes": codes})
 }
 
@@ -319,6 +332,7 @@ func (s *Server) disableTwoFactor(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.audit(r, nil, "auth.2fa.disabled", "user", u.ID, nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -370,12 +384,10 @@ func (s *Server) listTokens(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, list)
 }
 
-// Scopes de jetons API (affinés par les permissions d'équipe à l'étape 3).
-var validScopes = map[string]bool{"read": true, "write": true, "deploy": true, "root": true}
-
 func (s *Server) createToken(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Name          string   `json:"name"`
+		TeamID        string   `json:"team_id"`
 		Scopes        []string `json:"scopes"`
 		ExpiresInDays int      `json:"expires_in_days"`
 	}
@@ -391,12 +403,31 @@ func (s *Server) createToken(w http.ResponseWriter, r *http.Request) {
 		in.Scopes = []string{"read"}
 	}
 	for _, sc := range in.Scopes {
-		if !validScopes[sc] {
+		if !slices.Contains(rbac.TokenScopes, sc) {
 			writeError(w, http.StatusUnprocessableEntity, "scope inconnu : "+sc)
 			return
 		}
 	}
-	t := &store.APIToken{UserID: userFrom(r.Context()).ID, Name: in.Name, Scopes: in.Scopes}
+	// Un jeton est rattaché à une équipe (l'équipe personnelle par défaut).
+	ctx := r.Context()
+	u := userFrom(ctx)
+	if in.TeamID == "" {
+		teams, err := s.Store.UserTeams(ctx, u.ID)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		for _, t := range teams {
+			if t.Personal {
+				in.TeamID = t.ID
+			}
+		}
+	}
+	if _, err := s.enterTeam(r, in.TeamID); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "équipe inconnue")
+		return
+	}
+	t := &store.APIToken{UserID: u.ID, TeamID: &in.TeamID, Name: in.Name, Scopes: in.Scopes}
 	if in.ExpiresInDays > 0 {
 		exp := time.Now().AddDate(0, 0, in.ExpiresInDays)
 		t.ExpiresAt = &exp
@@ -408,11 +439,17 @@ func (s *Server) createToken(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.audit(r, created.TeamID, "auth.token.created", "api_token", created.ID, map[string]any{"name": created.Name, "scopes": created.Scopes})
 	writeJSON(w, http.StatusCreated, map[string]any{"token": plain, "api_token": created})
 }
 
 func (s *Server) deleteToken(w http.ResponseWriter, r *http.Request) {
-	err := s.Store.DeleteAPIToken(r.Context(), userFrom(r.Context()).ID, chi.URLParam(r, "id"))
+	id := chi.URLParam(r, "id")
+	if !isUUID(id) {
+		writeError(w, http.StatusNotFound, "jeton introuvable")
+		return
+	}
+	err := s.Store.DeleteAPIToken(r.Context(), userFrom(r.Context()).ID, id)
 	if errors.Is(err, store.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "jeton introuvable")
 		return
@@ -420,6 +457,7 @@ func (s *Server) deleteToken(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.audit(r, nil, "auth.token.deleted", "api_token", id, nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -444,6 +482,11 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, userID str
 func (s *Server) clearCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", HttpOnly: true,
 		Secure: s.SecureCookies, SameSite: http.SameSiteLaxMode, MaxAge: -1})
+}
+
+// withUser place l'utilisateur dans le contexte (pour l'audit avant l'ouverture de session).
+func withUser(r *http.Request, u *store.User) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), ctxUser, u))
 }
 
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
