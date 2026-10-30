@@ -68,7 +68,7 @@ func (r *run) sh(ctx context.Context, label, script string) error {
 	if label != "" {
 		fmt.Fprintf(r.out, "$ %s\n", label)
 	}
-	code, err := r.s.SSH.RunInput(ctx, r.t, "sh -s", strings.NewReader("set -e\nset -o pipefail 2>/dev/null || true\n"+script), r.out, r.out)
+	code, err := r.s.SSH.RunInput(ctx, r.t, "sh -s", strings.NewReader("set -e\n(set -o pipefail) 2>/dev/null && set -o pipefail\n"+script), r.out, r.out)
 	if err != nil {
 		return err
 	}

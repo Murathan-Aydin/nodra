@@ -36,11 +36,11 @@ func TestDumpAndRestoreScripts(t *testing.T) {
 		t.Fatal("clickhouse non pris en charge")
 	}
 	r, _ := RestoreScript("postgresql", "c1", "", "/b/x.dump")
-	if !strings.Contains(r, "cat '/b/x.dump' | docker exec -i 'c1' sh -c") || !strings.Contains(r, "pg_restore --clean") {
+	if !strings.Contains(r, "docker exec -i 'c1' sh -c") || !strings.HasSuffix(strings.TrimSpace(r), "< '/b/x.dump'") || !strings.Contains(r, "pg_restore --clean") {
 		t.Fatalf("restauration pg : %s", r)
 	}
 	r, _ = RestoreScript("postgresql", "c1", "", "/b/all.sql.gz")
-	if !strings.Contains(r, "gunzip -c") || !strings.Contains(r, "-d postgres") {
+	if !strings.Contains(r, "gunzip -c '/b/all.sql.gz' > '/b/all.sql.gz.restore'") || !strings.Contains(r, "-d postgres") || !strings.Contains(r, "rm -f") {
 		t.Fatalf("restauration pg_dumpall : %s", r)
 	}
 	r, _ = RestoreScript("mongodb", "c1", "", "/b/x.archive.gz")
@@ -52,6 +52,13 @@ func TestDumpAndRestoreScripts(t *testing.T) {
 	}
 	if !strings.Contains(VolumeBackupScript("v1", "/b/r/v1.tar.gz"), "-v 'v1':/data:ro") {
 		t.Fatal("archive de volume en lecture seule")
+	}
+	for _, typ := range []string{"postgresql", "mysql", "mariadb", "mongodb", "redis"} {
+		d, _ := DumpScript(typ, "c", "", true, "/b/x"+Extension(typ, true))
+		r, _ := RestoreScript(typ, "c", "", "/b/x"+Extension(typ, true))
+		if strings.Contains(d, "| gzip") || strings.Contains(r, "| docker") {
+			t.Errorf("%s : aucun tuyau (dash sans pipefail)\n%s\n%s", typ, d, r)
+		}
 	}
 	if !ValidDBName("app_db") || ValidDBName("a;rm -rf /") {
 		t.Fatal("validation des noms de base")

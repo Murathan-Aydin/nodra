@@ -57,6 +57,13 @@ func inContainer(container, cmd string, stdin bool) string {
 	return "docker exec " + i + ssh.Quote(container) + " sh -c " + ssh.Quote(cmd)
 }
 
+// gzipTo écrit la sortie de cmd dans file.gz sans tuyau : sous dash (/bin/sh de Debian/Ubuntu), sans
+// pipefail, l'échec d'un « cmd | gzip » passerait inaperçu et donnerait une sauvegarde vide.
+func gzipTo(cmd, file string) string {
+	raw := strings.TrimSuffix(file, ".gz")
+	return cmd + " > " + ssh.Quote(raw) + "\ngzip -f " + ssh.Quote(raw) + "\n"
+}
+
 // DumpScript produit le script qui écrit la sauvegarde dans file. db = nom de la base ("" = base par défaut).
 func DumpScript(typ, container, db string, all bool, file string) (string, error) {
 	q := ssh.Quote(file)
@@ -70,7 +77,7 @@ func DumpScript(typ, container, db string, all bool, file string) (string, error
 	switch typ {
 	case "postgresql":
 		if all {
-			return pre + inContainer(container, `pg_dumpall -U "$POSTGRES_USER"`, false) + " | gzip > " + q + "\n", nil
+			return pre + gzipTo(inContainer(container, `pg_dumpall -U "$POSTGRES_USER"`, false), file), nil
 		}
 		return pre + inContainer(container, `pg_dump --format=custom --no-acl --no-owner -U "$POSTGRES_USER" `+dbArg(`"$POSTGRES_DB"`), false) +
 			" > " + q + "\n", nil
@@ -87,8 +94,7 @@ func DumpScript(typ, container, db string, all bool, file string) (string, error
 			}
 			target = "--databases " + dbArg(def)
 		}
-		return pre + inContainer(container, bin+` -u root -p`+pass+` --single-transaction --routines --triggers `+target, false) +
-			" | gzip > " + q + "\n", nil
+		return pre + gzipTo(inContainer(container, bin+` -u root -p`+pass+` --single-transaction --routines --triggers `+target, false), file), nil
 	case "mongodb":
 		cmd := `mongodump --authenticationDatabase=admin -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --gzip --archive`
 		if !all {
@@ -116,20 +122,23 @@ func RestoreScript(typ, container, db, file string) (string, error) {
 		return ssh.Quote(db)
 	}
 	gz := strings.HasSuffix(file, ".gz")
-	feed := "cat " + q + " | "
+	// Sans tuyau (voir gzipTo) : le dump est décompressé dans un fichier temporaire puis fourni en entrée.
+	pre, input, post := "", q, ""
 	if gz && typ != "mongodb" {
-		feed = "gunzip -c " + q + " | "
+		tmp := ssh.Quote(file + ".restore")
+		pre, input, post = "gunzip -c "+q+" > "+tmp+"\n", tmp, "rm -f "+tmp+"\n"
 	}
+	feed := func(cmd string) string { return pre + cmd + " < " + input + "\n" + post }
 	switch typ {
 	case "postgresql":
 		if strings.HasSuffix(file, ".dump") {
-			return feed + inContainer(container, `pg_restore --clean --if-exists --no-acl --no-owner -U "$POSTGRES_USER" -d `+dbArg(`"$POSTGRES_DB"`), true) + "\n", nil
+			return feed(inContainer(container, `pg_restore --clean --if-exists --no-acl --no-owner -U "$POSTGRES_USER" -d `+dbArg(`"$POSTGRES_DB"`), true)), nil
 		}
 		target := dbArg(`"$POSTGRES_DB"`)
 		if gz && db == "" {
 			target = "postgres" // dump complet (pg_dumpall) : rejoué depuis la base postgres
 		}
-		return feed + inContainer(container, `psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d `+target, true) + "\n", nil
+		return feed(inContainer(container, `psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d `+target, true)), nil
 	case "mysql", "mariadb":
 		bin, pass := "mysql", `"$MYSQL_ROOT_PASSWORD"`
 		if typ == "mariadb" {
@@ -139,13 +148,13 @@ func RestoreScript(typ, container, db, file string) (string, error) {
 		if db != "" {
 			target = " " + ssh.Quote(db)
 		}
-		return feed + inContainer(container, bin+` -u root -p`+pass+target, true) + "\n", nil
+		return feed(inContainer(container, bin+` -u root -p`+pass+target, true)), nil
 	case "mongodb":
 		cmd := `mongorestore --authenticationDatabase=admin -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --drop --archive`
 		if gz {
 			cmd += " --gzip"
 		}
-		return feed + inContainer(container, cmd, true) + "\n", nil
+		return feed(inContainer(container, cmd, true)), nil
 	}
 	return "", fmt.Errorf("restauration non prise en charge pour %s", typ)
 }
