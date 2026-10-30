@@ -231,3 +231,33 @@ func TestWebhooks(t *testing.T) {
 		t.Fatalf("push Bitbucket : %+v", e)
 	}
 }
+
+func TestWatchPaths(t *testing.T) {
+	cases := []struct {
+		patterns string
+		files    []string
+		want     bool
+	}{
+		{"", []string{"README.md"}, true},
+		{"src/**", []string{"src/app/main.go"}, true},
+		{"src/**", []string{"docs/a.md"}, false},
+		{"*.go", []string{"main.go"}, true},
+		{"*.go", []string{"pkg/main.go"}, false},
+		{"**/*.go", []string{"pkg/main.go", "main.go"}, true},
+		{"!docs/**", []string{"docs/a.md"}, false},
+		{"!docs/**", []string{"docs/a.md", "src/x"}, true},
+		{"api/\n!api/README.md", []string{"api/README.md"}, false},
+		{"api/", []string{"api/v1/x.go"}, true},
+		{"src/**", nil, true},
+	}
+	for _, c := range cases {
+		if got := MatchWatchPaths(c.patterns, c.files); got != c.want {
+			t.Errorf("%q %v : %v, attendu %v", c.patterns, c.files, got, c.want)
+		}
+	}
+	push := []byte(`{"ref":"refs/heads/main","after":"a","commits":[{"added":["a.go"],"modified":["b.go"]},{"modified":["a.go"],"removed":["c.go"]}]}`)
+	e, _ := Parse(GitHub, http.Header{"X-Github-Event": {"push"}}, push)
+	if strings.Join(e.Files, ",") != "a.go,b.go,c.go" {
+		t.Fatalf("fichiers : %v", e.Files)
+	}
+}
