@@ -124,6 +124,8 @@ func (s *Server) Router() http.Handler {
 				})
 
 				r.Get("/permissions", s.listPermissions)
+				r.Get("/service-templates", s.listServiceTemplates)
+				r.Get("/service-templates/{slug}", s.getServiceTemplate)
 				// Retours de GitHub après création / installation d'une App (navigateur, session requise).
 				r.With(requireSession).Get("/sources/github/callback", s.githubCallback)
 				r.With(requireSession).Get("/sources/github/install", s.githubInstall)
@@ -283,6 +285,27 @@ func (s *Server) Router() http.Handler {
 						r.Post("/storages", s.createStorage(s.appLoader))
 						r.Patch("/storages/{storage}", s.updateStorage(s.appLoader))
 						r.Delete("/storages/{storage}", s.deleteStorage(s.appLoader))
+					})
+
+					r.Get("/services", s.listServices)
+					r.Post("/services", s.createService)
+					r.Route("/services/{svc}", func(r chi.Router) {
+						r.Get("/", s.getService)
+						r.Patch("/", s.updateService)
+						r.Delete("/", s.deleteService)
+						r.Put("/tags", s.setServiceTags)
+						r.Patch("/apps/{app}", s.updateServiceApp)
+						r.Post("/apps/{app}/restart", s.serviceAction(deploy.TaskServiceRestartApp))
+						r.Post("/start", s.serviceAction(deploy.TaskServiceStart))
+						r.Post("/stop", s.serviceAction(deploy.TaskServiceStop))
+						r.Post("/restart", s.serviceAction(deploy.TaskServiceRestart))
+						r.Get("/tasks", s.serviceTasks)
+						r.Get("/logs", s.serviceLogs)
+						r.Get("/envs", s.listEnvs(s.svcLoader))
+						r.Post("/envs", s.createEnv(s.svcLoader))
+						r.Post("/envs/bulk", s.bulkEnvs(s.svcLoader))
+						r.Patch("/envs/{env}", s.updateEnv(s.svcLoader))
+						r.Delete("/envs/{env}", s.deleteEnv(s.svcLoader))
 					})
 
 					r.Get("/databases", s.listDatabases)

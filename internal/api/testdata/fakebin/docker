@@ -18,7 +18,7 @@ case "$cmd" in
   compose)
     file=""; action=""
     while [ $# -gt 0 ]; do
-      case "$1" in -f) file="$2"; shift ;; up|down|build|ps|ls) [ -z "$action" ] && action="$1" ;; esac
+      case "$1" in -f) file="$2"; shift ;; -p|--env-file|--project-directory) shift ;; up|down|build|ps|ls|pull|restart|logs) [ -z "$action" ] && action="$1" ;; esac
       shift
     done
     case "$action" in
@@ -33,6 +33,7 @@ case "$cmd" in
           echo "compose" > "$STATE/compose-up"
         fi ;;
       ps) echo "web running 0" ;;
+      restart) echo "Container restarted" ;;
     esac ;;
   ps)
     res=""; pr=""

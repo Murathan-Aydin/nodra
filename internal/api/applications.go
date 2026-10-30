@@ -706,4 +706,6 @@ type Deployer interface {
 	Images(ctx context.Context, a *store.Application) ([]deploy.Image, error)
 	TeardownDatabase(ctx context.Context, db *store.Database, deleteVolumes bool) error
 	DatabaseLogs(ctx context.Context, db *store.Database, lines int) (string, error)
+	TeardownService(ctx context.Context, svc *store.Service, deleteVolumes bool) error
+	ServiceLogs(ctx context.Context, svc *store.Service, app string, lines int) (string, error)
 }

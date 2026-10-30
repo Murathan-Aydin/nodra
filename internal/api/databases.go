@@ -514,6 +514,14 @@ func (s *Server) execDeleteResource(ctx context.Context, req *store.ApprovalRequ
 	if err := json.Unmarshal(req.Payload, &p); err != nil {
 		return err
 	}
+	var sp svcDeletePayload
+	if err := json.Unmarshal(req.Payload, &sp); err == nil && sp.ServiceID != "" {
+		svc, err := s.Store.ServiceByID(ctx, sp.TeamID, sp.ServiceID)
+		if err != nil {
+			return err
+		}
+		return s.removeService(ctx, svc, sp.DeleteVolumes)
+	}
 	if p.DatabaseID == "" {
 		return s.execDeleteApplication(ctx, req)
 	}
@@ -567,9 +575,13 @@ func (s *Server) execDatabaseAction(ctx context.Context, req *store.ApprovalRequ
 func (s *Server) execResourceDeploy(ctx context.Context, req *store.ApprovalRequest) error {
 	var p struct {
 		DatabaseID string `json:"database_id"`
+		ServiceID  string `json:"service_id"`
 	}
 	if err := json.Unmarshal(req.Payload, &p); err != nil {
 		return err
+	}
+	if p.ServiceID != "" {
+		return s.execServiceAction(ctx, req)
 	}
 	if p.DatabaseID != "" {
 		return s.execDatabaseAction(ctx, req)

@@ -372,3 +372,27 @@ Types (image par défaut, port interne) : `postgresql` (`postgres:17-alpine`, 54
 **Database** : les champs ci-dessus (sans les mots de passe) + `id`, `team_id`, `status` (`stopped`, `running`, `degraded`, `restarting`, `exited`, relevé chaque minute), `started_at`, `created_at`, `updated_at`, `internal_host` (= `id`, joignable par les ressources du même réseau Docker) et `internal_port`. Avec `resource.env.read` : `password`, `root_password`, `internal_url` (ex. `postgres://user:pass@<id>:5432/db`, `redis://default:pass@<id>:6379/0`) et `public_url` (IP du serveur et port public) si la base est publique.
 
 **Démarrage** (tâche serveur) : fichiers écrits dans `/data/nodra/databases/<id>` (compose, configuration, scripts d'initialisation, fichiers), `docker compose pull` puis `up -d` (conteneur `<id>`, labels `nodra.*`, réseau de la destination, vérification de santé propre au type lisant les identifiants dans l'environnement du conteneur), attente de santé (3 min max.), puis proxy public : conteneur `nginx:stable-alpine` `<id>-proxy` (module stream, résolution par le DNS de Docker) publiant `public_port`. Les mots de passe ne sont appliqués par la plupart des images qu'à l'initialisation des données ; Redis, KeyDB et Dragonfly les prennent au redémarrage.
+
+## Services one-click (`/teams/{team}/services`)
+
+Catalogue de 347 modèles docker-compose repris de Coolify (`internal/services/templates`, Apache-2.0). Variables magiques reconnues : `SERVICE_URL_<ID>[_<PORT>]` (URL publique) et `SERVICE_FQDN_<ID>[_<PORT>]` (hôte) — déclarées sans valeur dans un service, elles l'exposent sur le port indiqué et un domaine est généré (sous-domaine du `wildcard_domain` du serveur, sinon `sslip.io`) ; `SERVICE_USER_*`, `SERVICE_PASSWORD[_64]_*`, `SERVICE_PASSWORDWITHSYMBOLS[_64]_*`, `SERVICE_BASE64[_32|_64|_128]_*`, `SERVICE_REALBASE64[_32|_64|_128]_*`, `SERVICE_HEX_32|64|128_*`, `SERVICE_LOWERCASEUSER_*`, `SERVICE_SUPABASEANON_*`/`SUPABASESERVICE_*` (JWT signés avec `SERVICE_PASSWORD_JWT`) sont générées une fois à la création et stockées comme variables du service (modifiables). Les autres `${VAR:-défaut}` deviennent des variables configurables. Extensions Coolify prises en charge : volumes `content` / `isDirectory` (fichiers créés sous le dossier du service, sources relatives uniquement), `exclude_from_hc`.
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/service-templates?q=&category=` (racine) | connecté | `{templates: [{slug, name, slogan, documentation, category, tags, logo, port}], categories}` |
+| GET | `/service-templates/{slug}` (racine) | connecté | Modèle avec `compose` |
+| GET | `/services?environment_id=` | `resource.read` | |
+| POST | `/services` | `resource.create` (environnement) + `server.read` | `{environment_id, destination_id, template? \| docker_compose_raw, name?, description?, instant_deploy?}` → `201 {service, apps, tags, task?, approval_request?}` |
+| GET | `/services/{id}` | `resource.read` | `{service, apps, tags}` |
+| PATCH | `/services/{id}` | `resource.update` | `{name?, description?, docker_compose_raw?}` ; un nouveau compose est ré-analysé (nouveaux secrets générés, valeurs et domaines existants conservés) |
+| DELETE | `/services/{id}?delete_volumes=true` | `resource.delete` | Soumis aux approbations |
+| PATCH | `/services/{id}/apps/{nom}` | `resource.update` | `{domains?, port?, exclude_from_status?, force_domain_override?}` (port du conteneur dans le domaine possible) |
+| POST | `/services/{id}/start` \| `/restart` | `resource.deploy` | Tâche serveur ; soumis aux approbations |
+| POST | `/services/{id}/stop` | `resource.deploy` | |
+| POST | `/services/{id}/apps/{nom}/restart` | `resource.deploy` | Redémarre un conteneur |
+| GET | `/services/{id}/tasks` | `resource.logs.read` | Tâches serveur du service |
+| GET | `/services/{id}/logs?app=&lines=` | `resource.logs.read` | |
+| PUT | `/services/{id}/tags` | `resource.update` | |
+| … | `/services/{id}/envs…` | comme les applications | Variables (générées et configurables) |
+
+Au démarrage, Nodra écrit dans `/data/nodra/services/<id>/` le compose transformé (`KEY` sans valeur → `KEY: ${KEY}`, conteneurs `<service>-<id>`, labels `nodra.*` et de routage, réseau de la destination sauf `network_mode`, volumes nommés déclarés, montages relatifs vers `data/`), le `.env` (variables, partagées interpolées, `SERVICE_URL_*`/`SERVICE_FQDN_*` recalculées depuis les domaines) et les fichiers générés, puis `docker compose pull` + `up -d` et attend les conteneurs (hors exclus).

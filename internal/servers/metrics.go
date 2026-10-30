@@ -143,8 +143,8 @@ func ContainerStatuses(out string) map[string]string {
 	states := map[string][]string{}
 	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
 		f := strings.Split(line, "|")
-		if len(f) != 3 || f[0] == "" || (f[1] != "" && f[1] != "0") {
-			continue
+		if len(f) < 3 || f[0] == "" || (f[1] != "" && f[1] != "0") || (len(f) > 3 && f[3] == "ignore") {
+			continue // prévisualisations et conteneurs exclus du statut (nodra.status=ignore)
 		}
 		states[f[0]] = append(states[f[0]], f[2])
 	}

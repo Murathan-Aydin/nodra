@@ -189,6 +189,7 @@ func (s *Store) SetResourceStatuses(ctx context.Context, serverID string, status
 	rows, err := s.Pool.Query(ctx, `SELECT x.id::text, x.status, x.kind FROM (
 			SELECT id, status, destination_id, 'applications' AS kind FROM applications
 			UNION ALL SELECT id, status, destination_id, 'databases' FROM databases
+			UNION ALL SELECT id, status, destination_id, 'services' FROM services
 		) x JOIN destinations d ON d.id = x.destination_id WHERE d.server_id = $1`, serverID)
 	if err != nil {
 		return err

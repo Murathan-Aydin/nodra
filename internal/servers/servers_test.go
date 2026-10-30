@@ -52,7 +52,7 @@ func TestCleanupCommands(t *testing.T) {
 }
 
 func TestContainerStatuses(t *testing.T) {
-	out := "a|0|running\na|0|running\nb|0|running\nb|0|exited\nc|0|exited\nd|0|restarting\ne|3|running\n|0|running"
+	out := "a|0|running|\na|0|running|\nb|0|running|\nb|0|exited|\nc|0|exited|\nd|0|restarting|\ne|3|running|\n|0|running|\na|0|exited|ignore"
 	got := ContainerStatuses(out)
 	want := map[string]string{"a": "running", "b": "degraded", "c": "exited", "d": "restarting"}
 	if len(got) != len(want) {

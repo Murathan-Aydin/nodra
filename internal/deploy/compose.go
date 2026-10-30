@@ -266,8 +266,19 @@ func TransformCompose(raw string, a *store.Application, deploymentID, network, p
 			labels = append(labels, escapeLabels(routing)...)
 		}
 		svc["labels"] = labels
-		nets := svc["networks"]
-		switch n := nets.(type) {
+		attachService(svc, network, dataDir)
+	}
+	attachNetwork(doc, network)
+	declareVolumes(doc)
+	out, err := yaml.Marshal(doc)
+	return string(out), err
+}
+
+// attachService branche un service compose sur le réseau de la destination (sauf network_mode), active
+// le redémarrage automatique et redirige les montages relatifs (./x) vers dataDir.
+func attachService(svc map[string]any, network, dataDir string) {
+	if _, ok := svc["network_mode"]; !ok {
+		switch n := svc["networks"].(type) {
 		case nil:
 			svc["networks"] = []string{network, "default"}
 		case []any:
@@ -275,32 +286,69 @@ func TransformCompose(raw string, a *store.Application, deploymentID, network, p
 		case map[string]any:
 			n[network] = map[string]any{}
 		}
-		if _, ok := svc["restart"]; !ok {
-			svc["restart"] = "unless-stopped"
-		}
-		if vols, ok := svc["volumes"].([]any); ok && dataDir != "" {
-			for i, v := range vols {
-				switch x := v.(type) {
-				case string:
-					if strings.HasPrefix(x, "./") {
-						vols[i] = dataDir + "/" + strings.TrimPrefix(x, "./")
-					}
-				case map[string]any:
-					if src, _ := x["source"].(string); x["type"] == "bind" && strings.HasPrefix(src, "./") {
-						x["source"] = dataDir + "/" + strings.TrimPrefix(src, "./")
-					}
+	}
+	if _, ok := svc["restart"]; !ok {
+		svc["restart"] = "unless-stopped"
+	}
+	if vols, ok := svc["volumes"].([]any); ok && dataDir != "" {
+		for i, v := range vols {
+			switch x := v.(type) {
+			case string:
+				if strings.HasPrefix(x, "./") {
+					vols[i] = dataDir + "/" + strings.TrimPrefix(x, "./")
+				}
+			case map[string]any:
+				if src, _ := x["source"].(string); x["type"] == "bind" && strings.HasPrefix(src, "./") {
+					x["source"] = dataDir + "/" + strings.TrimPrefix(src, "./")
 				}
 			}
 		}
 	}
+}
+
+// declareVolumes déclare au niveau du compose les volumes nommés utilisés par les services mais non déclarés
+// (les modèles de Coolify les omettent, docker compose les refuserait) ; « memos/:/data » devient « memos:/data ».
+func declareVolumes(doc map[string]any) {
+	vols, _ := doc["volumes"].(map[string]any)
+	if vols == nil {
+		vols = map[string]any{}
+	}
+	services, _ := doc["services"].(map[string]any)
+	for _, v := range services {
+		svc, _ := v.(map[string]any)
+		list, _ := svc["volumes"].([]any)
+		for i, item := range list {
+			name := ""
+			switch x := item.(type) {
+			case string:
+				src, rest, ok := strings.Cut(x, ":")
+				if ok && src != "" && !strings.ContainsAny(src[:1], "/.~$") {
+					name = strings.TrimRight(src, "/")
+					list[i] = name + ":" + rest
+				}
+			case map[string]any:
+				if src, _ := x["source"].(string); x["type"] == "volume" && src != "" {
+					name = src
+				}
+			}
+			if _, declared := vols[name]; name != "" && !declared {
+				vols[name] = map[string]any{"labels": []string{ManagedLabel}}
+			}
+		}
+	}
+	if len(vols) > 0 {
+		doc["volumes"] = vols
+	}
+}
+
+// attachNetwork déclare le réseau de la destination comme réseau externe du compose.
+func attachNetwork(doc map[string]any, network string) {
 	nets, _ := doc["networks"].(map[string]any)
 	if nets == nil {
 		nets = map[string]any{}
 	}
 	nets[network] = map[string]any{"external": true, "name": network}
 	doc["networks"] = nets
-	out, err := yaml.Marshal(doc)
-	return string(out), err
 }
 
 // normalizeList convertit une liste ou une table compose (labels, environment) en liste "clé=valeur".

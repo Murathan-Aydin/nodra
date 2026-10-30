@@ -37,6 +37,8 @@ type Runner struct {
 	AppsDir string // dossier des applications sur les serveurs (AppsDir par défaut)
 	// DatabasesDir : dossier des bases sur les serveurs (DatabasesDir par défaut).
 	DatabasesDir string
+	// ServicesDir : dossier des services sur les serveurs (ServicesDir par défaut).
+	ServicesDir string
 	// OnFinish est appelé à la fin de chaque déploiement (commentaires de PR, notifications).
 	OnFinish func(ctx context.Context, d *store.Deployment)
 }

@@ -295,9 +295,13 @@ func (s *Store) DeleteApplication(ctx context.Context, teamID, id string) error 
 
 // DomainOwners renvoie, pour chaque domaine déjà utilisé par une autre ressource, le nom de cette ressource.
 func (s *Store) DomainOwners(ctx context.Context, hosts []string, excludeID string) (map[string]string, error) {
-	rows, err := s.Pool.Query(ctx, `SELECT lower(regexp_replace(d, '^https?://([^/:]+).*$', '\1')), a.name
-		FROM applications a, unnest(a.domains) d
-		WHERE a.id::text <> $2 AND lower(regexp_replace(d, '^https?://([^/:]+).*$', '\1')) = ANY($1)`, hosts, excludeID)
+	rows, err := s.Pool.Query(ctx, `SELECT host, name FROM (
+			SELECT lower(regexp_replace(d, '^https?://([^/:]+).*$', '\1')) AS host, a.name, a.id::text AS rid
+			FROM applications a, unnest(a.domains) d
+			UNION ALL
+			SELECT lower(regexp_replace(d, '^https?://([^/:]+).*$', '\1')), s.name || ' / ' || sa.name, s.id::text
+			FROM service_apps sa JOIN services s ON s.id = sa.service_id, unnest(sa.domains) d
+		) x WHERE x.rid <> $2 AND x.host = ANY($1)`, hosts, excludeID)
 	if err != nil {
 		return nil, err
 	}
