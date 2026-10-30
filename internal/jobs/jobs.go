@@ -4,6 +4,7 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivermigrate"
 
+	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
@@ -36,6 +38,56 @@ type ServerTaskArgs struct {
 func (ServerTaskArgs) Kind() string { return "server_task" }
 func (ServerTaskArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{Queue: "servers", MaxAttempts: 1}
+}
+
+// DeployArgs : déploiement d'une application ; Timeout en secondes (réglage du serveur).
+type DeployArgs struct {
+	DeploymentID string `json:"deployment_id"`
+	Timeout      int    `json:"timeout"`
+}
+
+func (DeployArgs) Kind() string { return "deploy" }
+func (DeployArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: "deployments", MaxAttempts: 1}
+}
+
+type deployWorker struct {
+	river.WorkerDefaults[DeployArgs]
+	st     *store.Store
+	runner *deploy.Runner
+}
+
+// Work réserve le déploiement (un seul à la fois par application, limite de builds par serveur) ;
+// sinon le job est reporté sans consommer de tentative.
+func (w *deployWorker) Work(ctx context.Context, job *river.Job[DeployArgs]) error {
+	d, err := w.st.DeploymentByID(ctx, job.Args.DeploymentID)
+	if errors.Is(err, store.ErrNotFound) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	limit := 2
+	if sv, err := w.st.ServerByIDAny(ctx, d.ServerID); err == nil {
+		limit = sv.Settings.ConcurrentBuilds
+	}
+	claimed, queued, err := w.st.ClaimDeployment(ctx, d.ID, limit)
+	if err != nil {
+		return err
+	}
+	if !claimed {
+		if queued {
+			return river.JobSnooze(3 * time.Second)
+		}
+		return nil // annulé
+	}
+	return w.runner.Run(ctx, d.ID)
+}
+
+func (w *deployWorker) Timeout(job *river.Job[DeployArgs]) time.Duration {
+	if job.Args.Timeout < 60 {
+		return time.Hour
+	}
+	return time.Duration(job.Args.Timeout) * time.Second
 }
 
 type MetricsArgs struct{}
@@ -95,6 +147,7 @@ type maintenanceWorker struct {
 func (w *maintenanceWorker) Work(ctx context.Context, _ *river.Job[MaintenanceArgs]) error {
 	for _, f := range []func(context.Context) error{
 		w.st.DeleteExpiredSessions, w.st.PurgeServerMetrics, w.st.ExpireApprovalRequests, w.st.FailStaleServerTasks,
+		w.st.FailStaleDeployments,
 	} {
 		if err := f(ctx); err != nil {
 			return err
@@ -115,10 +168,11 @@ type Jobs struct {
 	log    *slog.Logger
 }
 
-func New(st *store.Store, svc *servers.Service, log *slog.Logger, opts Options) (*Jobs, error) {
+func New(st *store.Store, svc *servers.Service, runner *deploy.Runner, log *slog.Logger, opts Options) (*Jobs, error) {
 	j := &Jobs{st: st, log: log}
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &serverTaskWorker{svc: svc})
+	river.AddWorker(workers, &deployWorker{st: st, runner: runner})
 	river.AddWorker(workers, &metricsWorker{svc: svc})
 	river.AddWorker(workers, &cleanupSchedulerWorker{j: j})
 	river.AddWorker(workers, &maintenanceWorker{st: st})
@@ -127,6 +181,7 @@ func New(st *store.Store, svc *servers.Service, log *slog.Logger, opts Options) 
 		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: 10},
 			"servers":          {MaxWorkers: 20},
+			"deployments":      {MaxWorkers: 50},
 		},
 		Workers: workers,
 		Logger:  log,
@@ -152,6 +207,20 @@ func New(st *store.Store, svc *servers.Service, log *slog.Logger, opts Options) 
 func (j *Jobs) Start(ctx context.Context) error { return j.Client.Start(ctx) }
 
 func (j *Jobs) Stop(ctx context.Context) error { return j.Client.Stop(ctx) }
+
+// EnqueueDeployment crée le déploiement et son job dans une même transaction.
+func (j *Jobs) EnqueueDeployment(ctx context.Context, d *store.Deployment, timeout int) (*store.Deployment, error) {
+	var created *store.Deployment
+	err := pgx.BeginFunc(ctx, j.st.Pool, func(tx pgx.Tx) error {
+		var err error
+		if created, err = j.st.CreateDeployment(ctx, tx, d); err != nil {
+			return err
+		}
+		_, err = j.Client.InsertTx(ctx, tx, DeployArgs{DeploymentID: created.ID, Timeout: timeout}, nil)
+		return err
+	})
+	return created, err
+}
 
 // EnqueueServerTask crée la tâche et son job dans une même transaction.
 func (j *Jobs) EnqueueServerTask(ctx context.Context, t *store.ServerTask) (*store.ServerTask, error) {

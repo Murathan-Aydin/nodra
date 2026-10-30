@@ -93,8 +93,11 @@ func BuildEnv(vars []Var, shared map[string]string, preview bool, d Defaults) En
 			e.Runtime[k] = v
 		}
 		inBuild := d.IncludeInBuild || k == "PORT" || k == "HOST"
-		if k == "SOURCE_COMMIT" && !d.CommitInBuild {
+		switch {
+		case k == "SOURCE_COMMIT" && !d.CommitInBuild:
 			inBuild = false // éviterait d'invalider le cache de build à chaque commit
+		case k == "NODRA_CONTAINER_NAME":
+			inBuild = false // change à chaque déploiement : l'image ne serait jamais réutilisée
 		}
 		if _, set := e.Build[k]; inBuild && !set {
 			e.Build[k] = v

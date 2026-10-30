@@ -58,6 +58,7 @@ func (s *Server) Router() http.Handler {
 		"environment.delete": s.execDeleteEnvironment,
 		"resource.delete":    s.execDeleteApplication,
 		"resource.env.write": s.execEnvWrite,
+		"resource.deploy":    s.execDeploy,
 	} {
 		if _, ok := s.Executors[action]; !ok {
 			s.Executors[action] = exec
@@ -248,6 +249,17 @@ func (s *Server) Router() http.Handler {
 						r.Get("/webhooks", s.appWebhooks)
 						r.Post("/webhooks/rotate", s.appWebhooks)
 						r.Put("/tags", s.setApplicationTags)
+						r.Post("/deploy", s.deployApplication)
+						r.Post("/restart", s.restartApplication)
+						r.Post("/start", s.restartApplication)
+						r.Post("/stop", s.stopApplication)
+						r.Post("/rollback", s.rollbackApplication)
+						r.Get("/images", s.applicationImages)
+						r.Get("/logs", s.applicationLogs)
+						r.Get("/deployments", s.listDeployments)
+						r.Get("/deployments/{dep}", s.getDeployment)
+						r.Get("/deployments/{dep}/logs", s.deploymentLogs)
+						r.Post("/deployments/{dep}/cancel", s.cancelDeployment)
 						r.Get("/envs", s.listEnvs(s.appLoader))
 						r.Post("/envs", s.createEnv(s.appLoader))
 						r.Post("/envs/bulk", s.bulkEnvs(s.appLoader))

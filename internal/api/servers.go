@@ -20,6 +20,7 @@ import (
 // JobQueue enfile les tâches de fond (implémenté par jobs.Jobs).
 type JobQueue interface {
 	EnqueueServerTask(ctx context.Context, t *store.ServerTask) (*store.ServerTask, error)
+	EnqueueDeployment(ctx context.Context, d *store.Deployment, timeout int) (*store.Deployment, error)
 }
 
 var (

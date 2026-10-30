@@ -235,7 +235,8 @@ func AppCompose(s AppSpec, filesDir string) (string, error) {
 
 // TransformCompose adapte le docker-compose fourni par l'utilisateur : labels de gestion et de routage
 // (services ayant des domaines), réseau de la destination, redémarrage automatique.
-func TransformCompose(raw string, a *store.Application, deploymentID, network, proxyType string, certs map[string][2]string) (string, error) {
+// dataDir : dossier stable du serveur où sont redirigés les montages relatifs (./data → dataDir/data).
+func TransformCompose(raw string, a *store.Application, deploymentID, network, proxyType, dataDir string, certs map[string][2]string) (string, error) {
 	var doc map[string]any
 	if err := yaml.Unmarshal([]byte(raw), &doc); err != nil {
 		return "", fmt.Errorf("docker-compose invalide : %w", err)
@@ -276,6 +277,20 @@ func TransformCompose(raw string, a *store.Application, deploymentID, network, p
 		}
 		if _, ok := svc["restart"]; !ok {
 			svc["restart"] = "unless-stopped"
+		}
+		if vols, ok := svc["volumes"].([]any); ok && dataDir != "" {
+			for i, v := range vols {
+				switch x := v.(type) {
+				case string:
+					if strings.HasPrefix(x, "./") {
+						vols[i] = dataDir + "/" + strings.TrimPrefix(x, "./")
+					}
+				case map[string]any:
+					if src, _ := x["source"].(string); x["type"] == "bind" && strings.HasPrefix(src, "./") {
+						x["source"] = dataDir + "/" + strings.TrimPrefix(src, "./")
+					}
+				}
+			}
 		}
 	}
 	nets, _ := doc["networks"].(map[string]any)

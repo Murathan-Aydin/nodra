@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
 
@@ -109,9 +110,11 @@ func (s *Service) collectOne(ctx context.Context, sv *store.Server) error {
 	if err != nil {
 		return err
 	}
-	if !sv.Settings.MetricsEnabled {
-		_, err := s.SSH.Output(ctx, t, "true") // simple test de joignabilité
+	if err := s.syncContainerStatuses(ctx, t, sv); err != nil {
 		return err
+	}
+	if !sv.Settings.MetricsEnabled {
+		return nil
 	}
 	out, err := s.SSH.Output(ctx, t, metricsCommand)
 	if err != nil {
@@ -132,4 +135,48 @@ func (s *Service) collectOne(ctx context.Context, sv *store.Server) error {
 	}
 	m.TS = time.Now().Truncate(time.Second)
 	return s.Store.InsertServerMetric(ctx, sv.ID, m)
+}
+
+// ContainerStatuses agrège l'état des conteneurs gérés par ressource (hors prévisualisations) :
+// running (tous démarrés), degraded (en partie), restarting, exited.
+func ContainerStatuses(out string) map[string]string {
+	states := map[string][]string{}
+	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+		f := strings.Split(line, "|")
+		if len(f) != 3 || f[0] == "" || (f[1] != "" && f[1] != "0") {
+			continue
+		}
+		states[f[0]] = append(states[f[0]], f[2])
+	}
+	res := map[string]string{}
+	for id, list := range states {
+		running, restarting := 0, false
+		for _, st := range list {
+			switch st {
+			case "running":
+				running++
+			case "restarting":
+				restarting = true
+			}
+		}
+		switch {
+		case restarting:
+			res[id] = "restarting"
+		case running == len(list):
+			res[id] = "running"
+		case running > 0:
+			res[id] = "degraded"
+		default:
+			res[id] = "exited"
+		}
+	}
+	return res
+}
+
+func (s *Service) syncContainerStatuses(ctx context.Context, t ssh.Target, sv *store.Server) error {
+	out, err := s.SSH.Output(ctx, t, `docker ps -a --filter label=nodra.managed=true --format '{{.Label "nodra.resource"}}|{{.Label "nodra.pr"}}|{{.State}}'`)
+	if err != nil {
+		return err
+	}
+	return s.Store.SetResourceStatuses(ctx, sv.ID, ContainerStatuses(out))
 }

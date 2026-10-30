@@ -186,6 +186,12 @@ func FetchHostKey(ctx context.Context, t Target) (string, error) {
 // Run exécute cmd et écrit stdout/stderr dans les writers fournis. Renvoie le code de sortie.
 // L'annulation du contexte tue la commande distante.
 func (p *Pool) Run(ctx context.Context, t Target, cmd string, stdout, stderr io.Writer) (int, error) {
+	return p.RunInput(ctx, t, cmd, nil, stdout, stderr)
+}
+
+// RunInput est Run avec une entrée standard : un script passé par stdin (ex. "sh -s") n'apparaît pas
+// dans la liste des processus du serveur, contrairement aux arguments de la commande.
+func (p *Pool) RunInput(ctx context.Context, t Target, cmd string, stdin io.Reader, stdout, stderr io.Writer) (int, error) {
 	var sess *gossh.Session
 	for attempt := 0; ; attempt++ {
 		cl, err := p.client(ctx, t)
@@ -201,7 +207,7 @@ func (p *Pool) Run(ctx context.Context, t Target, cmd string, stdout, stderr io.
 		}
 	}
 	defer sess.Close()
-	sess.Stdout, sess.Stderr = stdout, stderr
+	sess.Stdout, sess.Stderr, sess.Stdin = stdout, stderr, stdin
 	done := make(chan error, 1)
 	go func() { done <- sess.Run(cmd) }()
 	select {

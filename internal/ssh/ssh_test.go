@@ -99,3 +99,15 @@ func TestKeys(t *testing.T) {
 		t.Fatal("échappement shell")
 	}
 }
+
+func TestRunInput(t *testing.T) {
+	tg, srv := target(t)
+	tg.HostKey = srv.AuthorizedHostKey()
+	p := NewPool()
+	defer p.Close()
+	var out bytes.Buffer
+	code, err := p.RunInput(context.Background(), tg, "sh -s", strings.NewReader("echo depuis-stdin\nexit 4\n"), &out, io.Discard)
+	if err != nil || code != 4 || strings.TrimSpace(out.String()) != "depuis-stdin" {
+		t.Fatalf("code %d, sortie %q, %v", code, out.String(), err)
+	}
+}

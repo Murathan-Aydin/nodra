@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Murathan-Aydin/nodra/internal/auth"
+	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/git"
 	"github.com/Murathan-Aydin/nodra/internal/rbac"
 	"github.com/Murathan-Aydin/nodra/internal/store"
@@ -36,22 +37,7 @@ func sourceView(g *store.GitSource) map[string]any {
 }
 
 // gitSource déchiffre les identifiants d'une source pour le paquet git.
-func (s *Server) gitSource(g *store.GitSource) (git.Source, error) {
-	src := git.Source{ID: g.ID, Type: g.Type, APIURL: strings.TrimSuffix(g.APIURL, "/"), HTMLURL: g.HTMLURL,
-		AppID: g.AppID, InstallationID: g.InstallationID}
-	var err error
-	if g.PrivateKeyEnc != "" {
-		if src.PrivateKey, err = s.Box.Decrypt(g.PrivateKeyEnc); err != nil {
-			return src, err
-		}
-	}
-	if g.AccessTokenEnc != "" {
-		if src.AccessToken, err = s.Box.Decrypt(g.AccessTokenEnc); err != nil {
-			return src, err
-		}
-	}
-	return src, nil
-}
+func (s *Server) gitSource(g *store.GitSource) (git.Source, error) { return deploy.SourceFor(s.Box, g) }
 
 // baseURL : URL publique de l'instance (réglage d'instance, sinon déduite de la requête).
 func (s *Server) baseURL(r *http.Request) string {

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Faux nixpacks pour les tests.
+echo "nixpacks $*" >> "$STATE/calls"
+mkdir -p .nixpacks && echo "FROM node:lts" > .nixpacks/Dockerfile

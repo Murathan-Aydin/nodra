@@ -157,10 +157,11 @@ func TestTransformCompose(t *testing.T) {
     image: postgres
     restart: always
     networks: [backend]
+    volumes: ["./pgdata:/var/lib/postgresql/data", "named:/x"]
 networks:
   backend: {}
 `
-	out, err := TransformCompose(raw, a, "dep1", "nodra", "traefik", nil)
+	out, err := TransformCompose(raw, a, "dep1", "nodra", "traefik", "/data/nodra/applications/app1/data", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +184,10 @@ networks:
 	if doc.Networks["backend"] == nil || doc.Networks["nodra"] == nil {
 		t.Fatal("réseaux conservés et ajoutés")
 	}
-	if _, err := TransformCompose("services: [", a, "d", "nodra", "traefik", nil); err == nil {
+	if vols := toStrings(db["volumes"]); vols[0] != "/data/nodra/applications/app1/data/pgdata:/var/lib/postgresql/data" || vols[1] != "named:/x" {
+		t.Fatalf("montages relatifs redirigés : %v", vols)
+	}
+	if _, err := TransformCompose("services: [", a, "d", "nodra", "traefik", "", nil); err == nil {
 		t.Fatal("compose invalide accepté")
 	}
 }
@@ -207,6 +211,9 @@ func TestBuildEnv(t *testing.T) {
 	}
 	if _, ok := e.Build["SOURCE_COMMIT"]; ok {
 		t.Fatal("SOURCE_COMMIT exclu du build par défaut (cache)")
+	}
+	if _, ok := e.Build["NODRA_CONTAINER_NAME"]; ok || e.Runtime["NODRA_CONTAINER_NAME"] != "c1" {
+		t.Fatal("NODRA_CONTAINER_NAME uniquement à l'exécution")
 	}
 	if len(e.Missing) != 1 || e.Missing[0] != "project.NOPE" || !slices.Contains(e.Secrets, "tok-secret") {
 		t.Fatalf("manquantes/secrets : %v %v", e.Missing, e.Secrets)

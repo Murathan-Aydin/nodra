@@ -16,6 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v3"
 
+	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/rbac"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
@@ -573,8 +574,9 @@ func (s *Server) updateApplication(w http.ResponseWriter, r *http.Request) {
 }
 
 type appPayload struct {
-	TeamID string `json:"team_id"`
-	AppID  string `json:"application_id"`
+	TeamID        string `json:"team_id"`
+	AppID         string `json:"application_id"`
+	DeleteVolumes bool   `json:"delete_volumes"`
 }
 
 func (s *Server) deleteApplication(w http.ResponseWriter, r *http.Request) {
@@ -582,7 +584,8 @@ func (s *Server) deleteApplication(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	req, err := s.gate(r, "resource.delete", resourceScope(a.ID), "Suppression de l'application "+a.Name, appPayload{a.TeamID, a.ID})
+	delVolumes := r.URL.Query().Get("delete_volumes") == "true"
+	req, err := s.gate(r, "resource.delete", resourceScope(a.ID), "Suppression de l'application "+a.Name, appPayload{a.TeamID, a.ID, delVolumes})
 	if err != nil {
 		s.fail(w, err)
 		return
@@ -591,18 +594,18 @@ func (s *Server) deleteApplication(w http.ResponseWriter, r *http.Request) {
 		respondPending(w, req)
 		return
 	}
-	if err := s.removeApplication(r.Context(), a); err != nil {
+	if err := s.removeApplication(r.Context(), a, delVolumes); err != nil {
 		s.internal(w, err)
 		return
 	}
-	s.auditTeam(r, "application.deleted", "application", a.ID, map[string]string{"name": a.Name})
+	s.auditTeam(r, "application.deleted", "application", a.ID, map[string]any{"name": a.Name, "delete_volumes": delVolumes})
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // removeApplication arrête les conteneurs de l'application (si un exécuteur est branché) puis la supprime.
-func (s *Server) removeApplication(ctx context.Context, a *store.Application) error {
+func (s *Server) removeApplication(ctx context.Context, a *store.Application, deleteVolumes bool) error {
 	if s.Deployer != nil {
-		if err := s.Deployer.Teardown(ctx, a); err != nil {
+		if err := s.Deployer.Teardown(ctx, a, deleteVolumes); err != nil {
 			return err
 		}
 	}
@@ -618,7 +621,7 @@ func (s *Server) execDeleteApplication(ctx context.Context, req *store.ApprovalR
 	if err != nil {
 		return err
 	}
-	return s.removeApplication(ctx, a)
+	return s.removeApplication(ctx, a, p.DeleteVolumes)
 }
 
 // --- Webhooks manuels ---
@@ -688,7 +691,10 @@ func (s *Server) setApplicationTags(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, tags)
 }
 
-// Deployer pilote les conteneurs des applications (implémenté par le module de déploiement).
+// Deployer pilote les conteneurs des applications (implémenté par deploy.Runner).
 type Deployer interface {
-	Teardown(ctx context.Context, a *store.Application) error
+	Teardown(ctx context.Context, a *store.Application, deleteVolumes bool) error
+	Stop(ctx context.Context, a *store.Application, pr int) error
+	ContainerLogs(ctx context.Context, a *store.Application, pr, lines int) (string, error)
+	Images(ctx context.Context, a *store.Application) ([]deploy.Image, error)
 }

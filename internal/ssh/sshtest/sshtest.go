@@ -6,6 +6,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"net"
 	"os/exec"
@@ -18,6 +19,9 @@ import (
 
 // Handler exécute une commande et renvoie son code de sortie.
 type Handler func(cmd string, stdout, stderr io.Writer) int
+
+// InputHandler reçoit aussi l'entrée standard de la commande.
+type InputHandler func(cmd string, stdin io.Reader, stdout, stderr io.Writer) int
 
 // Local exécute la commande sur la machine de test.
 func Local(cmd string, stdout, stderr io.Writer) int {
@@ -39,6 +43,9 @@ type Server struct {
 
 	mu       sync.Mutex
 	handler  Handler
+	inputH   InputHandler
+	Stdins   []string // entrées standard reçues (scripts), dans l'ordre
+	lastDone bool
 	Commands []string // commandes reçues, dans l'ordre
 	ln       net.Listener
 }
@@ -48,6 +55,20 @@ func (s *Server) SetHandler(h Handler) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.handler = h
+}
+
+// SetInputHandler installe un gestionnaire qui reçoit l'entrée standard (prioritaire sur SetHandler).
+func (s *Server) SetInputHandler(h InputHandler) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.inputH = h
+}
+
+// ReceivedStdins renvoie une copie des entrées standard reçues.
+func (s *Server) ReceivedStdins() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]string(nil), s.Stdins...)
 }
 
 // Received renvoie une copie des commandes reçues.
@@ -130,9 +151,18 @@ func (s *Server) session(ch gossh.Channel, reqs <-chan *gossh.Request) {
 			_ = req.Reply(true, nil)
 			s.mu.Lock()
 			s.Commands = append(s.Commands, cmd)
-			h := s.handler
+			h, ih := s.handler, s.inputH
 			s.mu.Unlock()
-			code := h(cmd, ch, ch.Stderr())
+			var code int
+			if ih == nil {
+				ih = func(cmd string, stdin io.Reader, stdout, stderr io.Writer) int {
+					if cmd == "sh -s" && h == nil {
+						return 127
+					}
+					return runWithStdin(h, cmd, stdin, stdout, stderr)
+				}
+			}
+			code = ih(cmd, &recordingReader{ch, s}, ch, ch.Stderr())
 			status := make([]byte, 4)
 			binary.BigEndian.PutUint32(status, uint32(code))
 			_, _ = ch.SendRequest("exit-status", false, status)
@@ -143,4 +173,49 @@ func (s *Server) session(ch gossh.Channel, reqs <-chan *gossh.Request) {
 			_ = req.Reply(false, nil)
 		}
 	}
+}
+
+// recordingReader enregistre l'entrée standard lue par le gestionnaire.
+type recordingReader struct {
+	r io.Reader
+	s *Server
+}
+
+func (r *recordingReader) Read(p []byte) (int, error) {
+	n, err := r.r.Read(p)
+	if n > 0 {
+		r.s.mu.Lock()
+		if len(r.s.Stdins) == 0 || r.s.lastDone {
+			r.s.Stdins = append(r.s.Stdins, "")
+			r.s.lastDone = false
+		}
+		r.s.Stdins[len(r.s.Stdins)-1] += string(p[:n])
+		r.s.mu.Unlock()
+	}
+	if err == io.EOF {
+		r.s.mu.Lock()
+		r.s.lastDone = true
+		r.s.mu.Unlock()
+	}
+	return n, err
+}
+
+// runWithStdin : pour le gestionnaire Local, transmet stdin à sh ; les autres gestionnaires l'ignorent.
+func runWithStdin(h Handler, cmd string, stdin io.Reader, stdout, stderr io.Writer) int {
+	if isLocal(h) {
+		c := exec.Command("sh", "-c", cmd)
+		c.Stdin, c.Stdout, c.Stderr = stdin, stdout, stderr
+		if err := c.Run(); err != nil {
+			if ee, ok := err.(*exec.ExitError); ok {
+				return ee.ExitCode()
+			}
+			return 127
+		}
+		return 0
+	}
+	return h(cmd, stdout, stderr)
+}
+
+func isLocal(h Handler) bool {
+	return fmt.Sprintf("%p", h) == fmt.Sprintf("%p", Handler(Local))
 }

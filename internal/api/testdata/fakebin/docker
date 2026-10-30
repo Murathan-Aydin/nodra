@@ -1,0 +1,71 @@
+#!/bin/sh
+# Faux docker pour les tests : l'état (images, conteneurs) est conservé dans $STATE.
+echo "docker $*" >> "$STATE/calls"
+mkdir -p "$STATE/images" "$STATE/containers"
+key() { echo "$1" | tr '/:' '__'; }
+cmd="$1"; shift
+case "$cmd" in
+  image) [ -f "$STATE/images/$(key "$2")" ] ;;
+  pull) touch "$STATE/images/$(key "$1")"; echo "Pulled $1" ;;
+  build)
+    tag=""
+    while [ $# -gt 0 ]; do [ "$1" = "-t" ] && tag="$2"; shift; done
+    if [ -n "$SLOW" ]; then sleep "$SLOW"; fi
+    if [ -n "$FAIL_BUILD" ]; then echo "erreur de compilation" >&2; exit 1; fi
+    sleep 1
+    touch "$STATE/images/$(key "$tag")"
+    echo "Successfully tagged $tag" ;;
+  compose)
+    file=""; action=""
+    while [ $# -gt 0 ]; do
+      case "$1" in -f) file="$2"; shift ;; up|down|build|ps|ls) [ -z "$action" ] && action="$1" ;; esac
+      shift
+    done
+    case "$action" in
+      up)
+        name=$(grep 'container_name:' "$file" | head -1 | awk '{print $2}')
+        if [ -n "$name" ]; then
+          res=$(grep -o 'nodra.resource=[^ "]*' "$file" | head -1 | cut -d= -f2)
+          pr=$(grep -o 'nodra.pr=[0-9]*' "$file" | head -1 | cut -d= -f2)
+          echo "$res $pr" > "$STATE/containers/$name"
+          echo "Container $name Started"
+        else
+          echo "compose" > "$STATE/compose-up"
+        fi ;;
+      ps) echo "web running 0" ;;
+    esac ;;
+  ps)
+    res=""; pr=""
+    while [ $# -gt 0 ]; do
+      if [ "$1" = "--filter" ]; then
+        case "$2" in label=nodra.resource=*) res="${2#label=nodra.resource=}" ;; label=nodra.pr=*) pr="${2#label=nodra.pr=}" ;; esac
+        shift
+      fi
+      shift
+    done
+    for f in "$STATE"/containers/*; do
+      [ -f "$f" ] || continue
+      set -- $(cat "$f")
+      [ -n "$res" ] && [ "$1" != "$res" ] && continue
+      [ -n "$pr" ] && [ "$2" != "$pr" ] && continue
+      basename "$f"
+    done ;;
+  inspect)
+    name="$3"
+    [ -f "$STATE/containers/$name" ] || { echo "No such object: $name" >&2; exit 1; }
+    case "$2" in *Name*) echo "/$name" ;; *) echo "running ${HEALTH:-healthy}" ;; esac ;;
+  rm) for n in "$@"; do [ "$n" = "-f" ] || rm -f "$STATE/containers/$n"; done ;;
+  images)
+    repo=$(key "$1"); full=""
+    case "$*" in *CreatedAt*) full=1 ;; esac
+    for f in $(ls -t "$STATE/images"); do
+      case "$f" in "${repo}_"*)
+        tag="${f#"${repo}_"}"
+        if [ -n "$full" ]; then echo "$tag|2026-10-30 12:00:00 +0000 UTC|150MB"; else echo "$tag"; fi ;;
+      esac
+    done ;;
+  rmi) for n in "$@"; do [ "$n" = "-f" ] || rm -f "$STATE/images/$(key "$n")"; done ;;
+  logs) echo "2026-10-30T12:00:00Z serveur démarré" ;;
+  exec) echo "exécuté : $*" ;;
+  stop|network|volume) ;;
+esac

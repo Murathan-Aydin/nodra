@@ -50,3 +50,17 @@ func TestCleanupCommands(t *testing.T) {
 		t.Fatal("volumes et réseaux optionnels")
 	}
 }
+
+func TestContainerStatuses(t *testing.T) {
+	out := "a|0|running\na|0|running\nb|0|running\nb|0|exited\nc|0|exited\nd|0|restarting\ne|3|running\n|0|running"
+	got := ContainerStatuses(out)
+	want := map[string]string{"a": "running", "b": "degraded", "c": "exited", "d": "restarting"}
+	if len(got) != len(want) {
+		t.Fatalf("%v", got)
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s : %s, attendu %s", k, got[k], v)
+		}
+	}
+}

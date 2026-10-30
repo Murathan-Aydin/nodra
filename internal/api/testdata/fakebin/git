@@ -1,0 +1,10 @@
+#!/bin/sh
+# Faux git pour les tests.
+echo "git $*" >> "$STATE/calls"
+sha="${SHA:-0123456789abcdef0123456789abcdef01234567}"
+case "$1" in
+  ls-remote) printf '%s\trefs/heads/main\n' "$sha" ;;
+  clone) for last; do :; done; mkdir -p "$last"; echo 'services: {web: {image: nginx}}' > "$last/docker-compose.yaml" ;;
+  rev-parse) echo "$sha" ;;
+  log) echo "Ajout de la page d'accueil" ;;
+esac

@@ -22,6 +22,7 @@ import (
 
 	"github.com/Murathan-Aydin/nodra/internal/auth"
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/jobs"
 	"github.com/Murathan-Aydin/nodra/internal/rbac"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
@@ -37,6 +38,7 @@ type testEnv struct {
 	st       *store.Store
 	api      *Server
 	svc      *servers.Service
+	runner   *deploy.Runner
 	executed []*store.ApprovalRequest
 }
 
@@ -76,7 +78,8 @@ func newTestEnv(t *testing.T) *testEnv {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool := ssh.NewPool()
 	env := &testEnv{mailer: &fakeMailer{}, st: st, svc: &servers.Service{Store: st, Box: box, SSH: pool, Log: log}}
-	jq, err := jobs.New(st, env.svc, log, jobs.Options{})
+	env.runner = &deploy.Runner{Store: st, Box: box, SSH: pool, Servers: env.svc, Log: log}
+	jq, err := jobs.New(st, env.svc, env.runner, log, jobs.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +87,7 @@ func newTestEnv(t *testing.T) *testEnv {
 		t.Fatal(err)
 	}
 	env.api = &Server{
-		Store: st, Box: box, Mailer: env.mailer, AuthRateLimit: 1000, Jobs: jq, Log: log,
+		Store: st, Box: box, Mailer: env.mailer, AuthRateLimit: 1000, Jobs: jq, Log: log, Deployer: env.runner,
 		Web: fstest.MapFS{"index.html": {Data: []byte("spa")}},
 		Executors: map[string]Executor{"resource.deploy": func(_ context.Context, req *store.ApprovalRequest) error {
 			env.executed = append(env.executed, req)

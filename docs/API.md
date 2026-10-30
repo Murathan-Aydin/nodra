@@ -305,3 +305,26 @@ Valeurs chiffrées ; elles peuvent référencer les variables partagées (`{{tea
 | POST | `/storages` | `resource.update` | `{kind: "volume", mount_path, name?}` (volume Docker nommé), `{kind: "bind", host_path, mount_path}`, `{kind: "file", mount_path, content}` (1 Mo max.) ; `409` si le point de montage existe |
 | PATCH | `/storages/{id}` | `resource.update` | `{content}` (fichiers) |
 | DELETE | `/storages/{id}` | `resource.update` | |
+
+### Déploiements (`/applications/{id}/…`)
+
+Un déploiement est asynchrone (`202 Deployment`) ; on suit son statut et ses logs par interrogation (WebSocket à l'étape 14). Un seul déploiement à la fois par application ; au plus `concurrent_builds` par serveur (les autres attendent) ; durée maximale `deployment_timeout` du serveur. Les commandes `deploy`, `restart`, `rollback` sont soumises aux règles d'approbation `resource.deploy`.
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| POST | `/deploy` | `resource.deploy` | `{force_rebuild?, commit_sha?}` → `202 Deployment` (ou demande d'approbation) |
+| POST | `/restart` (alias `/start`) | `resource.deploy` | Redéploie la dernière image sans reconstruction (reconstruit si aucune) |
+| POST | `/rollback` | `resource.deploy` | `{tag}` : redéploie une image précédente (`GET /images`) |
+| POST | `/stop` | `resource.deploy` | Arrête et supprime les conteneurs (images et volumes conservés) |
+| GET | `/images` | `resource.read` | Images disponibles pour un retour arrière `[{tag, image, created, size, current}]` |
+| GET | `/logs?lines=100&pr=0` | `resource.logs.read` | Logs des conteneurs `{logs}` |
+| GET | `/deployments` | `resource.read` | 50 derniers déploiements |
+| GET | `/deployments/{dep}` | `resource.read` | |
+| GET | `/deployments/{dep}/logs?after=&debug=1` | `resource.logs.read` | `{status, logs: [{id, created_at, kind, hidden, message}]}` ; `after` = dernier id reçu ; `debug=1` inclut les lignes masquées (compose généré…) |
+| POST | `/deployments/{dep}/cancel` | `resource.deploy` | En file : annulé ; en cours : interrompu (commande distante tuée) |
+
+`DELETE /applications/{id}?delete_volumes=true` supprime aussi les volumes Docker.
+
+**Deployment** : `{id, team_id, application_id, server_id, status: queued|in_progress|finished|failed|cancelled, trigger: manual|api|webhook|rollback|restart|approval|preview, branch, commit_sha, commit_message, pr_number, force_rebuild, rollback_image, image, error, cancel_requested, created_by, created_at, started_at, finished_at}`.
+
+**Déroulement** : résolution du commit (`git ls-remote`, sans cloner) → si l'image `nodra/<app>:<commit>-<empreinte de config>` existe déjà, la construction est sautée → clone (submodules, LFS, PR) → build (`nixpacks build --out` puis `docker build` ; `docker build` ; image statique nginx avec option SPA ; `docker pull` pour une image) avec labels `nodra.*` et `--build-arg` → commande de pré-déploiement dans le conteneur en cours → démarrage (`docker compose -p <déploiement>`) → attente de santé → suppression de l'ancien conteneur (bascule sans coupure ; arrêt préalable si ports publiés, nom fixe ou PR) → commande de post-déploiement → conservation des `docker_images_to_keep` dernières images. Les secrets (variables secrètes, jetons de clonage, deploy key) sont masqués dans les logs et les scripts passent par l'entrée standard SSH (absents de `ps` sur le serveur). Le statut des applications (`running`, `degraded`, `restarting`, `exited`, `stopped`) est relevé chaque minute.

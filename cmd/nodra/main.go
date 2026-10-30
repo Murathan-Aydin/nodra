@@ -14,6 +14,7 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/api"
 	"github.com/Murathan-Aydin/nodra/internal/config"
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/jobs"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/ssh"
@@ -73,7 +74,9 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	}
 	pool := ssh.NewPool()
 	defer pool.Close()
-	jq, err := jobs.New(st, &servers.Service{Store: st, Box: box, SSH: pool, Log: log}, log, jobs.Options{Periodic: true})
+	svc := &servers.Service{Store: st, Box: box, SSH: pool, Log: log}
+	runner := &deploy.Runner{Store: st, Box: box, SSH: pool, Servers: svc, Log: log}
+	jq, err := jobs.New(st, svc, runner, log, jobs.Options{Periodic: true})
 	if err != nil {
 		return err
 	}
@@ -87,7 +90,7 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	}()
 	srv := &http.Server{
 		Addr: cfg.Addr,
-		Handler: (&api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Jobs: jq,
+		Handler: (&api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Jobs: jq, Deployer: runner,
 			SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}).Router(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
