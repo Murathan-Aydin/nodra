@@ -47,9 +47,13 @@ func scanDeployment(row pgx.Row) (*Deployment, error) {
 
 // CreateDeployment insère un déploiement (dans tx pour l'enfiler avec son job).
 func (s *Store) CreateDeployment(ctx context.Context, tx pgx.Tx, d *Deployment) (*Deployment, error) {
-	return scanDeployment(tx.QueryRow(ctx, `INSERT INTO deployments (team_id, application_id, server_id, trigger, branch, commit_sha,
+	created, err := scanDeployment(tx.QueryRow(ctx, `INSERT INTO deployments (team_id, application_id, server_id, trigger, branch, commit_sha,
 		pr_number, force_rebuild, rollback_image, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING `+depCols,
 		d.TeamID, d.ApplicationID, d.ServerID, d.Trigger, d.Branch, d.CommitSHA, d.PRNumber, d.ForceRebuild, d.RollbackImage, d.CreatedBy))
+	if err == nil {
+		s.emitDeployment(ctx, tx, created.ID, EventDeploymentStatus)
+	}
+	return created, err
 }
 
 func (s *Store) DeploymentByID(ctx context.Context, id string) (*Deployment, error) {
@@ -87,7 +91,9 @@ func (s *Store) ClaimDeployment(ctx context.Context, id string, maxConcurrent in
 			return err
 		}
 		claimed = tag.RowsAffected() == 1
-		if !claimed {
+		if claimed {
+			s.emitDeployment(ctx, tx, id, EventDeploymentStatus)
+		} else {
 			return tx.QueryRow(ctx, `SELECT status = 'queued' AND NOT cancel_requested FROM deployments WHERE id = $1`, id).Scan(&queued)
 		}
 		return nil
@@ -96,8 +102,11 @@ func (s *Store) ClaimDeployment(ctx context.Context, id string, maxConcurrent in
 }
 
 func (s *Store) FinishDeployment(ctx context.Context, id, status, image, errMsg string) error {
-	_, err := s.Pool.Exec(ctx, `UPDATE deployments SET status = $2, image = CASE WHEN $3 = '' THEN image ELSE $3 END, error = $4,
+	tag, err := s.Pool.Exec(ctx, `UPDATE deployments SET status = $2, image = CASE WHEN $3 = '' THEN image ELSE $3 END, error = $4,
 		finished_at = now() WHERE id = $1 AND status IN ('queued', 'in_progress')`, id, status, image, errMsg)
+	if err == nil && tag.RowsAffected() > 0 {
+		s.emitDeployment(ctx, s.Pool, id, EventDeploymentStatus)
+	}
 	return err
 }
 
@@ -112,6 +121,9 @@ func (s *Store) RequestCancel(ctx context.Context, id string) (bool, error) {
 		status = CASE WHEN status = 'queued' THEN 'cancelled' ELSE status END,
 		finished_at = CASE WHEN status = 'queued' THEN now() ELSE finished_at END
 		WHERE id = $1 AND status IN ('queued', 'in_progress')`, id)
+	if err == nil && tag.RowsAffected() == 1 {
+		s.emitDeployment(ctx, s.Pool, id, EventDeploymentStatus)
+	}
 	return tag.RowsAffected() == 1, err
 }
 
@@ -166,7 +178,11 @@ func (s *Store) AppendDeploymentLogs(ctx context.Context, deploymentID string, l
 		b.Queue(`INSERT INTO deployment_logs (deployment_id, created_at, kind, hidden, message) VALUES ($1, $2, $3, $4, $5)`,
 			deploymentID, l.CreatedAt, l.Kind, l.Hidden, l.Message)
 	}
-	return s.Pool.SendBatch(ctx, b).Close()
+	if err := s.Pool.SendBatch(ctx, b).Close(); err != nil {
+		return err
+	}
+	s.emitDeployment(ctx, s.Pool, deploymentID, EventDeploymentLog)
+	return nil
 }
 
 func (s *Store) DeploymentLogs(ctx context.Context, deploymentID string, after int64, includeHidden bool, limit int) ([]DeploymentLog, error) {
@@ -225,6 +241,7 @@ func (s *Store) SetResourceStatuses(ctx context.Context, serverID string, status
 			}
 			changes = append(changes, StatusChange{ID: id, TeamID: old.team, Type: strings.TrimSuffix(old.table, "s"), Name: old.name,
 				Old: old.status, New: st})
+			s.Emit(ctx, Event{Team: old.team, Kind: EventResourceStatus, ID: id, Server: serverID, Status: st})
 		}
 	}
 	return changes, nil

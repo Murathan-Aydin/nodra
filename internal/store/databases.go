@@ -155,6 +155,9 @@ func (s *Store) ListDatabases(ctx context.Context, teamID, environmentID string)
 func (s *Store) SetDatabaseStatus(ctx context.Context, id, status string, started bool) error {
 	_, err := s.Pool.Exec(ctx, `UPDATE databases SET status = $2, started_at = CASE WHEN $3 THEN now() ELSE started_at END
 		WHERE id = $1`, id, status, started)
+	if err == nil {
+		s.emitResource(ctx, "databases", id)
+	}
 	return err
 }
 

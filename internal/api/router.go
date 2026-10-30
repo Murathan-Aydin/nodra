@@ -17,6 +17,7 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/notify"
+	"github.com/Murathan-Aydin/nodra/internal/realtime"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
@@ -56,6 +57,12 @@ type Server struct {
 	Executors map[string]Executor
 	// AuthRateLimit : tentatives d'authentification par IP et par minute (10 par défaut).
 	AuthRateLimit int
+	// Hub relaie les événements temps réel (nil : les flux relisent seulement l'état périodiquement).
+	Hub *realtime.Hub
+	// AllowedOrigins : origines supplémentaires acceptées pour les WebSocket (motifs d'hôte, ex. localhost:5173).
+	AllowedOrigins []string
+
+	streams streams
 }
 
 func (s *Server) Router() http.Handler {
@@ -185,6 +192,8 @@ func (s *Server) Router() http.Handler {
 					r.Put("/groups/{id}/members/{user}", s.addGroupMember)
 					r.Delete("/groups/{id}/members/{user}", s.removeGroupMember)
 
+					r.Get("/events", s.teamEvents)
+
 					r.Get("/audit", s.listAudit)
 					r.Get("/audit/export", s.exportAudit)
 
@@ -222,6 +231,9 @@ func (s *Server) Router() http.Handler {
 						r.Post("/host-key/reset", s.resetHostKey)
 						r.Get("/tasks", s.listServerTasks)
 						r.Get("/tasks/{task}", s.getServerTask)
+						r.Get("/tasks/{task}/stream", s.streamServerTask)
+						r.Get("/terminal", s.serverTerminal)
+						r.Get("/proxy/logs/stream", s.streamProxyLogs)
 						r.Post("/tasks/{task}/cancel", s.cancelServerTask)
 						r.Get("/metrics", s.serverMetrics)
 						r.Get("/destinations", s.listDestinations)
@@ -285,9 +297,13 @@ func (s *Server) Router() http.Handler {
 						r.Post("/rollback", s.rollbackApplication)
 						r.Get("/images", s.applicationImages)
 						r.Get("/logs", s.applicationLogs)
+						r.Get("/logs/stream", s.streamApplicationLogs)
+						r.Get("/containers", s.applicationContainers)
+						r.Get("/terminal", s.applicationTerminal)
 						r.Get("/deployments", s.listDeployments)
 						r.Get("/deployments/{dep}", s.getDeployment)
 						r.Get("/deployments/{dep}/logs", s.deploymentLogs)
+						r.Get("/deployments/{dep}/logs/stream", s.streamDeploymentLogs)
 						r.Post("/deployments/{dep}/cancel", s.cancelDeployment)
 						r.Get("/previews", s.listPreviews)
 						r.Post("/previews", s.createPreview)
@@ -352,6 +368,9 @@ func (s *Server) Router() http.Handler {
 						r.Post("/restart", s.serviceAction(deploy.TaskServiceRestart))
 						r.Get("/tasks", s.serviceTasks)
 						r.Get("/logs", s.serviceLogs)
+						r.Get("/logs/stream", s.streamServiceLogs)
+						r.Get("/containers", s.serviceContainers)
+						r.Get("/terminal", s.serviceTerminal)
 						r.Get("/envs", s.listEnvs(s.svcLoader))
 						r.Post("/envs", s.createEnv(s.svcLoader))
 						r.Post("/envs/bulk", s.bulkEnvs(s.svcLoader))
@@ -371,6 +390,9 @@ func (s *Server) Router() http.Handler {
 						r.Post("/restart", s.databaseAction(deploy.TaskDatabaseRestart))
 						r.Get("/tasks", s.databaseTasks)
 						r.Get("/logs", s.databaseLogs)
+						r.Get("/logs/stream", s.streamDatabaseLogs)
+						r.Get("/containers", s.databaseContainers)
+						r.Get("/terminal", s.databaseTerminal)
 						r.Post("/import", s.importDatabase)
 						r.Get("/envs", s.listEnvs(s.dbLoader))
 						r.Post("/envs", s.createEnv(s.dbLoader))

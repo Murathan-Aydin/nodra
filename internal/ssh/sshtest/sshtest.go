@@ -47,6 +47,7 @@ type Server struct {
 	Stdins   []string // entrées standard reçues (scripts), dans l'ordre
 	lastDone bool
 	Commands []string // commandes reçues, dans l'ordre
+	ptys     []*Pty
 	ln       net.Listener
 }
 
@@ -137,23 +138,67 @@ func (s *Server) serve(nc net.Conn, cfg *gossh.ServerConfig) {
 	}
 }
 
+// Pty : pseudo-terminal demandé par un client (taille initiale puis redimensionnements).
+type Pty struct {
+	Term    string
+	Sizes   [][2]int // [lignes, colonnes]
+	Command string
+}
+
+// Ptys renvoie une copie des pseudo-terminaux demandés.
+func (s *Server) Ptys() []Pty {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]Pty, len(s.ptys))
+	for i, p := range s.ptys {
+		out[i] = *p
+		out[i].Sizes = append([][2]int(nil), p.Sizes...)
+	}
+	return out
+}
+
 func (s *Server) session(ch gossh.Channel, reqs <-chan *gossh.Request) {
-	defer ch.Close()
+	var once sync.Once
+	closeCh := func() { once.Do(func() { ch.Close() }) }
+	defer closeCh()
+	var pty *Pty
 	for req := range reqs {
 		switch req.Type {
-		case "exec":
-			if len(req.Payload) < 4 {
-				_ = req.Reply(false, nil)
-				return
+		case "pty-req", "window-change":
+			if req.Type == "pty-req" {
+				pty = &Pty{}
+				if n := binary.BigEndian.Uint32(req.Payload); int(n)+12 <= len(req.Payload) {
+					pty.Term = string(req.Payload[4 : 4+n])
+					rest := req.Payload[4+n:]
+					pty.Sizes = append(pty.Sizes, [2]int{int(binary.BigEndian.Uint32(rest[4:])), int(binary.BigEndian.Uint32(rest))})
+				}
+				s.mu.Lock()
+				s.ptys = append(s.ptys, pty)
+				s.mu.Unlock()
+				_ = req.Reply(true, nil)
+			} else if pty != nil && len(req.Payload) >= 8 {
+				s.mu.Lock()
+				pty.Sizes = append(pty.Sizes, [2]int{int(binary.BigEndian.Uint32(req.Payload[4:])), int(binary.BigEndian.Uint32(req.Payload))})
+				s.mu.Unlock()
 			}
-			n := binary.BigEndian.Uint32(req.Payload)
-			cmd := string(req.Payload[4 : 4+n])
+		case "exec", "shell":
+			cmd := ""
+			if req.Type == "exec" {
+				if len(req.Payload) < 4 {
+					_ = req.Reply(false, nil)
+					return
+				}
+				n := binary.BigEndian.Uint32(req.Payload)
+				cmd = string(req.Payload[4 : 4+n])
+			}
 			_ = req.Reply(true, nil)
 			s.mu.Lock()
 			s.Commands = append(s.Commands, cmd)
+			if pty != nil {
+				pty.Command = cmd
+			}
 			h, ih := s.handler, s.inputH
 			s.mu.Unlock()
-			var code int
 			if ih == nil {
 				ih = func(cmd string, stdin io.Reader, stdout, stderr io.Writer) int {
 					if cmd == "sh -s" && h == nil {
@@ -162,11 +207,14 @@ func (s *Server) session(ch gossh.Channel, reqs <-chan *gossh.Request) {
 					return runWithStdin(h, cmd, stdin, stdout, stderr)
 				}
 			}
-			code = ih(cmd, &recordingReader{ch, s}, ch, ch.Stderr())
-			status := make([]byte, 4)
-			binary.BigEndian.PutUint32(status, uint32(code))
-			_, _ = ch.SendRequest("exit-status", false, status)
-			return
+			// Exécution en parallèle : les redimensionnements et signaux restent traités.
+			go func() {
+				code := ih(cmd, &recordingReader{ch, s}, ch, ch.Stderr())
+				status := make([]byte, 4)
+				binary.BigEndian.PutUint32(status, uint32(code))
+				_, _ = ch.SendRequest("exit-status", false, status)
+				closeCh()
+			}()
 		case "signal":
 			return
 		default:

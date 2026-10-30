@@ -266,6 +266,9 @@ func (s *Store) ApplicationsByRepo(ctx context.Context, repoKeys []string) ([]*A
 
 func (s *Store) SetApplicationStatus(ctx context.Context, id, status string) error {
 	_, err := s.Pool.Exec(ctx, `UPDATE applications SET status = $2 WHERE id = $1`, id, status)
+	if err == nil {
+		s.emitResource(ctx, "applications", id)
+	}
 	return err
 }
 

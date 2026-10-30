@@ -245,8 +245,21 @@ func (s *Store) SetServerValidation(ctx context.Context, id string, v ServerVali
 }
 
 func (s *Store) SetServerReachable(ctx context.Context, id string, reachable bool) error {
-	_, err := s.Pool.Exec(ctx, `UPDATE servers SET is_reachable = $2, last_seen_at = CASE WHEN $2 THEN now() ELSE last_seen_at END
-		WHERE id = $1`, id, reachable)
+	var team string
+	var was bool
+	err := s.Pool.QueryRow(ctx, `UPDATE servers s SET is_reachable = $2, last_seen_at = CASE WHEN $2 THEN now() ELSE s.last_seen_at END
+		FROM (SELECT id, is_reachable FROM servers WHERE id = $1) o WHERE s.id = o.id RETURNING s.team_id::text, o.is_reachable`,
+		id, reachable).Scan(&team, &was)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	if err == nil && was != reachable {
+		st := "unreachable"
+		if reachable {
+			st = "reachable"
+		}
+		s.Emit(ctx, Event{Team: team, Kind: EventServerStatus, ID: id, Server: id, Status: st})
+	}
 	return err
 }
 
@@ -340,8 +353,12 @@ func (s *Store) CreateServerTask(ctx context.Context, tx pgx.Tx, t *ServerTask) 
 	if len(params) == 0 {
 		params = json.RawMessage(`{}`)
 	}
-	return scanTask(tx.QueryRow(ctx, `INSERT INTO server_tasks (team_id, server_id, kind, params, created_by)
+	created, err := scanTask(tx.QueryRow(ctx, `INSERT INTO server_tasks (team_id, server_id, kind, params, created_by)
 		VALUES ($1, $2, $3, $4::jsonb, $5) RETURNING `+taskCols, t.TeamID, t.ServerID, t.Kind, string(params), t.CreatedBy))
+	if err == nil {
+		s.emitTask(ctx, tx, created.ID, EventTaskStatus)
+	}
+	return created, err
 }
 
 func (s *Store) ServerTaskByID(ctx context.Context, id string) (*ServerTask, error) {
@@ -359,17 +376,26 @@ func (s *Store) ListServerTasks(ctx context.Context, serverID string, limit int)
 // StartServerTask passe la tâche en cours ; false si elle n'était plus en file (annulée).
 func (s *Store) StartServerTask(ctx context.Context, id string) (bool, error) {
 	tag, err := s.Pool.Exec(ctx, `UPDATE server_tasks SET status = 'running', started_at = now() WHERE id = $1 AND status = 'queued'`, id)
+	if err == nil && tag.RowsAffected() == 1 {
+		s.emitTask(ctx, s.Pool, id, EventTaskStatus)
+	}
 	return tag.RowsAffected() == 1, err
 }
 
 func (s *Store) AppendServerTaskOutput(ctx context.Context, id, chunk string) error {
 	_, err := s.Pool.Exec(ctx, `UPDATE server_tasks SET output = right(output || $2, 1000000) WHERE id = $1`, id, chunk)
+	if err == nil {
+		s.emitTask(ctx, s.Pool, id, EventTaskOutput)
+	}
 	return err
 }
 
 func (s *Store) FinishServerTask(ctx context.Context, id, status, errMsg string) error {
-	_, err := s.Pool.Exec(ctx, `UPDATE server_tasks SET status = $2, error = $3, finished_at = now()
+	tag, err := s.Pool.Exec(ctx, `UPDATE server_tasks SET status = $2, error = $3, finished_at = now()
 		WHERE id = $1 AND status IN ('queued', 'running')`, id, status, errMsg)
+	if err == nil && tag.RowsAffected() > 0 {
+		s.emitTask(ctx, s.Pool, id, EventTaskStatus)
+	}
 	return err
 }
 
@@ -431,6 +457,9 @@ func (s *Store) FailStaleServerTasks(ctx context.Context) error {
 // CancelServerTask annule une tâche encore en file.
 func (s *Store) CancelServerTask(ctx context.Context, id string) (bool, error) {
 	tag, err := s.Pool.Exec(ctx, `UPDATE server_tasks SET status = 'cancelled', finished_at = now() WHERE id = $1 AND status = 'queued'`, id)
+	if err == nil && tag.RowsAffected() == 1 {
+		s.emitTask(ctx, s.Pool, id, EventTaskStatus)
+	}
 	return tag.RowsAffected() == 1, err
 }
 

@@ -19,6 +19,7 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/jobs"
 	"github.com/Murathan-Aydin/nodra/internal/notify"
+	"github.com/Murathan-Aydin/nodra/internal/realtime"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
@@ -89,6 +90,7 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	dispatcher := &notify.Dispatcher{Store: st, Box: box, Log: log, BaseURL: baseURL}
 	apiSrv := &api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Deployer: runner, Backups: backups, Targets: svc,
 		Notifier: dispatcher, Mailer: &notify.Mailer{D: dispatcher, BaseURL: baseURL},
+		Hub: realtime.New(st.Pool, log), AllowedOrigins: cfg.AllowedOrigins,
 		SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}
 	// avant le démarrage des workers
 	runner.OnFinish = apiSrv.DeploymentFinished
@@ -107,11 +109,13 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 		_ = jq.Stop(stopCtx)
 	}()
 	apiSrv.Jobs = jq
+	go apiSrv.Hub.Run(ctx)
 	srv := &http.Server{
 		Addr:              cfg.Addr,
 		Handler:           apiSrv.Router(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
+	srv.RegisterOnShutdown(apiSrv.CloseStreams) // WebSocket : connexions reprises, non suivies par Shutdown
 	errc := make(chan error, 1)
 	go func() {
 		log.Info("écoute", "addr", cfg.Addr)

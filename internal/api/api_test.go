@@ -27,6 +27,7 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/jobs"
 	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/rbac"
+	"github.com/Murathan-Aydin/nodra/internal/realtime"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
@@ -44,6 +45,7 @@ type testEnv struct {
 	backups  *backup.Service
 	jobs     *jobs.Jobs
 	notifier *notify.Dispatcher
+	hub      *realtime.Hub
 	executed []*store.ApprovalRequest
 }
 
@@ -89,6 +91,9 @@ func newTestEnv(t *testing.T) *testEnv {
 	for k, v := range env.backups.Tasks() {
 		env.svc.Tasks[k] = v
 	}
+	hubCtx, stopHub := context.WithCancel(ctx)
+	env.hub = realtime.New(st.Pool, log)
+	go env.hub.Run(hubCtx)
 	env.notifier = &notify.Dispatcher{Store: st, Box: box, Log: log, BaseURL: func(context.Context) string { return "https://nodra.example.com" }}
 	jq, err := jobs.New(st, env.svc, env.runner, log, jobs.Options{Notifier: env.notifier})
 	if err != nil {
@@ -100,7 +105,7 @@ func newTestEnv(t *testing.T) *testEnv {
 	}
 	env.api = &Server{
 		Store: st, Box: box, Mailer: env.mailer, AuthRateLimit: 1000, Jobs: jq, Log: log, Deployer: env.runner, Backups: env.backups, Targets: env.svc,
-		Notify: jq, Notifier: env.notifier,
+		Notify: jq, Notifier: env.notifier, Hub: env.hub,
 		Web: fstest.MapFS{"index.html": {Data: []byte("spa")}},
 		Executors: map[string]Executor{"resource.deploy": func(_ context.Context, req *store.ApprovalRequest) error {
 			env.executed = append(env.executed, req)
@@ -130,6 +135,8 @@ func newTestEnv(t *testing.T) *testEnv {
 	srv := httptest.NewServer(mux)
 	env.srv = srv
 	t.Cleanup(func() {
+		env.api.CloseStreams()
+		stopHub()
 		srv.Close()
 		stopCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		_ = jq.Stop(stopCtx)

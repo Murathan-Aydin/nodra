@@ -481,3 +481,24 @@ Un canal de l'équipe reçoit aussi les événements de ses sous-équipes. Les e
 | POST | `/admin/mail/test` | `{to?}` (défaut : l'administrateur) → `200 {"sent": true}` ou `502` |
 
 Utilisé pour la réinitialisation de mot de passe, les invitations, la vérification d'adresse et les canaux `email`.
+
+## Temps réel (WebSocket)
+
+Connexions WebSocket sur les routes ci-dessous (`GET` + `Upgrade`), authentifiées comme le reste de l'API (cookie de session ou `Authorization: Bearer`). Le navigateur doit venir de l'origine de l'instance (ou d'une origine de `NODRA_ALLOWED_ORIGINS`), sinon `403`. Messages texte : JSON `{type, …}` ; messages binaires : octets bruts (logs suivis, terminal). Un ping est envoyé toutes les 30 s.
+
+Les événements sont diffusés par PostgreSQL (`LISTEN/NOTIFY` sur `nodra_events`) ; chaque flux relit aussi l'état toutes les 2 s, un événement manqué ne fait que retarder l'affichage.
+
+| Route (sous `/teams/{team}`) | Permission | Messages |
+|---|---|---|
+| `/events` | `team.read` + lecture de chaque objet | `{type: "ready"}` puis `{type: "event", event: {team, kind, id, resource?, server?, status?}}` ; `kind` : `deployment.status`, `deployment.log`, `task.status`, `task.output`, `resource.status`, `server.status` (`reachable`/`unreachable`), `proxy.status`. Événements filtrés selon `resource.read` / `server.read` (droits relus chaque minute). |
+| `/applications/{app}/deployments/{dep}/logs/stream?after=&debug=1` | `resource.logs.read` | `{type: "logs", logs: [DeploymentLog]}`, `{type: "status", status}`, puis `{type: "end", status, error}` et fermeture à la fin du déploiement |
+| `/servers/{server}/tasks/{task}/stream` | `server.read` | `{type: "output", data}`, `{type: "reset"}` (sortie tronquée à 1 Mo : tout est renvoyé), `{type: "status"}`, `{type: "end", status, error}` |
+| `/applications/{app}/logs/stream?tail=100&container=` | `resource.logs.read` | Logs suivis (`docker logs -f`) en messages binaires ; avec plusieurs conteneurs, lignes préfixées `[nom]`. `{type: "end"}` ou `{type: "error", message}` |
+| `/databases/{db}/logs/stream`, `/services/{svc}/logs/stream?app=` | `resource.logs.read` | Idem |
+| `/servers/{server}/proxy/logs/stream?tail=100` | `server.read` | Logs du conteneur `nodra-proxy` |
+| `/servers/{server}/terminal?rows=24&cols=80` | `server.terminal` | Shell de l'utilisateur SSH (serveur validé, sinon `409`) |
+| `/applications/{app}/terminal?container=`, `/databases/{db}/terminal`, `/services/{svc}/terminal?app=&container=` | `resource.terminal` | Shell (`bash` sinon `sh`) dans le conteneur en cours d'exécution ; `container` requis s'il y en a plusieurs |
+
+Terminal : le client envoie la saisie en messages binaires (ou `{type: "input", data}`) et `{type: "resize", rows, cols}` ; le serveur répond `{type: "ready", container}`, la sortie en messages binaires, puis `{type: "exit", code}`. L'ouverture est journalisée (`server.terminal.opened`, `application.terminal.opened`…). Fermer la connexion coupe la session (SIGHUP).
+
+Conteneurs : `GET /applications/{app}/containers?pr=`, `/databases/{db}/containers`, `/services/{svc}/containers` (`resource.read`) → `[{name, service, state, status, image}]`.

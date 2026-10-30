@@ -147,6 +147,9 @@ func (s *Store) UpdateServiceApp(ctx context.Context, serviceID, name string, do
 
 func (s *Store) SetServiceStatus(ctx context.Context, id, status string) error {
 	_, err := s.Pool.Exec(ctx, `UPDATE services SET status = $2 WHERE id = $1`, id, status)
+	if err == nil {
+		s.emitResource(ctx, "services", id)
+	}
 	return err
 }
 

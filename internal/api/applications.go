@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/rbac"
+	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
 
@@ -708,4 +710,9 @@ type Deployer interface {
 	DatabaseLogs(ctx context.Context, db *store.Database, lines int) (string, error)
 	TeardownService(ctx context.Context, svc *store.Service, deleteVolumes bool) error
 	ServiceLogs(ctx context.Context, svc *store.Service, app string, lines int) (string, error)
+	Containers(ctx context.Context, resourceID string, pr int) ([]deploy.Container, error)
+	FollowLogs(ctx context.Context, resourceID, service, container string, tail int, w io.Writer) error
+	FollowProxyLogs(ctx context.Context, sv *store.Server, tail int, w io.Writer) error
+	ServerShell(ctx context.Context, sv *store.Server, o ssh.ShellOptions) (*ssh.Shell, error)
+	ContainerShell(ctx context.Context, resourceID, service, container string, o ssh.ShellOptions) (*ssh.Shell, string, error)
 }

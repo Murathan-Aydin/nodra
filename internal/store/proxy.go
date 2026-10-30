@@ -15,7 +15,15 @@ func (s *Store) UpdateProxy(ctx context.Context, serverID string, p ProxyInfo) e
 }
 
 func (s *Store) SetProxyStatus(ctx context.Context, serverID, status string) error {
-	_, err := s.Pool.Exec(ctx, `UPDATE servers SET proxy_status = $2 WHERE id = $1`, serverID, status)
+	var team, was string
+	err := s.Pool.QueryRow(ctx, `UPDATE servers s SET proxy_status = $2 FROM (SELECT id, proxy_status FROM servers WHERE id = $1) o
+		WHERE s.id = o.id RETURNING s.team_id::text, o.proxy_status`, serverID, status).Scan(&team, &was)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	if err == nil && was != status {
+		s.Emit(ctx, Event{Team: team, Kind: EventProxyStatus, ID: serverID, Server: serverID, Status: status})
+	}
 	return err
 }
 

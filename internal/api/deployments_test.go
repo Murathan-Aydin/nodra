@@ -50,21 +50,31 @@ func newFakeHost(t *testing.T, f *appFixture) *fakeHost {
 	dockerOK.Store(true)
 	fallback := fakeUbuntu(&dockerOK)
 	f.ssh.SetInputHandler(func(cmd string, stdin io.Reader, stdout, stderr io.Writer) int {
-		fileCmd := strings.HasPrefix(cmd, "cat ") || strings.HasPrefix(cmd, "mkdir -p ") || strings.HasPrefix(cmd, "rm -f ")
-		if cmd != "sh -s" && !fileCmd {
+		// Lecture/écriture de fichiers (téléchargement, import) et commandes des terminaux et logs suivis :
+		// exécutées réellement, comme les scripts ; un shell interactif (commande vide) lit ses commandes sur stdin.
+		fileCmd := strings.HasPrefix(cmd, "cat ") || strings.HasPrefix(cmd, "mkdir -p ") || strings.HasPrefix(cmd, "rm -f ") ||
+			strings.HasPrefix(cmd, "sh -c ")
+		if cmd != "sh -s" && cmd != "" && !fileCmd {
 			return fallback(cmd, stdout, stderr)
 		}
 		c := exec.Command("sh", "-s")
-		if fileCmd { // lecture/écriture de fichiers (téléchargement, import) exécutées réellement
+		if fileCmd {
 			c = exec.Command("sh", "-c", cmd)
 		}
-		c.Stdin, c.Stdout, c.Stderr = stdin, stdout, stderr
+		c.Stdout, c.Stderr = stdout, stderr
 		c.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"), "STATE="+h.state)
 		h.mu.Lock()
 		for k, v := range h.env {
 			c.Env = append(c.Env, k+"="+v)
 		}
 		h.mu.Unlock()
+		// Entrée copiée à part : la fin de la commande ne dépend pas de la fermeture de l'entrée par le client
+		// (terminal, logs suivis), comme avec un vrai sshd.
+		in, _ := c.StdinPipe()
+		go func() {
+			_, _ = io.Copy(in, stdin)
+			in.Close()
+		}()
 		if err := c.Run(); err != nil {
 			if ee, ok := err.(*exec.ExitError); ok {
 				return ee.ExitCode()
