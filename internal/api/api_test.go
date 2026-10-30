@@ -22,7 +22,10 @@ import (
 
 	"github.com/Murathan-Aydin/nodra/internal/auth"
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/jobs"
 	"github.com/Murathan-Aydin/nodra/internal/rbac"
+	"github.com/Murathan-Aydin/nodra/internal/servers"
+	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
 
@@ -33,6 +36,7 @@ type testEnv struct {
 	mailer   *fakeMailer
 	st       *store.Store
 	api      *Server
+	svc      *servers.Service
 	executed []*store.ApprovalRequest
 }
 
@@ -65,11 +69,22 @@ func newTestEnv(t *testing.T) *testEnv {
 	if err := st.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
+	if err := jobs.Migrate(ctx, st.Pool); err != nil {
+		t.Fatal(err)
+	}
 	box, _ := crypto.New(make([]byte, 32))
-	env := &testEnv{mailer: &fakeMailer{}, st: st}
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	pool := ssh.NewPool()
+	env := &testEnv{mailer: &fakeMailer{}, st: st, svc: &servers.Service{Store: st, Box: box, SSH: pool, Log: log}}
+	jq, err := jobs.New(st, env.svc, log, jobs.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := jq.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
 	env.api = &Server{
-		Store: st, Box: box, Mailer: env.mailer, AuthRateLimit: 1000,
-		Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Store: st, Box: box, Mailer: env.mailer, AuthRateLimit: 1000, Jobs: jq, Log: log,
 		Web: fstest.MapFS{"index.html": {Data: []byte("spa")}},
 		Executors: map[string]Executor{"resource.deploy": func(_ context.Context, req *store.ApprovalRequest) error {
 			env.executed = append(env.executed, req)
@@ -100,6 +115,10 @@ func newTestEnv(t *testing.T) *testEnv {
 	env.srv = srv
 	t.Cleanup(func() {
 		srv.Close()
+		stopCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		_ = jq.Stop(stopCtx)
+		cancel()
+		pool.Close()
 		st.Close()
 		_, _ = admin.Exec(ctx, "DROP DATABASE "+name+" WITH (FORCE)")
 		admin.Close(ctx)

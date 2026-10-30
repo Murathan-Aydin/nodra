@@ -119,3 +119,50 @@ Une **règle** soumet des actions (`gateable_actions` : `resource.deploy`, `reso
 | POST | `/approvals/{id}/approve` | `approvals.approve` sur la portée | `{comment?}` → demande mise à jour |
 | POST | `/approvals/{id}/reject` | `approvals.approve` sur la portée | `{comment?}` |
 | POST | `/approvals/{id}/cancel` | demandeur ou `approvals.manage` | |
+
+## Clés SSH (`/teams/{team}/private-keys`)
+
+La partie privée est chiffrée en base et n'est jamais renvoyée.
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/private-keys` | `key.read` | `[PrivateKey]` |
+| POST | `/private-keys` | `key.manage` | `{name, description?, private_key?}` : importe une clé PEM/OpenSSH (sans phrase de passe) ou, si `private_key` est vide, génère une paire ed25519. → `201 PrivateKey` |
+| GET / PATCH / DELETE | `/private-keys/{id}` | `key.read` / `key.manage` | PATCH `{name, description}` ; DELETE → `409` si un serveur l'utilise |
+
+**PrivateKey** : `{id, team_id, name, description, public_key, fingerprint, created_at}` — ajouter `public_key` au fichier `~/.ssh/authorized_keys` du serveur.
+
+## Serveurs (`/teams/{team}/servers`)
+
+Les opérations distantes sont des **tâches** asynchrones (`202 ServerTask`) dont on suit le statut et la sortie via `GET /servers/{id}/tasks/{task}`.
+
+| Méthode | Route | Permission (portée serveur) | Description |
+|---|---|---|---|
+| GET | `/servers` | `server.read` (équipe) | |
+| POST | `/servers` | `server.create` (équipe) | `{name, ip, port?: 22, user?: "root", private_key_id, description?, settings?}` → `201 {server, task}` (validation lancée automatiquement) |
+| GET | `/servers/{id}` | `server.read` | `{server, destinations}` |
+| PATCH | `/servers/{id}` | `server.update` | Champs partiels ; `settings` est fusionné. Changer IP/port/clé efface la clé d'hôte ; changer IP/port/utilisateur/clé repasse le serveur en non validé. |
+| DELETE | `/servers/{id}` | `server.delete` | Soumis aux règles d'approbation (`server.delete`) ; `409` si des ressources y sont déployées |
+| POST | `/servers/{id}/validate` | `server.update` | Connexion (enregistre la clé d'hôte à la 1re connexion), OS, Docker ≥ 24, Docker Compose, réseau `nodra` |
+| POST | `/servers/{id}/install-docker` | `server.update` | Prérequis + Docker (get.docker.com, apk, pacman), rotation des logs, puis validation |
+| POST | `/servers/{id}/docker-cleanup` | `server.update` | Conteneurs arrêtés, images inutilisées, cache de build (+ volumes/réseaux si activé) ; épargne tout ce qui porte `nodra.managed=true` |
+| POST | `/servers/{id}/packages/check` | `server.update` | Liste des mises à jour système disponibles |
+| POST | `/servers/{id}/packages/update` | `server.update` | Mise à jour des paquets |
+| POST | `/servers/{id}/reboot` | `server.update` | |
+| POST | `/servers/{id}/commands` | `server.terminal` | `{command}` : exécute une commande (enregistrée dans l'audit) |
+| PUT / DELETE | `/servers/{id}/cloudflared` | `server.update` | PUT `{token}` démarre Cloudflare Tunnel (jeton chiffré, masqué dans la sortie) ; DELETE l'arrête |
+| POST | `/servers/{id}/host-key/reset` | `server.update` | Oublie la clé d'hôte (serveur réinstallé) ; revalider ensuite |
+| GET | `/servers/{id}/tasks` | `server.read` | 50 dernières tâches (sans `output`) |
+| GET | `/servers/{id}/tasks/{task}` | `server.read` | Tâche avec sa sortie |
+| POST | `/servers/{id}/tasks/{task}/cancel` | `server.update` | Uniquement si encore en file |
+| GET | `/servers/{id}/metrics?since=` | `server.read` | Points `{ts, cpu_percent, mem_used, mem_total, disk_used, disk_total, load1}` (dernière heure par défaut) |
+| GET / POST | `/servers/{id}/destinations` | `server.read` / `server.update` | POST `{name?, network}` crée un réseau Docker (tâche) |
+| DELETE | `/servers/{id}/destinations/{dest}` | `server.update` | `409` pour la destination par défaut |
+
+**Server** : `{id, team_id, name, description, ip, port, user, private_key_id, host_key, is_reachable, is_usable, os_id, os_version, docker_version, compose_version, validation_error, validated_at, last_seen_at, last_cleanup_at, settings, created_at}`
+
+**settings** (valeurs par défaut) : `concurrent_builds` 2, `deployment_timeout` 3600 s, `is_build_server` false, `docker_cleanup_frequency` `"0 0 * * *"` (cron ou `@daily`…), `docker_cleanup_threshold` 80 (% disque déclenchant un nettoyage), `delete_unused_volumes` false, `delete_unused_networks` false, `metrics_enabled` true, `metrics_retention_days` 7, `timezone` `"UTC"`, `wildcard_domain` `""`, `connection_timeout` 10 s, `cloudflare_tunnel` (lecture seule).
+
+**ServerTask** : `{id, team_id, server_id, kind, params, status: queued|running|success|failed|cancelled, output, error, created_by, created_at, started_at, finished_at}` ; `kind` ∈ `validate`, `install_docker`, `docker_cleanup`, `packages_check`, `packages_update`, `reboot`, `command`, `cloudflared_start`, `cloudflared_stop`, `network_create`, `network_delete`.
+
+Tâches de fond automatiques : métriques et joignabilité chaque minute, nettoyage Docker selon `docker_cleanup_frequency` ou au-delà de `docker_cleanup_threshold` (vérifié toutes les 5 min), maintenance horaire (sessions expirées, rétention des métriques, demandes d'approbation expirées, tâches bloquées).

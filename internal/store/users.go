@@ -13,6 +13,7 @@ import (
 var (
 	ErrNotFound = errors.New("introuvable")
 	ErrConflict = errors.New("existe déjà")
+	ErrInUse    = errors.New("encore utilisé")
 )
 
 type User struct {
@@ -46,6 +47,11 @@ func scanUser(row pgx.Row) (*User, error) {
 func isUniqueViolation(err error) bool {
 	var pg *pgconn.PgError
 	return errors.As(err, &pg) && pg.Code == "23505"
+}
+
+func isForeignKeyViolation(err error) bool {
+	var pg *pgconn.PgError
+	return errors.As(err, &pg) && pg.Code == "23503"
 }
 
 // CreateUser crée un utilisateur. Le premier utilisateur de l'instance en devient l'administrateur

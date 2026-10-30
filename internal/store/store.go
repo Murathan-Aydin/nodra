@@ -42,6 +42,7 @@ func (s *Store) Migrate(ctx context.Context) error {
 
 func migrate(ctx context.Context, db *sql.DB) error {
 	goose.SetBaseFS(migrations)
+	goose.SetLogger(goose.NopLogger())
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}

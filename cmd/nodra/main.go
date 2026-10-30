@@ -14,6 +14,9 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/api"
 	"github.com/Murathan-Aydin/nodra/internal/config"
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/jobs"
+	"github.com/Murathan-Aydin/nodra/internal/servers"
+	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 	"github.com/Murathan-Aydin/nodra/web"
 )
@@ -44,13 +47,19 @@ func run(cmd string, log *slog.Logger) error {
 	}
 	defer st.Close()
 
+	if cmd != "migrate" && cmd != "serve" {
+		return fmt.Errorf("commande inconnue %q (serve, migrate)", cmd)
+	}
+	if err := st.Migrate(ctx); err != nil {
+		return fmt.Errorf("migrations: %w", err)
+	}
+	if err := jobs.Migrate(ctx, st.Pool); err != nil {
+		return fmt.Errorf("migrations River: %w", err)
+	}
 	switch cmd {
 	case "migrate":
-		return st.Migrate(ctx)
+		return nil
 	case "serve":
-		if err := st.Migrate(ctx); err != nil {
-			return fmt.Errorf("migrations: %w", err)
-		}
 		return serve(ctx, cfg, st, log)
 	default:
 		return fmt.Errorf("commande inconnue %q (serve, migrate)", cmd)
@@ -62,10 +71,24 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	if err != nil {
 		return err
 	}
-	go cleanupLoop(ctx, st, log)
+	pool := ssh.NewPool()
+	defer pool.Close()
+	jq, err := jobs.New(st, &servers.Service{Store: st, Box: box, SSH: pool, Log: log}, log, jobs.Options{Periodic: true})
+	if err != nil {
+		return err
+	}
+	if err := jq.Start(ctx); err != nil {
+		return fmt.Errorf("démarrage des jobs: %w", err)
+	}
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		_ = jq.Stop(stopCtx)
+	}()
 	srv := &http.Server{
-		Addr:              cfg.Addr,
-		Handler:           (&api.Server{Store: st, Log: log, Web: web.FS(), Box: box, SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}).Router(),
+		Addr: cfg.Addr,
+		Handler: (&api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Jobs: jq,
+			SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}).Router(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	errc := make(chan error, 1)
@@ -84,21 +107,5 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 		defer cancel()
 		log.Info("arrêt gracieux")
 		return srv.Shutdown(shutCtx)
-	}
-}
-
-// cleanupLoop purge les sessions expirées (remplacé par un job River à l'étape 14).
-func cleanupLoop(ctx context.Context, st *store.Store, log *slog.Logger) {
-	t := time.NewTicker(time.Hour)
-	defer t.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			if err := st.DeleteExpiredSessions(ctx); err != nil {
-				log.Error("purge des sessions", "err", err)
-			}
-		}
 	}
 }

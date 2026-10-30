@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
 
@@ -33,6 +34,8 @@ type Server struct {
 	Mailer        Mailer
 	// TrustProxy : utiliser l'IP transmise par le proxy (sinon contournement de la limite de tentatives).
 	TrustProxy bool
+	// Jobs enfile les tâches de fond.
+	Jobs JobQueue
 	// Executors : exécuteurs des actions soumises à approbation, par action (ex. "resource.deploy").
 	Executors map[string]Executor
 	// AuthRateLimit : tentatives d'authentification par IP et par minute (10 par défaut).
@@ -40,6 +43,14 @@ type Server struct {
 }
 
 func (s *Server) Router() http.Handler {
+	if s.Executors == nil {
+		s.Executors = map[string]Executor{}
+	}
+	for action, exec := range map[string]Executor{"server.delete": s.execDeleteServer} {
+		if _, ok := s.Executors[action]; !ok {
+			s.Executors[action] = exec
+		}
+	}
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	if s.TrustProxy {
@@ -138,6 +149,37 @@ func (s *Server) Router() http.Handler {
 					r.Post("/approvals/{id}/approve", s.voteApproval("approve"))
 					r.Post("/approvals/{id}/reject", s.voteApproval("reject"))
 					r.Post("/approvals/{id}/cancel", s.cancelApproval)
+
+					r.Get("/private-keys", s.listKeys)
+					r.Post("/private-keys", s.createKey)
+					r.Get("/private-keys/{id}", s.getKey)
+					r.Patch("/private-keys/{id}", s.updateKey)
+					r.Delete("/private-keys/{id}", s.deleteKey)
+
+					r.Get("/servers", s.listServers)
+					r.Post("/servers", s.createServer)
+					r.Route("/servers/{server}", func(r chi.Router) {
+						r.Get("/", s.getServer)
+						r.Patch("/", s.updateServer)
+						r.Delete("/", s.deleteServer)
+						r.Post("/validate", s.serverAction(servers.TaskValidate, "server.update"))
+						r.Post("/install-docker", s.serverAction(servers.TaskInstallDocker, "server.update"))
+						r.Post("/docker-cleanup", s.serverAction(servers.TaskDockerCleanup, "server.update"))
+						r.Post("/packages/check", s.serverAction(servers.TaskPackagesCheck, "server.update"))
+						r.Post("/packages/update", s.serverAction(servers.TaskPackagesUpdate, "server.update"))
+						r.Post("/reboot", s.serverAction(servers.TaskReboot, "server.update"))
+						r.Post("/commands", s.runCommand)
+						r.Put("/cloudflared", s.startCloudflared)
+						r.Delete("/cloudflared", s.serverAction(servers.TaskCloudflaredStop, "server.update"))
+						r.Post("/host-key/reset", s.resetHostKey)
+						r.Get("/tasks", s.listServerTasks)
+						r.Get("/tasks/{task}", s.getServerTask)
+						r.Post("/tasks/{task}/cancel", s.cancelServerTask)
+						r.Get("/metrics", s.serverMetrics)
+						r.Get("/destinations", s.listDestinations)
+						r.Post("/destinations", s.createDestination)
+						r.Delete("/destinations/{dest}", s.deleteDestination)
+					})
 				})
 			})
 		})

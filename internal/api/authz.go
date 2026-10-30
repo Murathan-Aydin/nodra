@@ -269,6 +269,8 @@ func (s *Server) fail(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusNotFound, "introuvable")
 	case errors.Is(err, store.ErrConflict):
 		writeError(w, http.StatusConflict, "existe déjà")
+	case errors.Is(err, store.ErrInUse):
+		writeError(w, http.StatusConflict, "encore utilisé par d'autres éléments")
 	case errors.Is(err, errForbidden):
 		writeError(w, http.StatusForbidden, "accès refusé")
 	default:
