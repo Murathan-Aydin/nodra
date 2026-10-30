@@ -26,18 +26,19 @@ type User struct {
 	TOTPSecretEnc   *string    `json:"-"`
 	TOTPEnabledAt   *time.Time `json:"-"`
 	RecoveryCodes   []string   `json:"-"`
+	DisabledAt      *time.Time `json:"disabled_at,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 }
 
 func (u *User) TwoFactorEnabled() bool { return u.TOTPEnabledAt != nil }
 
 const userCols = `id::text, email, name, password_hash, is_instance_admin, email_verified_at,
-	totp_secret_enc, totp_enabled_at, recovery_codes, created_at`
+	totp_secret_enc, totp_enabled_at, recovery_codes, disabled_at, created_at`
 
 func scanUser(row pgx.Row) (*User, error) {
 	u := &User{}
 	err := row.Scan(&u.ID, &u.Email, &u.Name, &u.PasswordHash, &u.IsInstanceAdmin, &u.EmailVerifiedAt,
-		&u.TOTPSecretEnc, &u.TOTPEnabledAt, &u.RecoveryCodes, &u.CreatedAt)
+		&u.TOTPSecretEnc, &u.TOTPEnabledAt, &u.RecoveryCodes, &u.DisabledAt, &u.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -134,4 +135,72 @@ func (s *Store) UseRecoveryCode(ctx context.Context, id, codeHash string) (bool,
 	tag, err := s.Pool.Exec(ctx, `UPDATE users SET recovery_codes = array_remove(recovery_codes, $2), updated_at = now()
 		WHERE id = $1 AND $2 = ANY(recovery_codes)`, id, codeHash)
 	return tag.RowsAffected() == 1, err
+}
+
+// --- Administration de l'instance ---
+
+// AdminUser : utilisateur vu par l'administrateur de l'instance.
+type AdminUser struct {
+	User
+	TwoFactor  bool       `json:"two_factor_enabled"`
+	Teams      int        `json:"teams"`
+	LastSeenAt *time.Time `json:"last_seen_at"`
+}
+
+// ListUsers liste les utilisateurs (recherche sur l'e-mail ou le nom), du plus récent au plus ancien.
+func (s *Store) ListUsers(ctx context.Context, search string, limit int) ([]*AdminUser, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT `+prefixed(userCols, "u.")+`,
+		(SELECT count(*) FROM team_members m WHERE m.user_id = u.id),
+		(SELECT max(last_seen_at) FROM sessions x WHERE x.user_id = u.id)
+		FROM users u WHERE $1 = '' OR u.email ILIKE '%' || $1 || '%' OR u.name ILIKE '%' || $1 || '%'
+		ORDER BY u.created_at DESC LIMIT $2`, search, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*AdminUser{}
+	for rows.Next() {
+		a := &AdminUser{}
+		u := &a.User
+		if err := rows.Scan(&u.ID, &u.Email, &u.Name, &u.PasswordHash, &u.IsInstanceAdmin, &u.EmailVerifiedAt, &u.TOTPSecretEnc,
+			&u.TOTPEnabledAt, &u.RecoveryCodes, &u.DisabledAt, &u.CreatedAt, &a.Teams, &a.LastSeenAt); err != nil {
+			return nil, err
+		}
+		a.TwoFactor = u.TwoFactorEnabled()
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// SetUserAdmin donne ou retire le rôle d'administrateur de l'instance.
+func (s *Store) SetUserAdmin(ctx context.Context, id string, admin bool) error {
+	tag, err := s.Pool.Exec(ctx, `UPDATE users SET is_instance_admin = $2, updated_at = now() WHERE id = $1`, id, admin)
+	if err == nil && tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return err
+}
+
+// SetUserDisabled désactive (sessions révoquées, jetons refusés) ou réactive un compte.
+func (s *Store) SetUserDisabled(ctx context.Context, id string, disabled bool) error {
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, `UPDATE users SET disabled_at = CASE WHEN $2 THEN coalesce(disabled_at, now()) END, updated_at = now()
+			WHERE id = $1`, id, disabled)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() == 0 {
+			return ErrNotFound
+		}
+		if disabled {
+			_, err = tx.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, id)
+		}
+		return err
+	})
+}
+
+// DeleteUserSessions déconnecte l'utilisateur partout.
+func (s *Store) DeleteUserSessions(ctx context.Context, id string) error {
+	_, err := s.Pool.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, id)
+	return err
 }

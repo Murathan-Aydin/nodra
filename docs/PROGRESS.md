@@ -85,7 +85,16 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [ ] Socle, dashboard, serveurs, projets/ressources, logs/terminal, catalogue services, équipes, paramètres
 
 ## Prochaine action
-Étape 15 : réglages d'instance (`/admin/settings` : FQDN de l'instance, inscriptions ouvertes/fermées, mise à jour automatique, fuseau horaire, IP publique, etc. — table `instance_settings`), administration des utilisateurs par l'administrateur de l'instance, consultation de l'audit `auth.*`/`instance.*` (événements sans équipe). Référence Coolify : `app/Models/InstanceSettings.php`, `app/Livewire/Settings/*`.
+Étape 15 — réglages d'instance, **en cours** :
+- Fait (commité, tests verts) : migration `00016_instance_settings.sql` (nom, IPv4/IPv6 publiques, fuseau horaire, fréquences de mise à jour et de vérification, validation DNS + serveurs DNS personnalisés, API activée + IP autorisées, dernière version connue ; `users.disabled_at`) ; `store.InstanceSettings` complet + `UpdateInstanceSettings`, `SetLatestVersion` ; `store.ListUsers` (`AdminUser` : 2FA, nombre d'équipes, dernière activité), `SetUserAdmin`, `SetUserDisabled` (révoque les sessions), `DeleteUserSessions` ; `AuditFilter.Instance` (événements sans équipe) et `AllTeams`.
+- Reste :
+  1. API `/admin` (déjà protégée par `requireInstanceAdmin`) : `GET/PATCH /admin/settings` (validation : fqdn http(s) sans chemin, fuseau `time.LoadLocation` + import `time/tzdata` dans main, IP, CIDR, cron via `backup.ParseCron`), `GET /admin/users?search=`, `PATCH /admin/users/{id}` `{is_instance_admin?, disabled?}` (interdit sur soi-même), `POST /admin/users/{id}/logout`, `GET /admin/audit?scope=instance|all` ; public `GET /instance` `{name, registration_enabled, version}`.
+  2. Compte désactivé : refuser la connexion (`login`, après vérification du mot de passe → 403) et ignorer l'utilisateur dans `authenticate` (session et jeton).
+  3. Jetons API : refuser si `api_enabled = false` ou si l'IP (`clientIP`) n'est pas dans `api_allowed_ips` (cache des réglages ~5 s dans `api.Server`, invalidé au PATCH).
+  4. `dnsCheck` : utiliser `dns_servers` (net.Resolver PreferGo + Dial vers un serveur:53) ; si `dns_validation_enabled = false`, répondre `skipped: true`.
+  5. Paquet `internal/version` (`Version = "dev"`, ldflags) + job périodique de vérification des versions (GitHub releases `Murathan-Aydin/nodra`, selon `update_check_frequency`) → `SetLatestVersion` ; la mise à jour automatique elle-même viendra avec install.sh.
+  6. Tests `internal/api/admin_test.go`, section `docs/API.md`, mise à jour de ce fichier, commit/push/CI.
+Puis : étape 16 (API publique complète + MCP optionnel), Dockerfile + install.sh + mise à jour + serveur localhost, restes listés plus haut, puis phase 2 (front React).
 
 ## Notes pour la reprise
 - Le serveur de test Oracle (84.235.231.3) fait tourner l'**ancienne** version de Nodra, qui suit le même dépôt GitHub : ne pas lancer `deploy/update.sh` dessus avant que la nouvelle version ait son install/update (étape « Dockerfile + install.sh »). La clé SSH `.dev/vm_ed25519` n'existe plus en local.

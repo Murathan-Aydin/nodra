@@ -35,7 +35,10 @@ func (s *Store) InsertAudit(ctx context.Context, e *AuditEvent) error {
 }
 
 type AuditFilter struct {
-	TeamIDs     []string // équipe et sous-équipes
+	TeamIDs []string // équipe et sous-équipes
+	// Instance : événements sans équipe (auth.*, instance.*) ; AllTeams : sans filtre d'équipe (administrateur).
+	Instance    bool
+	AllTeams    bool
 	ActorUserID string
 	Action      string // préfixe, ex. "team.member"
 	TargetType  string
@@ -53,7 +56,14 @@ func (s *Store) ListAudit(ctx context.Context, f AuditFilter) ([]*AuditEvent, er
 		args = append(args, v)
 		where = append(where, fmt.Sprintf(cond, len(args)))
 	}
-	add("team_id = ANY($%d::uuid[])", f.TeamIDs)
+	switch {
+	case f.Instance:
+		where = append(where, "team_id IS NULL")
+	case f.AllTeams:
+		where = append(where, "true")
+	default:
+		add("team_id = ANY($%d::uuid[])", f.TeamIDs)
+	}
 	if f.ActorUserID != "" {
 		add("actor_user_id::text = $%d", f.ActorUserID)
 	}
