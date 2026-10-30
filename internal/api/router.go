@@ -34,6 +34,8 @@ type Server struct {
 	Mailer        Mailer
 	// TrustProxy : utiliser l'IP transmise par le proxy (sinon contournement de la limite de tentatives).
 	TrustProxy bool
+	// Resolver : résolution DNS (net.DefaultResolver par défaut).
+	Resolver Resolver
 	// Jobs enfile les tâches de fond.
 	Jobs JobQueue
 	// Executors : exécuteurs des actions soumises à approbation, par action (ex. "resource.deploy").
@@ -179,7 +181,20 @@ func (s *Server) Router() http.Handler {
 						r.Get("/destinations", s.listDestinations)
 						r.Post("/destinations", s.createDestination)
 						r.Delete("/destinations/{dest}", s.deleteDestination)
+
+						r.Get("/proxy", s.getProxy)
+						r.Patch("/proxy", s.updateProxy)
+						r.Post("/proxy/start", s.serverAction(servers.TaskProxyStart, "server.proxy.manage"))
+						r.Post("/proxy/stop", s.serverAction(servers.TaskProxyStop, "server.proxy.manage"))
+						r.Post("/proxy/restart", s.serverAction(servers.TaskProxyRestart, "server.proxy.manage"))
+						r.Get("/proxy/configs", s.listProxyConfigs)
+						r.Put("/proxy/configs/{name}", s.putProxyConfig)
+						r.Delete("/proxy/configs/{name}", s.deleteProxyConfig)
+						r.Get("/proxy/certificates", s.listCertificates)
+						r.Post("/proxy/certificates", s.createCertificate)
+						r.Delete("/proxy/certificates/{cert}", s.deleteCertificate)
 					})
+					r.Post("/dns-check", s.dnsCheck)
 				})
 			})
 		})

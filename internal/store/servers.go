@@ -129,19 +129,29 @@ type Server struct {
 	LastSeenAt      *time.Time     `json:"last_seen_at"`
 	LastCleanupAt   *time.Time     `json:"last_cleanup_at"`
 	Settings        ServerSettings `json:"settings"`
+	Proxy           ProxyInfo      `json:"proxy"`
 	CreatedAt       time.Time      `json:"created_at"`
+}
+
+// ProxyInfo : proxy inverse du serveur (Traefik, Caddy ou aucun).
+type ProxyInfo struct {
+	Type      string `json:"type"`
+	Status    string `json:"status"`
+	Compose   string `json:"-"` // configuration personnalisée, vide = générée
+	AcmeEmail string `json:"acme_email"`
 }
 
 const serverCols = `id::text, team_id::text, name, description, ip, port, ssh_user, private_key_id::text, host_key,
 	is_reachable, is_usable, os_id, os_version, docker_version, compose_version, validation_error, validated_at,
-	last_seen_at, last_cleanup_at, settings, created_at`
+	last_seen_at, last_cleanup_at, settings, proxy_type, proxy_status, proxy_compose, proxy_acme_email, created_at`
 
 func scanServer(row pgx.Row) (*Server, error) {
 	s := &Server{}
 	var raw []byte
 	err := row.Scan(&s.ID, &s.TeamID, &s.Name, &s.Description, &s.IP, &s.Port, &s.User, &s.PrivateKeyID, &s.HostKey,
 		&s.IsReachable, &s.IsUsable, &s.OSID, &s.OSVersion, &s.DockerVersion, &s.ComposeVersion, &s.ValidationError,
-		&s.ValidatedAt, &s.LastSeenAt, &s.LastCleanupAt, &raw, &s.CreatedAt)
+		&s.ValidatedAt, &s.LastSeenAt, &s.LastCleanupAt, &raw, &s.Proxy.Type, &s.Proxy.Status, &s.Proxy.Compose,
+		&s.Proxy.AcmeEmail, &s.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -154,9 +164,12 @@ func scanServer(row pgx.Row) (*Server, error) {
 
 func (s *Store) CreateServer(ctx context.Context, sv *Server) (*Server, error) {
 	settings, _ := json.Marshal(sv.Settings)
-	r, err := scanServer(s.Pool.QueryRow(ctx, `INSERT INTO servers (team_id, name, description, ip, port, ssh_user, private_key_id, settings)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb) RETURNING `+serverCols,
-		sv.TeamID, sv.Name, sv.Description, sv.IP, sv.Port, sv.User, sv.PrivateKeyID, string(settings)))
+	if sv.Proxy.Type == "" {
+		sv.Proxy.Type = "traefik"
+	}
+	r, err := scanServer(s.Pool.QueryRow(ctx, `INSERT INTO servers (team_id, name, description, ip, port, ssh_user, private_key_id, settings, proxy_type)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9) RETURNING `+serverCols,
+		sv.TeamID, sv.Name, sv.Description, sv.IP, sv.Port, sv.User, sv.PrivateKeyID, string(settings), sv.Proxy.Type))
 	if isUniqueViolation(err) {
 		return nil, ErrConflict
 	}

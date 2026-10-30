@@ -12,7 +12,8 @@ import (
 )
 
 // metricsCommand : deux lectures de /proc/stat à 1 s d'intervalle, mémoire, disque racine et charge.
-const metricsCommand = `head -1 /proc/stat; sleep 1; head -1 /proc/stat; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; df -Pk / | tail -1; cat /proc/loadavg`
+// La dernière ligne donne l'état du conteneur du proxy.
+const metricsCommand = `head -1 /proc/stat; sleep 1; head -1 /proc/stat; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; df -Pk / | tail -1; cat /proc/loadavg; docker inspect -f '{{.State.Status}}' ` + ProxyContainer + ` 2>/dev/null || echo absent`
 
 // ParseMetrics analyse la sortie de metricsCommand.
 func ParseMetrics(out string) (store.ServerMetric, error) {
@@ -119,6 +120,15 @@ func (s *Service) collectOne(ctx context.Context, sv *store.Server) error {
 	m, err := ParseMetrics(out)
 	if err != nil {
 		return err
+	}
+	if lines := strings.Split(strings.TrimSpace(out), "\n"); len(lines) > 6 && sv.Proxy.Type != ProxyNone {
+		status := strings.TrimSpace(lines[6])
+		if status == "absent" {
+			status = "stopped"
+		}
+		if status != sv.Proxy.Status {
+			_ = s.Store.SetProxyStatus(ctx, sv.ID, status)
+		}
 	}
 	m.TS = time.Now().Truncate(time.Second)
 	return s.Store.InsertServerMetric(ctx, sv.ID, m)

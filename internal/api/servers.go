@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -34,6 +35,7 @@ type serverInput struct {
 	Port         *int            `json:"port"`
 	User         *string         `json:"user"`
 	PrivateKeyID *string         `json:"private_key_id"`
+	ProxyType    *string         `json:"proxy_type"` // à la création uniquement (ensuite : PATCH /proxy)
 	Settings     json.RawMessage `json:"settings"`
 }
 
@@ -123,7 +125,15 @@ func (s *Server) createServer(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	team := teamFrom(ctx).Team
-	sv := &store.Server{TeamID: team.ID, Port: 22, User: "root", Settings: store.DefaultServerSettings()}
+	sv := &store.Server{TeamID: team.ID, Port: 22, User: "root", Settings: store.DefaultServerSettings(),
+		Proxy: store.ProxyInfo{Type: servers.ProxyTraefik}}
+	if in.ProxyType != nil {
+		if !slices.Contains([]string{servers.ProxyTraefik, servers.ProxyCaddy, servers.ProxyNone}, *in.ProxyType) {
+			writeError(w, http.StatusUnprocessableEntity, "proxy_type : traefik, caddy ou none")
+			return
+		}
+		sv.Proxy.Type = *in.ProxyType
+	}
 	if msg := in.apply(sv); msg != "" {
 		writeError(w, http.StatusUnprocessableEntity, msg)
 		return

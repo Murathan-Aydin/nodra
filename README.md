@@ -11,11 +11,13 @@ Nodra va plus loin sur la gestion d'équipes : rôles personnalisés, permission
 ## Démarrage (développement)
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d   # PostgreSQL sur le port 5433
+make up-dev                                      # PostgreSQL sur le port 5433
 cp .env.example .env                            # renseigner NODRA_APP_KEY (openssl rand -base64 32)
 set -a; . ./.env; set +a
 go run ./cmd/nodra serve                        # http://localhost:8000
 ```
+
+`make up` sera utilisé avec la configuration Docker Compose standard lorsqu'elle sera ajoutée.
 
 Commandes : `nodra serve` (applique les migrations puis démarre), `nodra migrate`.
 

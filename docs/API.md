@@ -166,3 +166,27 @@ Les opérations distantes sont des **tâches** asynchrones (`202 ServerTask`) do
 **ServerTask** : `{id, team_id, server_id, kind, params, status: queued|running|success|failed|cancelled, output, error, created_by, created_at, started_at, finished_at}` ; `kind` ∈ `validate`, `install_docker`, `docker_cleanup`, `packages_check`, `packages_update`, `reboot`, `command`, `cloudflared_start`, `cloudflared_stop`, `network_create`, `network_delete`.
 
 Tâches de fond automatiques : métriques et joignabilité chaque minute, nettoyage Docker selon `docker_cleanup_frequency` ou au-delà de `docker_cleanup_threshold` (vérifié toutes les 5 min), maintenance horaire (sessions expirées, rétention des métriques, demandes d'approbation expirées, tâches bloquées).
+
+## Proxy (`/teams/{team}/servers/{id}/proxy`)
+
+Chaque serveur a un proxy inverse : **Traefik** (par défaut, `traefik:v3.7`) ou **Caddy** (`lucaslorentz/caddy-docker-proxy:2.13-alpine`), ou aucun. Il tourne dans le conteneur `nodra-proxy` sur le réseau `nodra`, ports 80/443 (+ 443/udp pour HTTP/3), certificats Let's Encrypt (HTTP-01). Les fichiers sont dans `/data/nodra/proxy` sur le serveur. Le proxy est démarré automatiquement après une validation réussie (sans faire échouer la validation si les ports 80/443 sont pris par un autre conteneur ou service).
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/proxy` | `server.read` | `{type, status, acme_email, compose, is_custom, default_compose}` |
+| PATCH | `/proxy` | `server.proxy.manage` | `{type?: traefik\|caddy\|none, acme_email?, compose?}` ; `compose: ""` revient à la configuration générée ; changer de type exige un proxy arrêté (`409`) |
+| POST | `/proxy/start` \| `/proxy/stop` \| `/proxy/restart` | `server.proxy.manage` | Tâches ; le démarrage vérifie que les ports 80/443 sont libres |
+| GET | `/proxy/configs` | `server.read` | Fichiers de configuration dynamique |
+| PUT | `/proxy/configs/{name}` | `server.proxy.manage` | `{content}` ; `.yml`/`.yaml` pour Traefik (provider fichier), `.caddy` pour Caddy (importés) ; préfixe `nodra-` réservé. Synchronisé sur le serveur sans redémarrage. |
+| DELETE | `/proxy/configs/{name}` | `server.proxy.manage` | |
+| GET | `/proxy/certificates` | `server.read` | Certificats personnalisés `{id, name, domains, certificate, expires_at}` |
+| POST | `/proxy/certificates` | `server.proxy.manage` | `{name, certificate (PEM, chaîne possible), private_key}` : vérifie la correspondance clé/certificat et l'expiration ; Traefik les charge automatiquement (`dynamic/nodra-certs.yml`), Caddy les reçoit dans `/certs` |
+| DELETE | `/proxy/certificates/{cert}` | `server.proxy.manage` | |
+
+`status` : `stopped`, `running`, `exited`… (mis à jour au démarrage/arrêt et chaque minute avec les métriques). À la création d'un serveur, `proxy_type` peut être fourni (`traefik` par défaut).
+
+## Vérification DNS
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| POST | `/teams/{team}/dns-check` | `server.read` sur le serveur | `{domain, server_id}` → `{domain, resolved, expected, ok, message}`. Accepte une URL complète ; `*.exemple.com` teste un sous-domaine aléatoire. Avec Cloudflare Tunnel actif, le domaine est considéré correct. |

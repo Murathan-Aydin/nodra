@@ -268,6 +268,13 @@ func validate(ctx context.Context, r *taskRun) error {
 		}
 		v.Usable = true
 		r.out.logf("Serveur prêt.\n")
+		// Démarrage automatique du proxy (non bloquant pour la validation).
+		if r.server.Proxy.Type != ProxyNone && r.server.Proxy.Status != "running" {
+			r.out.logf("Démarrage du proxy %s…\n", r.server.Proxy.Type)
+			if err := r.proxyUp(ctx, false); err != nil {
+				r.out.logf("Le proxy n'a pas pu démarrer : %s\n", err)
+			}
+		}
 		return nil
 	}()
 	if err != nil {
