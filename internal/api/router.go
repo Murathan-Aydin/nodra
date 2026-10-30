@@ -49,6 +49,9 @@ type Server struct {
 }
 
 func (s *Server) Router() http.Handler {
+	if s.GitEvents == nil {
+		s.GitEvents = s
+	}
 	if s.Executors == nil {
 		s.Executors = map[string]Executor{}
 	}
@@ -79,6 +82,9 @@ func (s *Server) Router() http.Handler {
 
 	// Webhooks des forges : authentifiés par signature, hors session et hors garde CSRF.
 	r.Post("/webhooks/github", s.githubAppWebhook)
+	r.Post("/webhooks/{provider}/manual", s.manualWebhook)
+	r.Get("/webhooks/deploy/{app}", s.deployWebhook)
+	r.Post("/webhooks/deploy/{app}", s.deployWebhook)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", s.health)
@@ -260,6 +266,13 @@ func (s *Server) Router() http.Handler {
 						r.Get("/deployments/{dep}", s.getDeployment)
 						r.Get("/deployments/{dep}/logs", s.deploymentLogs)
 						r.Post("/deployments/{dep}/cancel", s.cancelDeployment)
+						r.Get("/previews", s.listPreviews)
+						r.Post("/previews", s.createPreview)
+						r.Get("/previews/{pr}", s.getPreview)
+						r.Patch("/previews/{pr}", s.updatePreview)
+						r.Delete("/previews/{pr}", s.deletePreview)
+						r.Post("/previews/{pr}/deploy", s.deployPreview)
+						r.Post("/previews/{pr}/stop", s.stopPreview)
 						r.Get("/envs", s.listEnvs(s.appLoader))
 						r.Post("/envs", s.createEnv(s.appLoader))
 						r.Post("/envs/bulk", s.bulkEnvs(s.appLoader))

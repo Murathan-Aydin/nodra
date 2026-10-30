@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
@@ -25,7 +24,7 @@ import (
 
 type captureEvents struct{ events []*git.Event }
 
-func (c *captureEvents) HandleGitEvent(_ context.Context, _ *store.GitSource, ev *git.Event) (any, error) {
+func (c *captureEvents) HandleGitEvent(_ *http.Request, _ *store.GitSource, ev *git.Event) (any, error) {
 	c.events = append(c.events, ev)
 	return map[string]int{"deployments": 0}, nil
 }

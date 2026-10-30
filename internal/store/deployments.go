@@ -114,6 +114,15 @@ func (s *Store) RequestCancel(ctx context.Context, id string) (bool, error) {
 	return tag.RowsAffected() == 1, err
 }
 
+// CancelPreviewDeployments annule les déploiements en attente ou en cours d'une preview (PR fermée).
+func (s *Store) CancelPreviewDeployments(ctx context.Context, appID string, pr int) error {
+	_, err := s.Pool.Exec(ctx, `UPDATE deployments SET cancel_requested = true,
+		status = CASE WHEN status = 'queued' THEN 'cancelled' ELSE status END,
+		finished_at = CASE WHEN status = 'queued' THEN now() ELSE finished_at END
+		WHERE application_id = $1 AND pr_number = $2 AND status IN ('queued', 'in_progress')`, appID, pr)
+	return err
+}
+
 func (s *Store) CancelRequested(ctx context.Context, id string) (bool, error) {
 	var c bool
 	err := s.Pool.QueryRow(ctx, `SELECT cancel_requested FROM deployments WHERE id = $1`, id).Scan(&c)

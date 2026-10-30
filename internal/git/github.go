@@ -185,3 +185,31 @@ func ConvertManifest(ctx context.Context, apiURL, code string) (*AppCredentials,
 	}
 	return &c, nil
 }
+
+// CommentPR crée (ou met à jour si commentID > 0) un commentaire sur une pull request GitHub.
+func CommentPR(ctx context.Context, s Source, repo string, pr int, commentID int64, body string) (int64, error) {
+	if s.Type != GitHub {
+		return 0, errors.New("commentaires de PR pris en charge pour GitHub uniquement")
+	}
+	if !validRepo(repo) {
+		return 0, errors.New("nom de dépôt invalide")
+	}
+	tok, err := InstallationToken(ctx, s)
+	if err != nil {
+		return 0, err
+	}
+	payload, _ := json.Marshal(map[string]string{"body": body})
+	method, url := "POST", fmt.Sprintf("%s/repos/%s/issues/%d/comments", s.APIURL, repo, pr)
+	if commentID > 0 {
+		method, url = "PATCH", fmt.Sprintf("%s/repos/%s/issues/comments/%d", s.APIURL, repo, commentID)
+	}
+	_, b, err := do(ctx, method, url, "Bearer "+tok, bytes.NewReader(payload))
+	if err != nil {
+		return 0, err
+	}
+	var out struct {
+		ID int64 `json:"id"`
+	}
+	_ = json.Unmarshal(b, &out)
+	return out.ID, nil
+}

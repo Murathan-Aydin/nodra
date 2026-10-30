@@ -35,6 +35,8 @@ type Runner struct {
 	Servers *servers.Service
 	Log     *slog.Logger
 	AppsDir string // dossier des applications sur les serveurs (AppsDir par défaut)
+	// OnFinish est appelé à la fin de chaque déploiement (commentaires de PR, notifications).
+	OnFinish func(ctx context.Context, d *store.Deployment)
 }
 
 func (r *Runner) appsDir() string {
@@ -270,7 +272,12 @@ func (r *Runner) Run(ctx context.Context, deploymentID string) error {
 			_ = r.Store.SetPreviewStatus(bg, p.a.ID, d.PRNumber, "running")
 		}
 	}
-	return r.Store.FinishDeployment(bg, d.ID, status, p.image, msg)
+	err = r.Store.FinishDeployment(bg, d.ID, status, p.image, msg)
+	if r.OnFinish != nil {
+		d.Status, d.Image, d.Error = status, p.image, msg
+		r.OnFinish(bg, d)
+	}
+	return err
 }
 
 func (p *pipe) run(ctx context.Context) error {

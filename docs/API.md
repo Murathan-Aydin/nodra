@@ -257,9 +257,15 @@ L'URL publique de l'instance vient du réglage d'instance (FQDN), sinon de la re
 
 | Méthode | Route | Authentification | Description |
 |---|---|---|---|
-| POST | `/webhooks/github` | `X-Hub-Signature-256` (secret de l'App, App identifiée par `X-GitHub-Hook-Installation-Target-ID`) | `push` et `pull_request` → déploiements (étape 8) ; `installation` met à jour l'installation ; `ping` → `pong` |
+| POST | `/webhooks/github` | `X-Hub-Signature-256` (secret de l'App, App identifiée par `X-GitHub-Hook-Installation-Target-ID`) | `push` et `pull_request` → applications liées à cette source ; `installation` met à jour l'installation ; `ping` → `pong` |
+| POST | `/webhooks/{github,gitlab,gitea,bitbucket}/manual` | Secret de l'application : `X-Hub-Signature-256` (GitHub), `X-Gitlab-Token`, `X-Gitea-Signature`/`X-Forgejo-Signature`, `X-Hub-Signature` (Bitbucket) | Webhook configuré à la main sur la forge ; seules les applications du dépôt dont le secret valide la signature sont concernées (`401` sinon) |
+| GET/POST | `/webhooks/deploy/{app}` | Secret de l'application en `X-Nodra-Secret`, `Authorization: Bearer` ou `?secret=` | Déploiement depuis une CI ; `?force=1` reconstruit, `?commit=<sha>` ; `202 {application_id, action, deployment_id \| approval_request_id}` |
 
-Les webhooks « manuels » par application (GitHub, GitLab `X-Gitlab-Token`, Gitea `X-Gitea-Signature`, Bitbucket `X-Hub-Signature`) arrivent avec les applications ; l'analyse et la vérification sont déjà dans `internal/git`.
+Réponse des webhooks de forge : `[{application_id, action: deploy|preview_deploy|preview_removed|skipped|approval_required, deployment_id?, approval_request_id?, reason?}]`.
+
+**Push** : déploie si la branche est celle suivie, `auto_deploy` actif et un fichier modifié correspond à `watch_paths` (un motif par ligne, `*`, `**`, `?`, `!` pour exclure ; sans liste de fichiers, tout push compte). Le commit poussé est déployé (`trigger: webhook`).
+**Pull request** (branche cible = branche suivie, `preview_deployments` actif ; PR de forks seulement avec `public_pr_deployments`) : ouverture/mise à jour → preview créée (domaines dérivés de `preview_url_template`, `{{pr_id}}`, `{{domain}}`, `{{random}}`) puis déployée (`trigger: preview`, conteneur `<app>-pr-<n>`) ; fermeture → déploiements annulés, conteneurs arrêtés, preview supprimée. Pour une source GitHub App, un commentaire est publié sur la PR (puis mis à jour) avec l'URL ou l'échec.
+Les déploiements déclenchés par webhook passent par les mêmes règles d'approbation `resource.deploy` (demande sans demandeur).
 
 ## Applications (`/teams/{team}/applications`)
 
@@ -324,6 +330,20 @@ Un déploiement est asynchrone (`202 Deployment`) ; on suit son statut et ses lo
 | POST | `/deployments/{dep}/cancel` | `resource.deploy` | En file : annulé ; en cours : interrompu (commande distante tuée) |
 
 `DELETE /applications/{id}?delete_volumes=true` supprime aussi les volumes Docker.
+
+### Prévisualisations de PR (`/applications/{id}/previews`)
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/previews` | `resource.read` | `[Preview]` |
+| POST | `/previews` | `resource.deploy` | `{pr_number, title?, pr_url?}` : crée la preview et la déploie → `202 Deployment` (ou approbation) |
+| GET | `/previews/{pr}` | `resource.read` | |
+| PATCH | `/previews/{pr}` | `resource.update` | `{domains}` (pris en compte au prochain déploiement) |
+| POST | `/previews/{pr}/deploy` | `resource.deploy` | `{force_rebuild?}` |
+| POST | `/previews/{pr}/stop` | `resource.deploy` | Arrête les conteneurs |
+| DELETE | `/previews/{pr}` | `resource.deploy` | Annule les déploiements, arrête les conteneurs, supprime la preview |
+
+**Preview** : `{id, application_id, pr_number, pr_url, title, domains, status: stopped|running, last_commit, created_at, updated_at}`. Logs des conteneurs : `GET /logs?pr=<n>`.
 
 **Deployment** : `{id, team_id, application_id, server_id, status: queued|in_progress|finished|failed|cancelled, trigger: manual|api|webhook|rollback|restart|approval|preview, branch, commit_sha, commit_message, pr_number, force_rebuild, rollback_image, image, error, cancel_requested, created_by, created_at, started_at, finished_at}`.
 

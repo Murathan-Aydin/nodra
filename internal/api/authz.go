@@ -213,8 +213,18 @@ const approvalTTL = 7 * 24 * time.Hour
 // gate soumet l'action à approbation si une règle active la couvre.
 // Renvoie la demande créée ; nil signifie que l'action peut être exécutée immédiatement.
 func (s *Server) gate(r *http.Request, action string, sc rbac.Scope, summary string, payload any) (*store.ApprovalRequest, error) {
+	uid := userFrom(r.Context()).ID
+	return s.gateAs(r, teamFrom(r.Context()).Team.ID, &uid, action, sc, summary, payload)
+}
+
+// gateAs : comme gate, pour un demandeur explicite (nil pour un webhook) et hors contexte d'équipe.
+func (s *Server) gateAs(r *http.Request, teamID string, requestedBy *string, action string, sc rbac.Scope, summary string, payload any) (*store.ApprovalRequest, error) {
 	ctx := r.Context()
-	chain, err := s.scopeChain(ctx, sc)
+	scopeChain := s.scopeChain
+	if teamFrom(ctx) == nil { // webhook : la portée a été résolue par l'appelant
+		scopeChain = s.Store.ScopeChain
+	}
+	chain, err := scopeChain(ctx, sc)
 	if err != nil {
 		return nil, err
 	}
@@ -227,16 +237,15 @@ func (s *Server) gate(r *http.Request, action string, sc rbac.Scope, summary str
 	if err != nil {
 		return nil, err
 	}
-	uid := userFrom(ctx).ID
 	req, err := s.Store.CreateApprovalRequest(ctx, &store.ApprovalRequest{
-		TeamID: teamFrom(ctx).Team.ID, RuleID: &rule.ID, RequiredApprovals: rule.RequiredApprovals,
-		Action: action, Scope: chain[0], Summary: summary, Payload: b, RequestedBy: &uid,
+		TeamID: teamID, RuleID: &rule.ID, RequiredApprovals: rule.RequiredApprovals,
+		Action: action, Scope: chain[0], Summary: summary, Payload: b, RequestedBy: requestedBy,
 		ExpiresAt: time.Now().Add(approvalTTL),
 	})
 	if err != nil {
 		return nil, err
 	}
-	s.auditTeam(r, "approval.requested", "approval_request", req.ID, map[string]any{"action": action, "scope": chain[0], "summary": summary})
+	s.audit(r, &teamID, "approval.requested", "approval_request", req.ID, map[string]any{"action": action, "scope": chain[0], "summary": summary})
 	return req, nil
 }
 

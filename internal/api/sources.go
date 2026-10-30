@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -446,7 +445,7 @@ func (s *Server) githubInstall(w http.ResponseWriter, r *http.Request) {
 // --- Événements Git ---
 
 // GitEventHandler traite un événement (push, pull request) pour les applications concernées.
-// Implémenté par le module de déploiement.
+// Server.HandleGitEvent est l'implémentation par défaut.
 type GitEventHandler interface {
-	HandleGitEvent(ctx context.Context, src *store.GitSource, ev *git.Event) (any, error)
+	HandleGitEvent(r *http.Request, src *store.GitSource, ev *git.Event) (any, error)
 }

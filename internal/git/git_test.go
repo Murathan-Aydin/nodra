@@ -80,6 +80,10 @@ func fakeGitHub(t *testing.T, tokenCalls *atomic.Int32) *httptest.Server {
 			fmt.Fprint(w, `{"repositories":[{"full_name":"acme/api","name":"api","default_branch":"master"}]}`)
 		case r.URL.Path == "/repos/acme/web/branches":
 			fmt.Fprint(w, `[{"name":"main"},{"name":"dev"}]`)
+		case r.Method == "POST" && r.URL.Path == "/repos/acme/web/issues/12/comments":
+			fmt.Fprint(w, `{"id":555}`)
+		case r.Method == "PATCH" && r.URL.Path == "/repos/acme/web/issues/comments/555":
+			fmt.Fprint(w, `{"id":555}`)
 		case r.Method == "POST" && r.URL.Path == "/app-manifests/CODE/conversions":
 			fmt.Fprint(w, `{"id":99,"slug":"nodra-test","client_id":"Iv1","client_secret":"cs","webhook_secret":"ws","pem":"PEM","owner":{"login":"acme"}}`)
 		default:
@@ -115,6 +119,15 @@ func TestGitHubApp(t *testing.T) {
 	_, _ = Repos(ctx, src)
 	if calls.Load() != 2 {
 		t.Fatal("ForgetToken doit vider le cache")
+	}
+	if id, err := CommentPR(ctx, src, "acme/web", 12, 0, "preview"); err != nil || id != 555 {
+		t.Fatalf("commentaire de PR : %d %v", id, err)
+	}
+	if id, err := CommentPR(ctx, src, "acme/web", 12, 555, "preview"); err != nil || id != 555 {
+		t.Fatalf("mise à jour du commentaire : %d %v", id, err)
+	}
+	if _, err := CommentPR(ctx, src, "acme/web", 12, 556, "x"); err == nil {
+		t.Fatal("commentaire inconnu")
 	}
 	if _, err := Branches(ctx, src, "../etc"); err == nil {
 		t.Fatal("nom de dépôt invalide accepté")
@@ -229,5 +242,35 @@ func TestWebhooks(t *testing.T) {
 	}
 	if e, _ = Parse("bitbucket", bbh, bb); e.Kind != "push" || e.Commit != "b1" || e.Repo != "team/repo" {
 		t.Fatalf("push Bitbucket : %+v", e)
+	}
+}
+
+func TestWatchPaths(t *testing.T) {
+	cases := []struct {
+		patterns string
+		files    []string
+		want     bool
+	}{
+		{"", []string{"README.md"}, true},
+		{"src/**", []string{"src/app/main.go"}, true},
+		{"src/**", []string{"docs/a.md"}, false},
+		{"*.go", []string{"main.go"}, true},
+		{"*.go", []string{"pkg/main.go"}, false},
+		{"**/*.go", []string{"pkg/main.go", "main.go"}, true},
+		{"!docs/**", []string{"docs/a.md"}, false},
+		{"!docs/**", []string{"docs/a.md", "src/x"}, true},
+		{"api/\n!api/README.md", []string{"api/README.md"}, false},
+		{"api/", []string{"api/v1/x.go"}, true},
+		{"src/**", nil, true},
+	}
+	for _, c := range cases {
+		if got := MatchWatchPaths(c.patterns, c.files); got != c.want {
+			t.Errorf("%q %v : %v, attendu %v", c.patterns, c.files, got, c.want)
+		}
+	}
+	push := []byte(`{"ref":"refs/heads/main","after":"a","commits":[{"added":["a.go"],"modified":["b.go"]},{"modified":["a.go"],"removed":["c.go"]}]}`)
+	e, _ := Parse(GitHub, http.Header{"X-Github-Event": {"push"}}, push)
+	if strings.Join(e.Files, ",") != "a.go,b.go,c.go" {
+		t.Fatalf("fichiers : %v", e.Files)
 	}
 }

@@ -76,6 +76,9 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	defer pool.Close()
 	svc := &servers.Service{Store: st, Box: box, SSH: pool, Log: log}
 	runner := &deploy.Runner{Store: st, Box: box, SSH: pool, Servers: svc, Log: log}
+	apiSrv := &api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Deployer: runner,
+		SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}
+	runner.OnFinish = apiSrv.DeploymentFinished // avant le démarrage des workers
 	jq, err := jobs.New(st, svc, runner, log, jobs.Options{Periodic: true})
 	if err != nil {
 		return err
@@ -88,10 +91,10 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 		defer cancel()
 		_ = jq.Stop(stopCtx)
 	}()
+	apiSrv.Jobs = jq
 	srv := &http.Server{
-		Addr: cfg.Addr,
-		Handler: (&api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Jobs: jq, Deployer: runner,
-			SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}).Router(),
+		Addr:              cfg.Addr,
+		Handler:           apiSrv.Router(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	errc := make(chan error, 1)

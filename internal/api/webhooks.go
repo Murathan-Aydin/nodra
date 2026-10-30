@@ -60,11 +60,7 @@ func (s *Server) githubAppWebhook(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"message": "installation " + ev.Action})
 		return
 	case "push", "pull_request":
-		if s.GitEvents == nil {
-			writeJSON(w, http.StatusAccepted, map[string]string{"message": "aucune application à déployer"})
-			return
-		}
-		res, err := s.GitEvents.HandleGitEvent(r.Context(), src, ev)
+		res, err := s.GitEvents.HandleGitEvent(r, src, ev)
 		if err != nil {
 			s.internal(w, err)
 			return

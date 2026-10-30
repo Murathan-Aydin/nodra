@@ -17,15 +17,16 @@ type Preview struct {
 	Domains       []string  `json:"domains"`
 	Status        string    `json:"status"`
 	LastCommit    string    `json:"last_commit"`
+	CommentID     int64     `json:"-"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
-const previewCols = `id::text, application_id::text, pr_number, pr_url, title, domains, status, last_commit, created_at, updated_at`
+const previewCols = `id::text, application_id::text, pr_number, pr_url, title, domains, status, last_commit, comment_id, created_at, updated_at`
 
 func scanPreview(row pgx.Row) (*Preview, error) {
 	p := &Preview{}
-	err := row.Scan(&p.ID, &p.ApplicationID, &p.PRNumber, &p.PRURL, &p.Title, &p.Domains, &p.Status, &p.LastCommit, &p.CreatedAt, &p.UpdatedAt)
+	err := row.Scan(&p.ID, &p.ApplicationID, &p.PRNumber, &p.PRURL, &p.Title, &p.Domains, &p.Status, &p.LastCommit, &p.CommentID, &p.CreatedAt, &p.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -66,5 +67,11 @@ func (s *Store) SetPreviewStatus(ctx context.Context, appID string, pr int, stat
 
 func (s *Store) DeletePreview(ctx context.Context, appID string, pr int) error {
 	_, err := s.Pool.Exec(ctx, `DELETE FROM application_previews WHERE application_id = $1 AND pr_number = $2`, appID, pr)
+	return err
+}
+
+func (s *Store) SetPreviewComment(ctx context.Context, appID string, pr int, commentID int64) error {
+	_, err := s.Pool.Exec(ctx, `UPDATE application_previews SET comment_id = $3 WHERE application_id = $1 AND pr_number = $2`,
+		appID, pr, commentID)
 	return err
 }

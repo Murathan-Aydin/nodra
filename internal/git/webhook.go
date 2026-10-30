@@ -8,26 +8,51 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
+	"slices"
 	"strings"
 )
 
 // Event : événement de webhook normalisé, quelle que soit la forge.
 type Event struct {
-	Provider       string `json:"provider"`
-	Kind           string `json:"kind"`   // push | pull_request | ping | installation
-	Action         string `json:"action"` // pull_request : opened, synchronize, reopened, closed ; installation : created, deleted…
-	Repo           string `json:"repo"`   // owner/name
-	CloneURL       string `json:"clone_url"`
-	Branch         string `json:"branch"` // push : branche poussée ; pull_request : branche de base
-	Commit         string `json:"commit"`
-	Deleted        bool   `json:"deleted"` // push de suppression de branche
-	PRNumber       int    `json:"pr_number"`
-	PRTitle        string `json:"pr_title"`
-	PRURL          string `json:"pr_url"`
-	PRBranch       string `json:"pr_branch"` // branche source de la PR
-	IsFork         bool   `json:"is_fork"`
-	Sender         string `json:"sender"`
-	InstallationID int64  `json:"installation_id"`
+	Provider       string   `json:"provider"`
+	Kind           string   `json:"kind"`   // push | pull_request | ping | installation
+	Action         string   `json:"action"` // pull_request : opened, synchronize, reopened, closed ; installation : created, deleted…
+	Repo           string   `json:"repo"`   // owner/name
+	CloneURL       string   `json:"clone_url"`
+	Branch         string   `json:"branch"` // push : branche poussée ; pull_request : branche de base
+	Commit         string   `json:"commit"`
+	Deleted        bool     `json:"deleted"` // push de suppression de branche
+	PRNumber       int      `json:"pr_number"`
+	PRTitle        string   `json:"pr_title"`
+	PRURL          string   `json:"pr_url"`
+	PRBranch       string   `json:"pr_branch"` // branche source de la PR
+	IsFork         bool     `json:"is_fork"`
+	Sender         string   `json:"sender"`
+	InstallationID int64    `json:"installation_id"`
+	Files          []string `json:"files,omitempty"` // fichiers modifiés (push), pour watch_paths
+}
+
+type commitFiles []struct {
+	Added    []string `json:"added"`
+	Modified []string `json:"modified"`
+	Removed  []string `json:"removed"`
+}
+
+func (c commitFiles) files() []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, cm := range c {
+		for _, l := range [][]string{cm.Added, cm.Modified, cm.Removed} {
+			for _, f := range l {
+				if !seen[f] {
+					seen[f] = true
+					out = append(out, f)
+				}
+			}
+		}
+	}
+	return out
 }
 
 var ErrSignature = errors.New("signature du webhook invalide")
@@ -101,11 +126,12 @@ func Parse(provider string, h http.Header, body []byte) (*Event, error) {
 
 func parseGitHub(event string, body []byte) (*Event, error) {
 	var p struct {
-		Ref        string `json:"ref"`
-		After      string `json:"after"`
-		Deleted    bool   `json:"deleted"`
-		Action     string `json:"action"`
-		Number     int    `json:"number"`
+		Ref        string      `json:"ref"`
+		After      string      `json:"after"`
+		Deleted    bool        `json:"deleted"`
+		Commits    commitFiles `json:"commits"`
+		Action     string      `json:"action"`
+		Number     int         `json:"number"`
 		Repository struct {
 			FullName string `json:"full_name"`
 			CloneURL string `json:"clone_url"`
@@ -142,11 +168,12 @@ func parseGitHub(event string, body []byte) (*Event, error) {
 			return &Event{Provider: GitHub}, nil // tags ignorés
 		}
 		e.Kind, e.Branch, e.Commit, e.Deleted = "push", branchFromRef(p.Ref), p.After, p.Deleted || strings.Trim(p.After, "0") == ""
+		e.Files = p.Commits.files()
 	case "pull_request":
 		pr := p.PullRequest
 		e.Kind, e.PRNumber, e.PRTitle, e.PRURL = "pull_request", p.Number, pr.Title, pr.HTMLURL
 		e.Branch, e.PRBranch, e.Commit = pr.Base.Ref, pr.Head.Ref, pr.Head.SHA
-		e.IsFork = pr.Head.Repo.FullName != "" && pr.Head.Repo.FullName != p.Repository.FullName
+		e.IsFork = pr.Head.Repo.FullName != "" && !strings.EqualFold(pr.Head.Repo.FullName, p.Repository.FullName)
 	case "ping", "installation", "installation_repositories":
 		e.Kind = event
 	default:
@@ -157,10 +184,11 @@ func parseGitHub(event string, body []byte) (*Event, error) {
 
 func parseGitLab(event string, body []byte) (*Event, error) {
 	var p struct {
-		Ref          string `json:"ref"`
-		After        string `json:"after"`
-		CheckoutSHA  string `json:"checkout_sha"`
-		UserUsername string `json:"user_username"`
+		Ref          string      `json:"ref"`
+		After        string      `json:"after"`
+		Commits      commitFiles `json:"commits"`
+		CheckoutSHA  string      `json:"checkout_sha"`
+		UserUsername string      `json:"user_username"`
 		Project      struct {
 			PathWithNamespace string `json:"path_with_namespace"`
 			GitHTTPURL        string `json:"git_http_url"`
@@ -190,6 +218,7 @@ func parseGitLab(event string, body []byte) (*Event, error) {
 	case "Push Hook":
 		e.Kind, e.Branch, e.Sender = "push", branchFromRef(p.Ref), p.UserUsername
 		e.Commit, e.Deleted = p.After, strings.Trim(p.After, "0") == ""
+		e.Files = p.Commits.files()
 	case "Merge Request Hook":
 		o := p.ObjectAttributes
 		action := map[string]string{"open": "opened", "update": "synchronize", "reopen": "reopened", "close": "closed", "merge": "closed"}[o.Action]
@@ -264,7 +293,66 @@ func parseBitbucket(event string, body []byte) (*Event, error) {
 			"pullrequest:fulfilled": "closed", "pullrequest:rejected": "closed"}[event]
 		e.Kind, e.Action, e.PRNumber, e.PRTitle, e.PRURL = "pull_request", action, pr.ID, pr.Title, pr.Links.HTML.Href
 		e.Branch, e.PRBranch, e.Commit = pr.Destination.Branch.Name, pr.Source.Branch.Name, pr.Source.Commit.Hash
-		e.IsFork = pr.Source.Repository.FullName != "" && pr.Source.Repository.FullName != p.Repository.FullName
+		e.IsFork = pr.Source.Repository.FullName != "" && !strings.EqualFold(pr.Source.Repository.FullName, p.Repository.FullName)
 	}
 	return e, nil
+}
+
+// MatchWatchPaths indique si un push concerne les chemins surveillés (un motif par ligne, ** autorisé,
+// ! pour exclure). Sans motif, ou si la forge ne fournit pas la liste des fichiers, tout push compte.
+func MatchWatchPaths(patterns string, files []string) bool {
+	var include, exclude []*regexp.Regexp
+	for _, l := range strings.Split(patterns, "\n") {
+		l = strings.TrimSpace(l)
+		if l == "" || strings.HasPrefix(l, "#") {
+			continue
+		}
+		if neg, ok := strings.CutPrefix(l, "!"); ok {
+			exclude = append(exclude, globRe(neg))
+		} else {
+			include = append(include, globRe(l))
+		}
+	}
+	if len(include) == 0 && len(exclude) == 0 || len(files) == 0 {
+		return true
+	}
+	for _, f := range files {
+		if slices.ContainsFunc(exclude, func(r *regexp.Regexp) bool { return r.MatchString(f) }) {
+			continue
+		}
+		if len(include) == 0 || slices.ContainsFunc(include, func(r *regexp.Regexp) bool { return r.MatchString(f) }) {
+			return true
+		}
+	}
+	return false
+}
+
+func globRe(glob string) *regexp.Regexp {
+	glob = strings.TrimPrefix(glob, "/")
+	var b strings.Builder
+	b.WriteString("^")
+	for i := 0; i < len(glob); i++ {
+		switch c := glob[i]; c {
+		case '*':
+			if i+1 < len(glob) && glob[i+1] == '*' {
+				b.WriteString(".*")
+				i++
+				if i+1 < len(glob) && glob[i+1] == '/' {
+					i++
+					b.WriteString("/?")
+				}
+			} else {
+				b.WriteString("[^/]*")
+			}
+		case '?':
+			b.WriteString("[^/]")
+		default:
+			b.WriteString(regexp.QuoteMeta(string(c)))
+		}
+	}
+	if strings.HasSuffix(glob, "/") {
+		b.WriteString(".*")
+	}
+	b.WriteString("$")
+	return regexp.MustCompile(b.String())
 }
