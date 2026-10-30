@@ -190,3 +190,40 @@ Chaque serveur a un proxy inverse : **Traefik** (par défaut, `traefik:v3.7`) ou
 | Méthode | Route | Permission | Description |
 |---|---|---|---|
 | POST | `/teams/{team}/dns-check` | `server.read` sur le serveur | `{domain, server_id}` → `{domain, resolved, expected, ok, message}`. Accepte une URL complète ; `*.exemple.com` teste un sous-domaine aléatoire. Avec Cloudflare Tunnel actif, le domaine est considéré correct. |
+
+## Projets et environnements (`/teams/{team}/projects`)
+
+Un projet est créé avec un environnement `production`. Les permissions peuvent être attribuées sur un projet ou un environnement (voir « Équipes, rôles et permissions »).
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/projects` | `project.read` (équipe ou projet) | Projets visibles par l'appelant |
+| POST | `/projects` | `project.create` (équipe) | `{name, description?}` → `201 Project` |
+| GET | `/projects/{p}` | `project.read` (projet ou un de ses environnements) | `{project, environments}` (environnements visibles) |
+| PATCH | `/projects/{p}` | `project.update` | `{name, description?}` |
+| DELETE | `/projects/{p}` | `project.delete` | Soumis aux approbations ; supprime environnements, variables et attributions liées ; `409` s'il reste des ressources |
+| POST | `/projects/{p}/environments` | `environment.create` (projet) | `{name, description?}` |
+| GET | `/projects/{p}/environments/{e}` | `project.read` (environnement) | `{project, environment}` |
+| PATCH | `/projects/{p}/environments/{e}` | `environment.update` | |
+| DELETE | `/projects/{p}/environments/{e}` | `environment.delete` | Soumis aux approbations ; `409` s'il reste des ressources |
+| POST | `/projects/{p}/environments/{e}/clone` | `project.read` (source) + `environment.create` (projet cible) | `{name, project_id?}` : copie l'environnement et ses variables (les ressources seront copiées par leurs modules) |
+
+## Variables partagées (`/teams/{team}/variables`)
+
+Variables réutilisables dans les ressources via `{{team.CLÉ}}`, `{{project.CLÉ}}`, `{{environment.CLÉ}}`, `{{server.CLÉ}}`. Valeurs chiffrées en base.
+
+| Méthode | Route | Permission (sur la portée) | Description |
+|---|---|---|---|
+| GET | `/variables?scope_type=&scope_id=` | `variable.read` | Équipe par défaut ; la valeur d'un secret est toujours vide |
+| POST | `/variables` | `variable.manage` | `{scope?: {type: team\|project\|environment\|server, id}, key, value, comment?, is_secret?, is_multiline?, is_literal?}` ; `409` si la clé existe sur la portée |
+| PATCH | `/variables/{id}` | `variable.manage` | Champs partiels ; un secret ne redevient visible qu'en redéfinissant sa valeur |
+| DELETE | `/variables/{id}` | `variable.manage` | |
+
+**SharedVariable** : `{id, team_id, scope, key, value, comment, is_secret, is_multiline, is_literal, updated_at}`
+
+## Tags (`/teams/{team}/tags`)
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/tags` | `team.read` | |
+| POST / PATCH / DELETE | `/tags`, `/tags/{id}` | `resource.update` | `{name, color?: "#rrggbb"}` (l'étiquetage des ressources arrive avec elles) |

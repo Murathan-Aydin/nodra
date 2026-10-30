@@ -48,7 +48,11 @@ func (s *Server) Router() http.Handler {
 	if s.Executors == nil {
 		s.Executors = map[string]Executor{}
 	}
-	for action, exec := range map[string]Executor{"server.delete": s.execDeleteServer} {
+	for action, exec := range map[string]Executor{
+		"server.delete":      s.execDeleteServer,
+		"project.delete":     s.execDeleteProject,
+		"environment.delete": s.execDeleteEnvironment,
+	} {
 		if _, ok := s.Executors[action]; !ok {
 			s.Executors[action] = exec
 		}
@@ -195,6 +199,29 @@ func (s *Server) Router() http.Handler {
 						r.Delete("/proxy/certificates/{cert}", s.deleteCertificate)
 					})
 					r.Post("/dns-check", s.dnsCheck)
+
+					r.Get("/projects", s.listProjects)
+					r.Post("/projects", s.createProject)
+					r.Route("/projects/{project}", func(r chi.Router) {
+						r.Get("/", s.getProject)
+						r.Patch("/", s.updateProject)
+						r.Delete("/", s.deleteProject)
+						r.Post("/environments", s.createEnvironment)
+						r.Get("/environments/{env}", s.getEnvironment)
+						r.Patch("/environments/{env}", s.updateEnvironment)
+						r.Delete("/environments/{env}", s.deleteEnvironment)
+						r.Post("/environments/{env}/clone", s.cloneEnvironment)
+					})
+
+					r.Get("/variables", s.listVariables)
+					r.Post("/variables", s.createVariable)
+					r.Patch("/variables/{id}", s.updateVariable)
+					r.Delete("/variables/{id}", s.deleteVariable)
+
+					r.Get("/tags", s.listTags)
+					r.Post("/tags", s.createTag)
+					r.Patch("/tags/{id}", s.updateTag)
+					r.Delete("/tags/{id}", s.deleteTag)
 				})
 			})
 		})

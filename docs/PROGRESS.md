@@ -32,6 +32,8 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 
 - **Étape 5 — Proxy** (2026-10-30) : migration `00005_proxy.sql` (colonnes proxy_* sur servers, proxy_configs, ssl_certificates). `internal/servers/proxy.go` : compose Traefik/Caddy générés (alignés sur Coolify), compose personnalisé validé (YAML + conteneur `nodra-proxy`), fichiers dynamiques, certificats écrits sur le serveur par un script qui supprime aussi les fichiers obsolètes (testé en l'exécutant réellement), tâches proxy_start/stop/restart/sync, vérification des ports 80/443, démarrage automatique après validation, statut du proxy relevé avec les métriques. API `proxy.go` : proxy, configs dynamiques, certificats (vérification clé/certificat/expiration), vérification DNS (résolveur injectable, jokers, Cloudflare Tunnel). Tests : `internal/servers/proxy_test.go`, `internal/api/proxy_test.go`. **Vérifié en vrai** : sur la machine de dev, les ports 80/443 sont pris par un `coolify-proxy` → Nodra le détecte, ne démarre pas son proxy et la validation reste réussie. Script e2e réutilisable : voir « Notes pour la reprise ».
 
+- **Étape 6 — Projets & environnements** (2026-10-30) : migration `00006_projects.sql` (projects, environments, shared_variables chiffrées avec portée team/project/environment/server, tags). Portées `project` et `environment` branchées dans `scopeParents` → les droits par projet/environnement fonctionnent de bout en bout. API `projects.go` : projets (environnement production par défaut, liste filtrée par droits), environnements, clonage (avec variables), suppressions soumises aux approbations (exécuteurs `project.delete`, `environment.delete`) qui nettoient variables et attributions de rôle liées, variables partagées (secrets jamais réaffichés), tags. `store.SharedVariablesFor` prépare l'interpolation `{{team.X}}`… pour l'étape 8. Tests : `internal/api/projects_test.go`.
+
 ## Comment brancher un nouveau module sur le RBAC (à suivre aux étapes suivantes)
 1. Routes sous `/teams/{team}/...` (middleware `withTeam` déjà en place).
 2. Enregistrer la portée parente dans `scopeParents` (ex. `scopeParents["project"] = func(...) { return Scope{team, project.team_id} }`) pour que `ScopeChain` fonctionne.
@@ -44,7 +46,7 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [x] 3. Équipes avancées — **reste** : envoi réel des e-mails d'invitation (étape 13, `Mailer.TeamInvitation` prêt), notifications aux approbateurs (étape 13), nettoyage des ressources sur les serveurs à la suppression d'une équipe (étapes 8-10), consultation de l'audit `auth.*` par l'admin d'instance (étape 15)
 - [x] 4. Clés SSH & serveurs — **reste** : terminal web interactif (WebSocket, étape 14), serveur « localhost » de l'instance (avec install.sh), alertes disque/injoignable (étape 13), annulation d'une tâche déjà en cours
 - [x] 5. Proxy Traefik/Caddy — **reste** : labels de routage par ressource et redirections HTTP→HTTPS (étape 8), logs du proxy en direct (étape 14), certificats wildcard DNS-01 (OVH/Cloudflare, prévu en v1.1)
-- [ ] 6. Projets & environnements
+- [x] 6. Projets & environnements — **reste** : clonage des ressources avec l'environnement (étapes 8-10), étiquetage des ressources (étape 8)
 - [ ] 7. Sources Git
 - [ ] 8. Applications & déploiements
 - [ ] 9. Bases de données
@@ -61,7 +63,7 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [ ] Socle, dashboard, serveurs, projets/ressources, logs/terminal, catalogue services, équipes, paramètres
 
 ## Prochaine action
-Étape 6 : projets & environnements. Prévu : tables `projects` (team_id, name, description), `environments` (project_id, name ; « production » créé par défaut), `shared_variables` (portée team/project/environment, valeur chiffrée, is_secret) ; brancher les portées `project` et `environment` dans `scopeParents` ; CRUD + clonage d'environnement (sans les ressources tant qu'elles n'existent pas), suppression soumise aux approbations (`project.delete`, `environment.delete`) ; tags (Coolify `Tag`). Référence Coolify : `app/Models/Project.php`, `Environment.php`, `SharedEnvironmentVariable.php`, `Tag.php`.
+Étape 7 : sources Git. Prévu : table `git_sources` (team_id, type github|gitlab|gitea|bitbucket?, nom, URL API/HTML, App GitHub : app_id, client_id, client_secret chiffré, webhook_secret chiffré, private_key chiffrée, installation_id ; GitLab/Gitea : jeton d'accès chiffré, webhook_secret), création d'une GitHub App via le flux « manifest » (redirection + callback), liste des dépôts et branches via l'API, jetons d'installation GitHub (JWT RS256), deploy keys (réutiliser private_keys), webhooks entrants `/webhooks/github|gitlab|gitea` (vérification HMAC/jeton, push et pull requests → déclencheront les déploiements à l'étape 8). Référence Coolify : `app/Models/GithubApp.php`, `GitlabApp.php`, `GiteaApp.php`, `app/Http/Controllers/Webhook/*`, `routes/webhooks.php`.
 
 ## Notes pour la reprise
 - Le serveur de test Oracle (84.235.231.3) fait tourner l'**ancienne** version de Nodra, qui suit le même dépôt GitHub : ne pas lancer `deploy/update.sh` dessus avant que la nouvelle version ait son install/update (étape « Dockerfile + install.sh »). La clé SSH `.dev/vm_ed25519` n'existe plus en local.
