@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"github.com/Murathan-Aydin/nodra/internal/backup"
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
@@ -41,6 +42,9 @@ type Server struct {
 	Deployer Deployer
 	// GitEvents traite les push et pull requests reçus par webhook.
 	GitEvents GitEventHandler
+	// Backups : sauvegardes (envoi et lecture de fichiers sur les serveurs) ; Targets fournit les cibles SSH.
+	Backups *backup.Service
+	Targets backup.Targets
 	// Jobs enfile les tâches de fond.
 	Jobs JobQueue
 	// Executors : exécuteurs des actions soumises à approbation, par action (ex. "resource.deploy").
@@ -57,12 +61,13 @@ func (s *Server) Router() http.Handler {
 		s.Executors = map[string]Executor{}
 	}
 	for action, exec := range map[string]Executor{
-		"server.delete":      s.execDeleteServer,
-		"project.delete":     s.execDeleteProject,
-		"environment.delete": s.execDeleteEnvironment,
-		"resource.delete":    s.execDeleteResource,
-		"resource.env.write": s.execEnvWrite,
-		"resource.deploy":    s.execResourceDeploy,
+		"server.delete":           s.execDeleteServer,
+		"project.delete":          s.execDeleteProject,
+		"environment.delete":      s.execDeleteEnvironment,
+		"resource.delete":         s.execDeleteResource,
+		"resource.env.write":      s.execEnvWrite,
+		"resource.deploy":         s.execResourceDeploy,
+		"resource.backup.restore": s.execRestore,
 	} {
 		if _, ok := s.Executors[action]; !ok {
 			s.Executors[action] = exec
@@ -287,6 +292,23 @@ func (s *Server) Router() http.Handler {
 						r.Delete("/storages/{storage}", s.deleteStorage(s.appLoader))
 					})
 
+					r.Get("/s3-storages", s.listS3)
+					r.Post("/s3-storages", s.createS3)
+					r.Get("/s3-storages/{id}", s.getS3)
+					r.Patch("/s3-storages/{id}", s.updateS3)
+					r.Delete("/s3-storages/{id}", s.deleteS3)
+					r.Post("/s3-storages/{id}/check", s.checkS3Handler)
+
+					r.Get("/backups", s.listBackupSchedules)
+					r.Post("/backups", s.createBackupSchedule)
+					r.Patch("/backups/{id}", s.updateBackupSchedule)
+					r.Delete("/backups/{id}", s.deleteBackupSchedule)
+					r.Post("/backups/{id}/run", s.runBackupNow)
+					r.Get("/backup-executions", s.listBackupExecutions)
+					r.Post("/backup-executions/{id}/restore", s.restoreBackup)
+					r.Get("/backup-executions/{id}/download", s.downloadBackup)
+					r.Delete("/backup-executions/{id}", s.deleteBackupExecution)
+
 					r.Get("/services", s.listServices)
 					r.Post("/services", s.createService)
 					r.Route("/services/{svc}", func(r chi.Router) {
@@ -320,6 +342,7 @@ func (s *Server) Router() http.Handler {
 						r.Post("/restart", s.databaseAction(deploy.TaskDatabaseRestart))
 						r.Get("/tasks", s.databaseTasks)
 						r.Get("/logs", s.databaseLogs)
+						r.Post("/import", s.importDatabase)
 						r.Get("/envs", s.listEnvs(s.dbLoader))
 						r.Post("/envs", s.createEnv(s.dbLoader))
 						r.Post("/envs/bulk", s.bulkEnvs(s.dbLoader))

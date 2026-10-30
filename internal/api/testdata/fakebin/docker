@@ -68,5 +68,14 @@ case "$cmd" in
   rmi) for n in "$@"; do [ "$n" = "-f" ] || rm -f "$STATE/images/$(key "$n")"; done ;;
   logs) echo "2026-10-30T12:00:00Z serveur démarré" ;;
   exec) echo "exécuté : $*" ;;
+  run)
+    # Conteneurs éphémères : client MinIO (cp SRC DST) ou archive de volume (tar czf /backup/NOM).
+    backup_dir=""; prev=""; last=""
+    for a in "$@"; do
+      if [ "$prev" = "-v" ]; then case "$a" in *:/backup) backup_dir="${a%:/backup}" ;; esac; fi
+      case "$a" in /backup/*) [ -n "$backup_dir" ] && echo "archive" > "$backup_dir/${a#/backup/}" ;; esac
+      prev="$a"; last="$a"
+    done
+    case "$*" in *rclone/rclone*) case "$last" in /*) mkdir -p "$(dirname "$last")"; echo "téléchargé" > "$last" ;; esac; echo "rclone $*" >> "$STATE/s3" ;; esac ;;
   stop|network|volume) ;;
 esac

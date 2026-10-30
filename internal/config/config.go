@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -13,16 +14,20 @@ type Config struct {
 	DatabaseURL string // DSN PostgreSQL
 	AppKey      []byte // clé AES-256 (32 octets) pour chiffrer les secrets
 	Env         string // "production" ou "development"
+	// ServerDataDir : dossier de travail de Nodra sur les serveurs gérés (applications, bases, services,
+	// sauvegardes). /data/nodra par défaut ; le proxy reste dans /data/nodra/proxy.
+	ServerDataDir string
 	// TrustProxy : faire confiance à X-Forwarded-For / X-Real-IP (uniquement derrière un proxy maîtrisé).
 	TrustProxy bool
 }
 
 func Load() (*Config, error) {
 	c := &Config{
-		Addr:        getenv("NODRA_ADDR", ":8000"),
-		DatabaseURL: os.Getenv("NODRA_DATABASE_URL"),
-		Env:         getenv("NODRA_ENV", "production"),
-		TrustProxy:  os.Getenv("NODRA_TRUST_PROXY") == "true",
+		Addr:          getenv("NODRA_ADDR", ":8000"),
+		DatabaseURL:   os.Getenv("NODRA_DATABASE_URL"),
+		Env:           getenv("NODRA_ENV", "production"),
+		TrustProxy:    os.Getenv("NODRA_TRUST_PROXY") == "true",
+		ServerDataDir: strings.TrimSuffix(getenv("NODRA_SERVER_DATA_DIR", "/data/nodra"), "/"),
 	}
 	if c.DatabaseURL == "" {
 		return nil, errors.New("NODRA_DATABASE_URL est requis")
@@ -36,6 +41,9 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("NODRA_APP_KEY doit être 32 octets encodés en base64")
 	}
 	c.AppKey = key
+	if !strings.HasPrefix(c.ServerDataDir, "/") || strings.Contains(c.ServerDataDir, "..") {
+		return nil, errors.New("NODRA_SERVER_DATA_DIR doit être un chemin absolu")
+	}
 	return c, nil
 }
 

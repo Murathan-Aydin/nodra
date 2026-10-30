@@ -50,10 +50,14 @@ func newFakeHost(t *testing.T, f *appFixture) *fakeHost {
 	dockerOK.Store(true)
 	fallback := fakeUbuntu(&dockerOK)
 	f.ssh.SetInputHandler(func(cmd string, stdin io.Reader, stdout, stderr io.Writer) int {
-		if cmd != "sh -s" {
+		fileCmd := strings.HasPrefix(cmd, "cat ") || strings.HasPrefix(cmd, "mkdir -p ") || strings.HasPrefix(cmd, "rm -f ")
+		if cmd != "sh -s" && !fileCmd {
 			return fallback(cmd, stdout, stderr)
 		}
 		c := exec.Command("sh", "-s")
+		if fileCmd { // lecture/écriture de fichiers (téléchargement, import) exécutées réellement
+			c = exec.Command("sh", "-c", cmd)
+		}
 		c.Stdin, c.Stdout, c.Stderr = stdin, stdout, stderr
 		c.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"), "STATE="+h.state)
 		h.mu.Lock()

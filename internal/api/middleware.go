@@ -97,8 +97,10 @@ func csrfGuard(next http.Handler) http.Handler {
 		switch r.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
 		default:
+			// Un corps non-JSON (ex. import d'un dump) n'est accepté qu'avec X-Requested-With, en-tête qu'un site
+			// tiers ne peut pas envoyer sans pré-vérification CORS.
 			if r.Header.Get("Authorization") == "" && r.ContentLength != 0 &&
-				!strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+				!strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") && r.Header.Get("X-Requested-With") == "" {
 				writeError(w, http.StatusUnsupportedMediaType, "Content-Type application/json requis")
 				return
 			}

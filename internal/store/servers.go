@@ -439,3 +439,21 @@ func (s *Store) ResetServerHostKey(ctx context.Context, teamID, id string) error
 	_, err := s.Pool.Exec(ctx, `UPDATE servers SET host_key = '', is_usable = false, updated_at = now() WHERE team_id = $1 AND id = $2`, teamID, id)
 	return err
 }
+
+// HasActiveTaskWithParam indique si une tâche en file ou en cours porte params[key] = value.
+func (s *Store) HasActiveTaskWithParam(ctx context.Context, key, value string) (bool, error) {
+	var ok bool
+	err := s.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM server_tasks WHERE params->>$1 = $2 AND status IN ('queued', 'running'))`,
+		key, value).Scan(&ok)
+	return ok, err
+}
+
+// TasksWithParam : tâches portant params[key] = value (historique d'une sauvegarde…).
+func (s *Store) TasksWithParam(ctx context.Context, key, value string, limit int) ([]*ServerTask, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT `+taskCols+` FROM server_tasks WHERE params->>$1 = $2 ORDER BY created_at DESC LIMIT $3`,
+		key, value, limit)
+	if err != nil {
+		return nil, err
+	}
+	return collect(rows, scanTask)
+}

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Murathan-Aydin/nodra/internal/api"
+	"github.com/Murathan-Aydin/nodra/internal/backup"
 	"github.com/Murathan-Aydin/nodra/internal/config"
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
@@ -75,9 +76,14 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	pool := ssh.NewPool()
 	defer pool.Close()
 	svc := &servers.Service{Store: st, Box: box, SSH: pool, Log: log}
-	runner := &deploy.Runner{Store: st, Box: box, SSH: pool, Servers: svc, Log: log}
+	runner := &deploy.Runner{Store: st, Box: box, SSH: pool, Servers: svc, Log: log, AppsDir: cfg.ServerDataDir + "/applications",
+		DatabasesDir: cfg.ServerDataDir + "/databases", ServicesDir: cfg.ServerDataDir + "/services"}
+	backups := &backup.Service{Store: st, Box: box, SSH: pool, Log: log, Dir: cfg.ServerDataDir + "/backups"}
 	svc.Tasks = runner.Tasks()
-	apiSrv := &api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Deployer: runner,
+	for k, v := range backups.Tasks() {
+		svc.Tasks[k] = v
+	}
+	apiSrv := &api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Deployer: runner, Backups: backups, Targets: svc,
 		SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}
 	runner.OnFinish = apiSrv.DeploymentFinished // avant le démarrage des workers
 	jq, err := jobs.New(st, svc, runner, log, jobs.Options{Periodic: true})

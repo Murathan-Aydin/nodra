@@ -165,6 +165,7 @@ func (s *Store) DeleteDatabase(ctx context.Context, teamID, id string) error {
 			`DELETE FROM resource_env_vars WHERE resource_id = $1`,
 			`DELETE FROM resource_storages WHERE resource_id = $1`,
 			`DELETE FROM resource_tags WHERE resource_id = $1`,
+			`DELETE FROM backup_schedules WHERE resource_id = $1`,
 			`DELETE FROM role_assignments WHERE scope_type = 'resource' AND scope_id = $1`,
 			`DELETE FROM approval_rules WHERE scope_type = 'resource' AND scope_id = $1`,
 		} {

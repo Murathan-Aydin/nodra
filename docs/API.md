@@ -396,3 +396,32 @@ Catalogue de 347 modèles docker-compose repris de Coolify (`internal/services/t
 | … | `/services/{id}/envs…` | comme les applications | Variables (générées et configurables) |
 
 Au démarrage, Nodra écrit dans `/data/nodra/services/<id>/` le compose transformé (`KEY` sans valeur → `KEY: ${KEY}`, conteneurs `<service>-<id>`, labels `nodra.*` et de routage, réseau de la destination sauf `network_mode`, volumes nommés déclarés, montages relatifs vers `data/`), le `.env` (variables, partagées interpolées, `SERVICE_URL_*`/`SERVICE_FQDN_*` recalculées depuis les domaines) et les fichiers générés, puis `docker compose pull` + `up -d` et attend les conteneurs (hors exclus).
+
+## Stockages S3 (`/teams/{team}/s3-storages`)
+
+Tout stockage compatible S3 (AWS, Cloudflare R2, Garage, SeaweedFS, MinIO…). L'accès au bucket est vérifié à la création et à la modification (`is_usable`, `last_error`). Clés chiffrées, jamais renvoyées.
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/s3-storages` | `storage.read` | |
+| POST | `/s3-storages` | `storage.manage` | `{name, endpoint, bucket, access_key, secret_key, region?: "us-east-1", path_prefix?, description?}` |
+| GET / PATCH / DELETE | `/s3-storages/{id}` | `storage.read` / `storage.manage` | Les clés vides ne sont pas modifiées |
+| POST | `/s3-storages/{id}/check` | `storage.manage` | Revérifie l'accès |
+
+## Sauvegardes (`/teams/{team}/backups`, `/backup-executions`)
+
+Dumps de PostgreSQL (`pg_dump` format custom, ou `pg_dumpall` compressé), MySQL / MariaDB (`mysqldump` / `mariadb-dump` compressé), MongoDB (`mongodump --archive --gzip`), Redis / KeyDB (fichier RDB, restauration manuelle), et archives de volumes Docker (`tar.gz`). Les commandes s'exécutent dans le conteneur avec ses propres identifiants (aucun mot de passe dans les arguments visibles sur l'hôte). L'envoi vers S3 se fait depuis le serveur avec `rclone/rclone:1`, configuré par variables d'environnement. Fichiers locaux : `<NODRA_SERVER_DATA_DIR>/backups/<ressource>/`.
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/backups?resource_id=` | `resource.read` | Planifications d'une ressource |
+| POST | `/backups` | `resource.backup.manage` | `{kind: "database"\|"volume", resource_id, volume_name?, databases? ("a,b"), dump_all?, frequency?: "0 0 * * *", enabled?, keep_local?: 7, keep_local_days?, local_backup?: true, s3_storage_id?, keep_s3?: 30, keep_s3_days?}` ; un volume doit appartenir à la ressource |
+| PATCH / DELETE | `/backups/{id}` | `resource.backup.manage` | |
+| POST | `/backups/{id}/run` | `resource.backup.manage` | Sauvegarde immédiate (tâche serveur) |
+| GET | `/backup-executions?resource_id=` | `resource.read` | `[{id, schedule_id, database_name, status, filename, size, s3_key, local_deleted, s3_deleted, message, created_at, finished_at}]` |
+| POST | `/backup-executions/{id}/restore` | `resource.backup.restore` | Soumis aux approbations ; récupère le fichier depuis S3 si la copie locale n'existe plus |
+| GET | `/backup-executions/{id}/download` | `resource.backup.manage` | `{url}` présignée (15 min) si sur S3, sinon le fichier lu sur le serveur |
+| DELETE | `/backup-executions/{id}` | `resource.backup.manage` | Supprime fichier local et objet S3 |
+| POST | `/databases/{id}/import?filename=&database=` | `resource.backup.restore` | Corps brut (`.dump`, `.sql`, `.sql.gz`, `.archive[.gz]`, 20 Go max., en-tête `X-Requested-With` requis par cookie) envoyé en flux vers le serveur puis restauré ; soumis aux approbations |
+
+Planificateur : chaque minute, les planifications arrivées à échéance (fuseau horaire du serveur) sont lancées ; rétention locale et S3 appliquée après chaque exécution (nombre et/ou âge).
