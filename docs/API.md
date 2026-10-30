@@ -260,3 +260,48 @@ L'URL publique de l'instance vient du réglage d'instance (FQDN), sinon de la re
 | POST | `/webhooks/github` | `X-Hub-Signature-256` (secret de l'App, App identifiée par `X-GitHub-Hook-Installation-Target-ID`) | `push` et `pull_request` → déploiements (étape 8) ; `installation` met à jour l'installation ; `ping` → `pong` |
 
 Les webhooks « manuels » par application (GitHub, GitLab `X-Gitlab-Token`, Gitea `X-Gitea-Signature`, Bitbucket `X-Hub-Signature`) arrivent avec les applications ; l'analyse et la vérification sont déjà dans `internal/git`.
+
+## Applications (`/teams/{team}/applications`)
+
+Build packs : `nixpacks` (détection automatique), `dockerfile` (dans le dépôt ou en ligne via `dockerfile`), `dockercompose` (dans le dépôt ou brut via `docker_compose_raw`), `dockerimage` (image publique ou privée), `static` (site statique servi par `static_image`, `nginx:alpine` par défaut).
+
+Source du code : dépôt public (`git_repository` = URL https), source Git de l'équipe (`source_id` + `git_repository` = `owner/nom`), ou deploy key (`private_key_id` + URL SSH `git@hôte:owner/nom.git`).
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/applications?environment_id=` | `resource.read` (par application) | |
+| POST | `/applications` | `resource.create` (environnement) + `server.read` (serveur de la destination) | Voir champs ci-dessous. Sans `domains`, un domaine est généré : sous-domaine du `wildcard_domain` du serveur, sinon `http://<nom>-xxxxxx.<ip>.sslip.io`. `409` si un domaine est déjà utilisé (sauf `force_domain_override: true`). |
+| GET | `/applications/{id}` | `resource.read` | `{application, tags, server_id, project_id}` |
+| PATCH | `/applications/{id}` | `resource.update` | Champs partiels ; `health_check`, `limits`, `settings` sont fusionnés |
+| DELETE | `/applications/{id}` | `resource.delete` | Soumis aux approbations ; arrête les conteneurs puis supprime variables, stockages, tags et droits liés |
+| GET | `/applications/{id}/webhooks` | `resource.update` | `{secret, urls: {github, gitlab, gitea, bitbucket, deploy}}` (webhooks manuels) |
+| POST | `/applications/{id}/webhooks/rotate` | `resource.update` | Nouveau secret |
+| PUT | `/applications/{id}/tags` | `resource.update` | `{tag_ids}` → tags |
+
+**Champs** : `environment_id`, `destination_id` (création uniquement), `name`, `description`, `git_repository`, `git_branch` (`main`), `git_commit_sha` (`HEAD` ou SHA), `source_id`, `private_key_id`, `build_pack`, `docker_image`, `docker_image_tag`, `static_image`, `base_directory` (`/`), `publish_directory`, `dockerfile`, `dockerfile_location` (`/Dockerfile`), `dockerfile_target`, `docker_compose_location` (`/docker-compose.yaml`), `docker_compose_raw`, `docker_compose_domains` (`{service: [domaines]}`), `install_command`, `build_command`, `start_command`, `watch_paths`, `ports_exposes` (`3000` nixpacks, `80` sinon), `ports_mappings` (`8080:80`), `domains` (URL ; `https://` ajouté si absent ; un chemin est possible), `redirect` (`both`/`www`/`non-www`), `preview_url_template` (`{{pr_id}}.{{domain}}`), `custom_labels`, `custom_docker_run_options`, `pre_deployment_command`/`_container`, `post_deployment_command`/`_container`, `health_check`, `limits`, `settings`, `basic_auth_password` (écriture seule, stocké en bcrypt ; la réponse indique `basic_auth_password_set`), `force_domain_override`.
+
+**health_check** (défauts) : `enabled` false, `type` http|cmd, `path` `/`, `port` (premier port exposé), `host` localhost, `method` GET, `return_code` 200, `scheme` http, `response_text`, `interval` 5, `timeout` 5, `retries` 10, `start_period` 5, `command`.
+
+**limits** : `memory`, `memory_swap`, `memory_reservation` (`"0"` = illimité, ex. `"512m"`), `memory_swappiness` 60, `cpus` (`"0"`, ex. `"1.5"`), `cpuset`, `cpu_shares` 1024.
+
+**settings** (défauts) : `auto_deploy` true, `force_https` true, `preview_deployments` false, `public_pr_deployments` false, `git_submodules` true, `git_lfs` true, `git_shallow_clone` true, `is_spa` false, `gzip` true, `strip_prefix` true, `consistent_container_name` false, `connect_to_docker_network` false, `custom_internal_name`, `disable_build_cache` false, `include_source_commit_in_build` false, `inject_build_args` true, `use_build_secrets` false, `include_default_variables` true, `docker_images_to_keep` 2, `stop_grace_period` 30, `debug`, `gpu_enabled`/`gpu_driver`/`gpu_count`/`gpu_device_ids`, `basic_auth_enabled`/`basic_auth_username`, `certificate_resolver` letsencrypt, `raw_compose_deployment`, `preserve_repository`, `redact_env_values_in_logs`, `permanent_redirect`, `container_label_escape` true, `include_timestamps`, `build_server_enabled`, `env_sorting`, `container_label_readonly` true, `rolling_update_drain_seconds`.
+
+### Variables d'environnement (`/applications/{id}/envs`)
+
+Valeurs chiffrées ; elles peuvent référencer les variables partagées (`{{team.X}}`, `{{project.X}}`, `{{environment.X}}`, `{{server.X}}`). Une variable `is_preview` remplace la valeur normale dans les prévisualisations de PR. Toute écriture est soumise aux règles d'approbation `resource.env.write` (les valeurs restent chiffrées dans la demande).
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/envs` | `resource.env.read` | Liste ; valeur vide pour un secret |
+| POST | `/envs` | `resource.env.write` | `{key, value, is_buildtime?: true, is_runtime?: true, is_preview?, is_literal?, is_multiline?, is_secret?, comment?}` : crée ou remplace (clé + `is_preview`) → liste |
+| POST | `/envs/bulk` | `resource.env.write` | `{content: ".env", is_preview?, is_buildtime?}` → liste |
+| PATCH / DELETE | `/envs/{env}` | `resource.env.write` | → liste |
+
+### Stockages (`/applications/{id}/storages`)
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/storages` | `resource.read` | |
+| POST | `/storages` | `resource.update` | `{kind: "volume", mount_path, name?}` (volume Docker nommé), `{kind: "bind", host_path, mount_path}`, `{kind: "file", mount_path, content}` (1 Mo max.) ; `409` si le point de montage existe |
+| PATCH | `/storages/{id}` | `resource.update` | `{content}` (fichiers) |
+| DELETE | `/storages/{id}` | `resource.update` | |

@@ -36,6 +36,8 @@ type Server struct {
 	TrustProxy bool
 	// Resolver : résolution DNS (net.DefaultResolver par défaut).
 	Resolver Resolver
+	// Deployer pilote les conteneurs des ressources (nil tant que le module n'est pas branché).
+	Deployer Deployer
 	// GitEvents traite les push et pull requests reçus par webhook.
 	GitEvents GitEventHandler
 	// Jobs enfile les tâches de fond.
@@ -54,6 +56,8 @@ func (s *Server) Router() http.Handler {
 		"server.delete":      s.execDeleteServer,
 		"project.delete":     s.execDeleteProject,
 		"environment.delete": s.execDeleteEnvironment,
+		"resource.delete":    s.execDeleteApplication,
+		"resource.env.write": s.execEnvWrite,
 	} {
 		if _, ok := s.Executors[action]; !ok {
 			s.Executors[action] = exec
@@ -234,6 +238,26 @@ func (s *Server) Router() http.Handler {
 					r.Delete("/sources/{id}", s.deleteSource)
 					r.Get("/sources/{id}/repositories", s.listRepositories)
 					r.Get("/sources/{id}/branches", s.listBranches)
+
+					r.Get("/applications", s.listApplications)
+					r.Post("/applications", s.createApplication)
+					r.Route("/applications/{app}", func(r chi.Router) {
+						r.Get("/", s.getApplication)
+						r.Patch("/", s.updateApplication)
+						r.Delete("/", s.deleteApplication)
+						r.Get("/webhooks", s.appWebhooks)
+						r.Post("/webhooks/rotate", s.appWebhooks)
+						r.Put("/tags", s.setApplicationTags)
+						r.Get("/envs", s.listEnvs(s.appLoader))
+						r.Post("/envs", s.createEnv(s.appLoader))
+						r.Post("/envs/bulk", s.bulkEnvs(s.appLoader))
+						r.Patch("/envs/{env}", s.updateEnv(s.appLoader))
+						r.Delete("/envs/{env}", s.deleteEnv(s.appLoader))
+						r.Get("/storages", s.listStorages(s.appLoader))
+						r.Post("/storages", s.createStorage(s.appLoader))
+						r.Patch("/storages/{storage}", s.updateStorage(s.appLoader))
+						r.Delete("/storages/{storage}", s.deleteStorage(s.appLoader))
+					})
 
 					r.Get("/tags", s.listTags)
 					r.Post("/tags", s.createTag)
