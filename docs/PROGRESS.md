@@ -34,6 +34,8 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 
 - **Étape 6 — Projets & environnements** (2026-10-30) : migration `00006_projects.sql` (projects, environments, shared_variables chiffrées avec portée team/project/environment/server, tags). Portées `project` et `environment` branchées dans `scopeParents` → les droits par projet/environnement fonctionnent de bout en bout. API `projects.go` : projets (environnement production par défaut, liste filtrée par droits), environnements, clonage (avec variables), suppressions soumises aux approbations (exécuteurs `project.delete`, `environment.delete`) qui nettoient variables et attributions de rôle liées, variables partagées (secrets jamais réaffichés), tags. `store.SharedVariablesFor` prépare l'interpolation `{{team.X}}`… pour l'étape 8. Tests : `internal/api/projects_test.go`.
 
+- **Étape 7 — Sources Git** (2026-10-30) : `internal/git` : GitHub App (JWT RS256 maison, jetons d'installation en cache, dépôts paginés via `Link`, branches, conversion de manifeste), GitLab et Gitea/Forgejo par jeton, URL de clonage authentifiées, analyse normalisée (`git.Event`) et vérification des webhooks GitHub/GitLab/Gitea/Bitbucket ; les erreurs de forge n'exposent pas le corps de la réponse (anti-SSRF). Migration `00007_sources.sql` (git_sources, secrets chiffrés, état du flux manifeste haché). API `sources.go` : CRUD, création automatique d'une GitHub App (manifeste → callback → installation, état à usage unique), dépôts, branches ; `webhooks.go` : `POST /webhooks/github` (App identifiée par en-tête, signature vérifiée, installation/désinstallation, transmission des push/PR à `Server.GitEvents`). Tests : `internal/git/git_test.go` (fausses API), `internal/api/sources_test.go` (flux complet sur un GitHub Enterprise simulé).
+
 ## Comment brancher un nouveau module sur le RBAC (à suivre aux étapes suivantes)
 1. Routes sous `/teams/{team}/...` (middleware `withTeam` déjà en place).
 2. Enregistrer la portée parente dans `scopeParents` (ex. `scopeParents["project"] = func(...) { return Scope{team, project.team_id} }`) pour que `ScopeChain` fonctionne.
@@ -47,7 +49,7 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [x] 4. Clés SSH & serveurs — **reste** : terminal web interactif (WebSocket, étape 14), serveur « localhost » de l'instance (avec install.sh), alertes disque/injoignable (étape 13), annulation d'une tâche déjà en cours
 - [x] 5. Proxy Traefik/Caddy — **reste** : labels de routage par ressource et redirections HTTP→HTTPS (étape 8), logs du proxy en direct (étape 14), certificats wildcard DNS-01 (OVH/Cloudflare, prévu en v1.1)
 - [x] 6. Projets & environnements — **reste** : clonage des ressources avec l'environnement (étapes 8-10), étiquetage des ressources (étape 8)
-- [ ] 7. Sources Git
+- [x] 7. Sources Git — **reste** : webhooks manuels par application et implémentation de `GitEventHandler` (étape 8), commentaires de PR avec l'URL de prévisualisation (étape 8), connexion OAuth GitHub/GitLab des utilisateurs (rattachée à l'étape 2)
 - [ ] 8. Applications & déploiements
 - [ ] 9. Bases de données
 - [ ] 10. Services one-click
@@ -63,7 +65,12 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [ ] Socle, dashboard, serveurs, projets/ressources, logs/terminal, catalogue services, équipes, paramètres
 
 ## Prochaine action
-Étape 7 : sources Git. Prévu : table `git_sources` (team_id, type github|gitlab|gitea|bitbucket?, nom, URL API/HTML, App GitHub : app_id, client_id, client_secret chiffré, webhook_secret chiffré, private_key chiffrée, installation_id ; GitLab/Gitea : jeton d'accès chiffré, webhook_secret), création d'une GitHub App via le flux « manifest » (redirection + callback), liste des dépôts et branches via l'API, jetons d'installation GitHub (JWT RS256), deploy keys (réutiliser private_keys), webhooks entrants `/webhooks/github|gitlab|gitea` (vérification HMAC/jeton, push et pull requests → déclencheront les déploiements à l'étape 8). Référence Coolify : `app/Models/GithubApp.php`, `GitlabApp.php`, `GiteaApp.php`, `app/Http/Controllers/Webhook/*`, `routes/webhooks.php`.
+Étape 8 : applications & déploiements (le gros morceau). Découper en sous-étapes, chacune committée :
+- 8a. Modèle `applications` (environment_id, destination_id → serveur, source : dépôt public / GitHub App / GitLab / Gitea / deploy key (private_keys), branche, build pack nixpacks|dockerfile|dockercompose|dockerimage|static, base_directory, dockerfile_location, ports exposés, domaines (FQDN multiples), commandes install/build/start, pre/post-deploy, healthcheck, limites CPU/RAM, redirections www, labels personnalisés, settings JSON), variables d'environnement (build/runtime, preview, interpolation `{{team.X}}`…, chiffrées), volumes persistants et fichiers montés ; portée `resource` dans `scopeParents` ; CRUD + API.
+- 8b. Génération du docker-compose de l'application et des labels Traefik/Caddy (routers http/https, redirection HTTPS, certresolver letsencrypt, middlewares) — fonctions pures testées.
+- 8c. Pipeline de déploiement (job River `deploy`, file par serveur limitée par `concurrent_builds`) : clone (git via conteneur helper sur le serveur), build (Nixpacks / docker build / compose), push éventuel, démarrage, healthcheck, bascule sans coupure, logs en base, annulation, rollback vers une image précédente (images marquées `nodra.managed`).
+- 8d. Webhooks : `GitEventHandler` (déploiement sur push de la branche suivie, previews de PR avec domaine dérivé du wildcard, nettoyage à la fermeture), webhooks manuels par application, déploiement via API/jeton (`resource.deploy`), approbations (`resource.deploy` via `gate`).
+Référence Coolify : `app/Jobs/ApplicationDeploymentJob.php`, `app/Models/Application.php`, `bootstrap/helpers/docker.php` (labels), `app/Actions/Application/*`.
 
 ## Notes pour la reprise
 - Le serveur de test Oracle (84.235.231.3) fait tourner l'**ancienne** version de Nodra, qui suit le même dépôt GitHub : ne pas lancer `deploy/update.sh` dessus avant que la nouvelle version ait son install/update (étape « Dockerfile + install.sh »). La clé SSH `.dev/vm_ed25519` n'existe plus en local.

@@ -36,6 +36,8 @@ type Server struct {
 	TrustProxy bool
 	// Resolver : résolution DNS (net.DefaultResolver par défaut).
 	Resolver Resolver
+	// GitEvents traite les push et pull requests reçus par webhook.
+	GitEvents GitEventHandler
 	// Jobs enfile les tâches de fond.
 	Jobs JobQueue
 	// Executors : exécuteurs des actions soumises à approbation, par action (ex. "resource.deploy").
@@ -69,6 +71,9 @@ func (s *Server) Router() http.Handler {
 		limit = 10
 	}
 	authLimit := newRateLimiter(limit, time.Minute)
+
+	// Webhooks des forges : authentifiés par signature, hors session et hors garde CSRF.
+	r.Post("/webhooks/github", s.githubAppWebhook)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", s.health)
@@ -107,6 +112,9 @@ func (s *Server) Router() http.Handler {
 				})
 
 				r.Get("/permissions", s.listPermissions)
+				// Retours de GitHub après création / installation d'une App (navigateur, session requise).
+				r.With(requireSession).Get("/sources/github/callback", s.githubCallback)
+				r.With(requireSession).Get("/sources/github/install", s.githubInstall)
 				r.Get("/teams", s.listTeams)
 				r.Post("/teams", s.createTeam)
 
@@ -217,6 +225,15 @@ func (s *Server) Router() http.Handler {
 					r.Post("/variables", s.createVariable)
 					r.Patch("/variables/{id}", s.updateVariable)
 					r.Delete("/variables/{id}", s.deleteVariable)
+
+					r.Get("/sources", s.listSources)
+					r.Post("/sources", s.createSource)
+					r.Post("/sources/github/manifest", s.startGitHubManifest)
+					r.Get("/sources/{id}", s.getSource)
+					r.Patch("/sources/{id}", s.updateSource)
+					r.Delete("/sources/{id}", s.deleteSource)
+					r.Get("/sources/{id}/repositories", s.listRepositories)
+					r.Get("/sources/{id}/branches", s.listBranches)
 
 					r.Get("/tags", s.listTags)
 					r.Post("/tags", s.createTag)

@@ -227,3 +227,36 @@ Variables réutilisables dans les ressources via `{{team.CLÉ}}`, `{{project.CL�
 |---|---|---|---|
 | GET | `/tags` | `team.read` | |
 | POST / PATCH / DELETE | `/tags`, `/tags/{id}` | `resource.update` | `{name, color?: "#rrggbb"}` (l'étiquetage des ressources arrive avec elles) |
+
+## Sources Git (`/teams/{team}/sources`)
+
+Types : **GitHub App** (github.com ou GitHub Enterprise Server), **GitLab** (gitlab.com ou auto-hébergé, jeton `read_api` + `read_repository`), **Gitea/Forgejo** (jeton). Les secrets (clé de l'App, secret du webhook, secret client, jeton) sont chiffrés et jamais renvoyés. Les dépôts publics et les deploy keys n'ont pas besoin de source (configurés sur l'application).
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/sources` | `source.read` | Liste (sans secrets) |
+| POST | `/sources` | `source.manage` | GitHub : `{type: "github", name, app_id, private_key, webhook_secret, installation_id?, client_id?, client_secret?, html_url?, api_url?, organization?}` ; GitLab/Gitea : `{type, name, access_token, html_url?, api_url?}` (`api_url` déduite : `/api/v3`, `/api/v4`, `/api/v1`) |
+| POST | `/sources/github/manifest` | `source.manage` | `{name, organization?, html_url?, is_public?}` → `201 {source, form_action, manifest}` : le front soumet un formulaire POST vers `form_action` avec le champ `manifest` |
+| GET | `/sources/{id}` | `source.read` | |
+| PATCH | `/sources/{id}` | `source.manage` | Champs partiels ; un secret vide (`""`) l'efface |
+| DELETE | `/sources/{id}` | `source.manage` | `409` si des applications l'utilisent |
+| GET | `/sources/{id}/repositories` | `source.read` | `[{full_name, name, private, default_branch, html_url}]` ; `502` si la forge refuse |
+| GET | `/sources/{id}/branches?repo=owner/name` | `source.read` | `["main", …]` |
+
+**Source** : `{id, team_id, type, name, html_url, api_url, organization, is_public, app_id, app_slug, client_id, installation_id, configured, installed, has_private_key, has_webhook_secret, has_access_token, created_at}`.
+
+### Création automatique d'une GitHub App
+
+1. `POST /sources/github/manifest` → le navigateur poste le manifeste sur GitHub (nom `nodra-<nom>-NNNN`, permissions contents/metadata/emails/administration en lecture, pull requests en écriture, événements push et pull_request, webhook `<instance>/webhooks/github`).
+2. GitHub redirige vers `GET /api/v1/sources/github/callback?code=&state=` (session requise, `source.manage`) : Nodra récupère les identifiants de l'App et redirige vers la page d'installation.
+3. Après installation, GitHub redirige vers `GET /api/v1/sources/github/install?installation_id=&state=` → redirection vers `/sources/{id}?installed=1`.
+
+L'URL publique de l'instance vient du réglage d'instance (FQDN), sinon de la requête.
+
+## Webhooks
+
+| Méthode | Route | Authentification | Description |
+|---|---|---|---|
+| POST | `/webhooks/github` | `X-Hub-Signature-256` (secret de l'App, App identifiée par `X-GitHub-Hook-Installation-Target-ID`) | `push` et `pull_request` → déploiements (étape 8) ; `installation` met à jour l'installation ; `ping` → `pong` |
+
+Les webhooks « manuels » par application (GitHub, GitLab `X-Gitlab-Token`, Gitea `X-Gitea-Signature`, Bitbucket `X-Hub-Signature`) arrivent avec les applications ; l'analyse et la vérification sont déjà dans `internal/git`.
