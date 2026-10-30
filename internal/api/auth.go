@@ -70,6 +70,9 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.audit(withUser(r, u), nil, "auth.registered", "user", u.ID, nil)
+	if err := s.sendVerification(r.Context(), u); err != nil {
+		s.Log.Warn("e-mail de vérification", "user", u.ID, "err", err)
+	}
 	writeJSON(w, http.StatusCreated, u)
 }
 

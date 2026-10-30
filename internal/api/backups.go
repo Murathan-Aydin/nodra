@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"path"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Murathan-Aydin/nodra/internal/backup"
+	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
 
@@ -472,4 +474,37 @@ func (s *Server) importDatabase(w http.ResponseWriter, r *http.Request) {
 	}
 	s.auditTeam(r, "database.import", "database", d.ID, map[string]any{"file": name, "size": size, "task_id": task.ID})
 	writeJSON(w, http.StatusAccepted, task)
+}
+
+// BackupFinished publie le résultat d'une sauvegarde (branché sur backup.Service.OnResult).
+func (s *Server) BackupFinished(ctx context.Context, e *store.BackupExecution) {
+	name, typ, err := s.Store.ResourceName(ctx, e.ResourceID)
+	if err != nil {
+		name, typ = e.ResourceID, "database"
+	}
+	ev := notify.Event{TeamID: e.TeamID, URL: "/" + typ + "s/" + e.ResourceID + "/backups",
+		Fields: map[string]string{"Fichier": path.Base(e.Filename)}}
+	if e.DatabaseName != "" {
+		ev.Fields["Base"] = e.DatabaseName
+	}
+	if e.Status == "success" {
+		ev.Type, ev.Title, ev.Level, ev.Message = notify.BackupSuccess, "Sauvegarde réussie", "success", name
+		ev.Fields["Taille"] = humanSize(e.Size)
+	} else {
+		ev.Type, ev.Title, ev.Level, ev.Message = notify.BackupFailure, "Échec de la sauvegarde", "error", name+" : "+e.Message
+	}
+	s.publish(ctx, ev)
+}
+
+func humanSize(n int64) string {
+	const unit = 1024
+	if n < unit {
+		return strconv.FormatInt(n, 10) + " o"
+	}
+	div, exp := int64(unit), 0
+	for m := n / unit; m >= unit; m /= unit {
+		div *= unit
+		exp++
+	}
+	return strconv.FormatFloat(float64(n)/float64(div), 'f', 1, 64) + " " + string("KMGTPE"[exp]) + "io"
 }

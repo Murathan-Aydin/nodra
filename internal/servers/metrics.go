@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
@@ -99,6 +100,7 @@ func (s *Service) CollectMetrics(ctx context.Context) error {
 				s.Log.Warn("métriques", "server", sv.ID, "err", err)
 			}
 			_ = s.Store.SetServerReachable(ctx, sv.ID, err == nil)
+			s.reachability(ctx, sv, err)
 		}(sv)
 	}
 	wg.Wait()
@@ -134,7 +136,42 @@ func (s *Service) collectOne(ctx context.Context, sv *store.Server) error {
 		}
 	}
 	m.TS = time.Now().Truncate(time.Second)
+	s.diskUsage(ctx, sv, m)
 	return s.Store.InsertServerMetric(ctx, sv.ID, m)
+}
+
+// reachability publie « serveur injoignable » (au plus toutes les 6 h tant qu'il le reste) et « de nouveau joignable ».
+func (s *Service) reachability(ctx context.Context, sv *store.Server, err error) {
+	key := "server.unreachable:" + sv.ID
+	if err != nil {
+		if send, terr := s.Store.Throttle(ctx, key, 6*time.Hour); terr == nil && send {
+			s.publish(ctx, notify.Event{Type: notify.ServerUnreachable, TeamID: sv.TeamID, Title: "Serveur injoignable",
+				Message: sv.Name + " (" + sv.IP + ") ne répond pas : " + err.Error(), Level: "error", URL: "/servers/" + sv.ID})
+		}
+		return
+	}
+	if !sv.IsReachable {
+		_ = s.Store.ClearThrottle(ctx, key)
+		s.publish(ctx, notify.Event{Type: notify.ServerReachable, TeamID: sv.TeamID, Title: "Serveur de nouveau joignable",
+			Message: sv.Name + " (" + sv.IP + ")", Level: "success", URL: "/servers/" + sv.ID})
+	}
+}
+
+// diskUsage publie une alerte (au plus une par jour) quand le disque dépasse le seuil de nettoyage du serveur.
+func (s *Service) diskUsage(ctx context.Context, sv *store.Server, m store.ServerMetric) {
+	threshold := sv.Settings.DockerCleanupThreshold
+	if threshold <= 0 || m.DiskTotal == 0 {
+		return
+	}
+	pct := 100 * float64(m.DiskUsed) / float64(m.DiskTotal)
+	if pct < float64(threshold) {
+		return
+	}
+	if send, err := s.Store.Throttle(ctx, "server.disk:"+sv.ID, 24*time.Hour); err == nil && send {
+		s.publish(ctx, notify.Event{Type: notify.ServerDiskUsage, TeamID: sv.TeamID, Title: "Disque presque plein",
+			Message: fmt.Sprintf("%s : disque utilisé à %.0f %% (seuil %d %%)", sv.Name, pct, threshold), Level: "warning",
+			URL: "/servers/" + sv.ID})
+	}
 }
 
 // ContainerStatuses agrège l'état des conteneurs gérés par ressource (hors prévisualisations) :
@@ -178,5 +215,20 @@ func (s *Service) syncContainerStatuses(ctx context.Context, t ssh.Target, sv *s
 	if err != nil {
 		return err
 	}
-	return s.Store.SetResourceStatuses(ctx, sv.ID, ContainerStatuses(out))
+	changes, err := s.Store.SetResourceStatuses(ctx, sv.ID, ContainerStatuses(out))
+	if err != nil {
+		return err
+	}
+	for _, c := range changes {
+		// Ressource qui était en marche et ne l'est plus (hors arrêt demandé, qui passe directement à stopped).
+		if c.Old != "running" || c.New == "running" {
+			continue
+		}
+		if send, terr := s.Store.Throttle(ctx, "status:"+c.ID, 15*time.Minute); terr == nil && send {
+			s.publish(ctx, notify.Event{Type: notify.StatusChange, TeamID: c.TeamID, Title: "Ressource arrêtée ou en erreur",
+				Message: fmt.Sprintf("%s est passé de %s à %s sur %s", c.Name, c.Old, c.New, sv.Name), Level: "error",
+				URL: "/" + c.Type + "s/" + c.ID})
+		}
+	}
+	return nil
 }

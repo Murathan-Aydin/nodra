@@ -16,6 +16,7 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/backup"
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
+	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
@@ -24,6 +25,7 @@ import (
 type Mailer interface {
 	PasswordReset(ctx context.Context, to, token string)
 	TeamInvitation(ctx context.Context, to, teamName, token string)
+	EmailVerification(ctx context.Context, to, token string)
 }
 
 type Server struct {
@@ -45,6 +47,9 @@ type Server struct {
 	// Backups : sauvegardes (envoi et lecture de fichiers sur les serveurs) ; Targets fournit les cibles SSH.
 	Backups *backup.Service
 	Targets backup.Targets
+	// Notify publie les notifications ; Notifier les envoie (tests de canaux, e-mail de l'instance).
+	Notify   notify.Publisher
+	Notifier *notify.Dispatcher
 	// Jobs enfile les tâches de fond.
 	Jobs JobQueue
 	// Executors : exécuteurs des actions soumises à approbation, par action (ex. "resource.deploy").
@@ -104,6 +109,7 @@ func (s *Server) Router() http.Handler {
 				r.With(authLimit.middleware).Post("/login/2fa", s.loginTwoFactor)
 				r.With(authLimit.middleware).Post("/password/forgot", s.forgotPassword)
 				r.With(authLimit.middleware).Post("/password/reset", s.resetPassword)
+				r.With(authLimit.middleware).Post("/verify-email", s.verifyEmail)
 				r.Post("/logout", s.logout)
 			})
 
@@ -116,6 +122,7 @@ func (s *Server) Router() http.Handler {
 					r.Use(requireSession)
 					r.Patch("/me", s.updateProfile)
 					r.Post("/me/password", s.changePassword)
+					r.Post("/me/verify-email", s.resendVerification)
 					r.Post("/me/2fa/setup", s.setupTwoFactor)
 					r.Post("/me/2fa/enable", s.enableTwoFactor)
 					r.Post("/me/2fa/disable", s.disableTwoFactor)
@@ -129,6 +136,14 @@ func (s *Server) Router() http.Handler {
 				})
 
 				r.Get("/permissions", s.listPermissions)
+				r.Get("/notifications/catalog", s.notificationCatalog)
+				r.Route("/admin", func(r chi.Router) {
+					r.Use(requireInstanceAdmin)
+					r.Get("/mail", s.getMailConfig)
+					r.Put("/mail", s.putMailConfig)
+					r.Delete("/mail", s.deleteMailConfig)
+					r.Post("/mail/test", s.testMail)
+				})
 				r.Get("/service-templates", s.listServiceTemplates)
 				r.Get("/service-templates/{slug}", s.getServiceTemplate)
 				// Retours de GitHub après création / installation d'une App (navigateur, session requise).
@@ -308,6 +323,13 @@ func (s *Server) Router() http.Handler {
 					r.Post("/backup-executions/{id}/restore", s.restoreBackup)
 					r.Get("/backup-executions/{id}/download", s.downloadBackup)
 					r.Delete("/backup-executions/{id}", s.deleteBackupExecution)
+
+					r.Get("/notification-channels", s.listChannels)
+					r.Post("/notification-channels", s.createChannel)
+					r.Patch("/notification-channels/{id}", s.updateChannel)
+					r.Delete("/notification-channels/{id}", s.deleteChannel)
+					r.Post("/notification-channels/{id}/test", s.testChannel)
+					r.Get("/notification-deliveries", s.listDeliveries)
 
 					r.Get("/scheduled-tasks", s.listScheduledTasks)
 					r.Post("/scheduled-tasks", s.createScheduledTask)

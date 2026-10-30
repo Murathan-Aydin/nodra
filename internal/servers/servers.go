@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
+	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
@@ -56,6 +57,14 @@ type Service struct {
 	Log   *slog.Logger
 	// Tasks : types de tâches fournis par d'autres modules (actions sur les bases de données…).
 	Tasks map[string]TaskFunc
+	// Notify publie les notifications (serveur injoignable, disque plein, tâches terminées…).
+	Notify notify.Publisher
+}
+
+func (s *Service) publish(ctx context.Context, e notify.Event) {
+	if s.Notify != nil {
+		s.Notify.Publish(context.WithoutCancel(ctx), e)
+	}
 }
 
 // TaskFunc exécute une tâche fournie par un autre module ; out reçoit la sortie enregistrée avec la tâche.
@@ -140,7 +149,11 @@ func (s *Service) RunTask(ctx context.Context, id string) error {
 		r.out.Close()
 	}
 	// Contexte détaché : le statut final doit être enregistré même si le job a expiré.
-	return s.Store.FinishServerTask(context.WithoutCancel(ctx), id, status, msg)
+	if err := s.Store.FinishServerTask(context.WithoutCancel(ctx), id, status, msg); err != nil {
+		return err
+	}
+	s.taskFinished(ctx, task, r.server, status, msg)
+	return nil
 }
 
 func (r *taskRun) params(v any) error { return json.Unmarshal(r.task.Params, v) }
@@ -539,4 +552,49 @@ func networkDelete(ctx context.Context, r *taskRun) error {
 		return err
 	}
 	return r.exec(ctx, "docker network rm "+ssh.Quote(p.Network)+" 2>/dev/null || true")
+}
+
+// taskFinished publie les notifications des tâches terminées (tâches planifiées, nettoyage, mises à jour).
+func (s *Service) taskFinished(ctx context.Context, task *store.ServerTask, sv *store.Server, status, msg string) {
+	name := task.ServerID
+	if sv != nil {
+		name = sv.Name
+	}
+	ok := status == "success"
+	level := map[bool]string{true: "success", false: "error"}[ok]
+	switch task.Kind {
+	case "scheduled_task":
+		var p struct {
+			ID string `json:"scheduled_task_id"`
+		}
+		_ = json.Unmarshal(task.Params, &p)
+		title := "Tâche planifiée réussie"
+		if !ok {
+			title = "Tâche planifiée en échec"
+		}
+		taskName := p.ID
+		if st, err := s.Store.ScheduledTaskByIDAny(ctx, p.ID); err == nil {
+			taskName = st.Name
+		}
+		s.publish(ctx, notify.Event{Type: map[bool]string{true: notify.ScheduledTaskSuccess, false: notify.ScheduledTaskFailure}[ok],
+			TeamID: task.TeamID, Title: title, Message: taskName + " (" + name + ")", Level: level,
+			Fields: map[string]string{"Erreur": msg}})
+	case TaskDockerCleanup:
+		s.publish(ctx, notify.Event{Type: map[bool]string{true: notify.DockerCleanupSuccess, false: notify.DockerCleanupFailure}[ok],
+			TeamID: task.TeamID, Title: map[bool]string{true: "Nettoyage Docker effectué", false: "Nettoyage Docker en échec"}[ok],
+			Message: name, Level: level, URL: "/servers/" + task.ServerID})
+	case TaskPackagesCheck:
+		if t, err := s.Store.ServerTaskByID(ctx, task.ID); err == nil && ok {
+			n := 0
+			for _, l := range strings.Split(t.Output, "\n") {
+				if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "$") {
+					n++
+				}
+			}
+			if n > 0 {
+				s.publish(ctx, notify.Event{Type: notify.ServerPatch, TeamID: task.TeamID, Title: "Mises à jour disponibles",
+					Message: fmt.Sprintf("%d paquet(s) à mettre à jour sur %s", n, name), Level: "info", URL: "/servers/" + task.ServerID})
+			}
+		}
+	}
 }

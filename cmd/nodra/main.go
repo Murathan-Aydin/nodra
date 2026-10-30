@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/jobs"
+	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
@@ -83,13 +85,19 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	for k, v := range backups.Tasks() {
 		svc.Tasks[k] = v
 	}
+	baseURL := func(ctx context.Context) string { return instanceURL(ctx, st, cfg) }
+	dispatcher := &notify.Dispatcher{Store: st, Box: box, Log: log, BaseURL: baseURL}
 	apiSrv := &api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Deployer: runner, Backups: backups, Targets: svc,
+		Notifier: dispatcher, Mailer: &notify.Mailer{D: dispatcher, BaseURL: baseURL},
 		SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}
-	runner.OnFinish = apiSrv.DeploymentFinished // avant le démarrage des workers
-	jq, err := jobs.New(st, svc, runner, log, jobs.Options{Periodic: true})
+	// avant le démarrage des workers
+	runner.OnFinish = apiSrv.DeploymentFinished
+	backups.OnResult = apiSrv.BackupFinished
+	jq, err := jobs.New(st, svc, runner, log, jobs.Options{Periodic: true, Notifier: dispatcher})
 	if err != nil {
 		return err
 	}
+	svc.Notify, apiSrv.Notify = jq, jq
 	if err := jq.Start(ctx); err != nil {
 		return fmt.Errorf("démarrage des jobs: %w", err)
 	}
@@ -121,4 +129,16 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 		log.Info("arrêt gracieux")
 		return srv.Shutdown(shutCtx)
 	}
+}
+
+// instanceURL : URL publique de l'instance (paramètre FQDN, sinon NODRA_PUBLIC_URL) pour les liens des e-mails et notifications.
+func instanceURL(ctx context.Context, st *store.Store, cfg *config.Config) string {
+	if i, err := st.InstanceSettings(ctx); err == nil && i.FQDN != nil && *i.FQDN != "" {
+		u := strings.TrimRight(*i.FQDN, "/")
+		if !strings.Contains(u, "://") {
+			u = "https://" + u
+		}
+		return u
+	}
+	return strings.TrimRight(cfg.PublicURL, "/")
 }

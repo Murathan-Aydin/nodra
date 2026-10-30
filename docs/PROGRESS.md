@@ -52,6 +52,8 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 
 - **Étape 12 — Tâches planifiées** (2026-10-30) : migration `00014_scheduled_tasks.sql` ; tâche serveur `scheduled_task` (`internal/deploy/scheduled.go` : conteneur en cours de la ressource, service compose ciblé, délai maximal) ; planificateur commun `jobs.RunSchedules` (sauvegardes + tâches, chaque minute, une exécution à la fois par tâche) ; API `scheduled.go` (permission `resource.terminal`, historique via `TasksWithParam`). Tests : `internal/api/scheduled_test.go` (échec sans conteneur, exécution après un vrai déploiement sur le faux hôte, planificateur, droits par ressource).
 
+- **Étape 13 — Notifications** (2026-10-30) : migration `00015_notifications.sql` (notification_channels chiffrés, notification_deliveries, notification_throttles, `instance_settings.mail_config_enc`, email_verifications). `internal/notify` : catalogue d'événements avec abonnements par défaut, canaux e-mail / Discord / Slack / Telegram (sujets de forum) / Pushover / webhook JSON (erreurs sans le corps distant), e-mail de l'instance SMTP (TLS, STARTTLS, clair) ou Resend, `Dispatcher` (canaux de l'équipe et de ses parents, liens relatifs complétés par le FQDN de l'instance ou `NODRA_PUBLIC_URL`, journal des envois), `Mailer` (réinitialisation, invitations, vérification d'adresse — envoyés pour de vrai). File River `notifications` (`jobs.Publish`). Émetteurs : déploiements (`DeploymentFinished`), sauvegardes (`BackupFinished` via `OnResult`), tâches planifiées, nettoyage Docker, mises à jour de paquets, serveur injoignable/rejoint (anti-répétition 6 h), disque (24 h), ressource arrêtée (`status.change`, 15 min), certificats (14 j) et jetons API (7 j) qui expirent, demandes d'approbation. API `notifications.go` : catalogue, canaux (secrets masqués, `********` conserve l'ancien), test immédiat, journal ; `/admin/mail` réservé à l'administrateur de l'instance en session ; vérification d'adresse (`/auth/verify-email`, `/me/verify-email`, lien envoyé à l'inscription). Tests : `internal/notify` (faux SMTP, Resend, canaux), `internal/api/notifications_test.go` (webhook réel, filtrage des abonnements, échecs journalisés, e-mail Resend simulé, vérification d'adresse).
+
 ## Comment brancher un nouveau module sur le RBAC (à suivre aux étapes suivantes)
 1. Routes sous `/teams/{team}/...` (middleware `withTeam` déjà en place).
 2. Enregistrer la portée parente dans `scopeParents` (ex. `scopeParents["project"] = func(...) { return Scope{team, project.team_id} }`) pour que `ScopeChain` fonctionne.
@@ -60,18 +62,18 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 5. `s.auditTeam(r, "<module>.<action>", "<type>", id, meta)` sur chaque mutation.
 
 ## Reste à faire (backend)
-- [x] 2. Auth & utilisateurs — **reste** : vérification d'e-mail et envoi réel du mail de reset (attend l'étape 13, interface `api.Mailer` déjà prête), connexion OAuth (GitHub/GitLab/Google), rattachement des jetons API à une équipe (étape 3)
-- [x] 3. Équipes avancées — **reste** : envoi réel des e-mails d'invitation (étape 13, `Mailer.TeamInvitation` prêt), notifications aux approbateurs (étape 13), nettoyage des ressources sur les serveurs à la suppression d'une équipe (étapes 8-10), consultation de l'audit `auth.*` par l'admin d'instance (étape 15)
-- [x] 4. Clés SSH & serveurs — **reste** : terminal web interactif (WebSocket, étape 14), serveur « localhost » de l'instance (avec install.sh), alertes disque/injoignable (étape 13), annulation d'une tâche déjà en cours
+- [x] 2. Auth & utilisateurs — **reste** : connexion OAuth (GitHub/GitLab/Google)
+- [x] 3. Équipes avancées — **reste** : nettoyage des ressources sur les serveurs à la suppression d'une équipe (étapes 8-10), consultation de l'audit `auth.*` par l'admin d'instance (étape 15)
+- [x] 4. Clés SSH & serveurs — **reste** : terminal web interactif (WebSocket, étape 14), serveur « localhost » de l'instance (avec install.sh), annulation d'une tâche déjà en cours
 - [x] 5. Proxy Traefik/Caddy — **reste** : labels de routage par ressource et redirections HTTP→HTTPS (étape 8), logs du proxy en direct (étape 14), certificats wildcard DNS-01 (OVH/Cloudflare, prévu en v1.1)
 - [x] 6. Projets & environnements — **reste** : clonage des ressources avec l'environnement (étapes 8-10), étiquetage des ressources (étape 8)
 - [x] 7. Sources Git — **reste** : connexion OAuth GitHub/GitLab des utilisateurs (rattachée à l'étape 2)
 - [x] 8. Applications & déploiements — **reste** : previews des applications Docker Compose (domaines par service), commentaires de PR GitLab/Gitea, clonage des ressources avec l'environnement
 - [x] 9. Bases de données — vérifiées sur un vrai Docker (étape 10) ; **reste** : SSL des bases (CA de l'instance), import de dump et sauvegardes (étape 11), démarrage automatique à la création (`instant_deploy`), SQLite, clonage avec l'environnement
 - [x] 10. Services one-click — **reste** : prévisualisations de PR (sans objet pour les services), stockages par sous-service (les volumes du compose suffisent)
-- [x] 11. S3 & sauvegardes — **reste** : alertes de sauvegarde manquante/en échec (étape 13, crochet `backup.Service.OnResult` prêt)
-- [x] 12. Tâches planifiées — **reste** : notification en cas d'échec (étape 13)
-- [ ] 13. Notifications
+- [x] 11. S3 & sauvegardes
+- [x] 12. Tâches planifiées
+- [x] 13. Notifications
 - [ ] 14. Temps réel (WebSocket)
 - [ ] 15. Réglages d'instance
 - [ ] 16. API publique complète (+ MCP optionnel)
@@ -81,7 +83,7 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [ ] Socle, dashboard, serveurs, projets/ressources, logs/terminal, catalogue services, équipes, paramètres
 
 ## Prochaine action
-Étape 13 : notifications (e-mail SMTP/Resend, Discord, Slack, Telegram, Pushover, webhook ; abonnements par événement ; envoi réel des e-mails de réinitialisation et d'invitation via `api.Mailer` ; alertes aux approbateurs, déploiements, sauvegardes (`backup.Service.OnResult`), tâches planifiées, serveur injoignable, disque plein). Référence Coolify : `app/Notifications/*`, `app/Models/*NotificationSettings.php`.
+Étape 14 : temps réel (WebSocket `coder/websocket`) — logs de déploiement en direct, logs des conteneurs et du proxy en flux, terminal web (serveurs et conteneurs, permission `server.terminal` / `resource.terminal`), événements d'équipe (statuts, tâches). Référence Coolify : `app/Events/*`, terminal `docker/coolify-realtime`.
 
 ## Notes pour la reprise
 - Le serveur de test Oracle (84.235.231.3) fait tourner l'**ancienne** version de Nodra, qui suit le même dépôt GitHub : ne pas lancer `deploy/update.sh` dessus avant que la nouvelle version ait son install/update (étape « Dockerfile + install.sh »). La clé SSH `.dev/vm_ed25519` n'existe plus en local.

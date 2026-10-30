@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"slices"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/rbac"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
@@ -246,7 +248,17 @@ func (s *Server) gateAs(r *http.Request, teamID string, requestedBy *string, act
 		return nil, err
 	}
 	s.audit(r, &teamID, "approval.requested", "approval_request", req.ID, map[string]any{"action": action, "scope": chain[0], "summary": summary})
+	s.publish(ctx, notify.Event{Type: notify.ApprovalRequested, TeamID: teamID, Title: "Demande d'approbation",
+		Message: fmt.Sprintf("%s (%d approbation(s) requise(s))", summary, rule.RequiredApprovals), Level: "warning",
+		URL: "/teams/" + teamID + "/approvals/" + req.ID})
 	return req, nil
+}
+
+// publish publie une notification (sans effet si les notifications ne sont pas branchées).
+func (s *Server) publish(ctx context.Context, e notify.Event) {
+	if s.Notify != nil {
+		s.Notify.Publish(context.WithoutCancel(ctx), e)
+	}
 }
 
 // respondPending : réponse standard quand une action attend une approbation.

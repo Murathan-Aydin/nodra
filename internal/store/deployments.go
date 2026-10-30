@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -185,27 +186,33 @@ func (s *Store) DeploymentLogs(ctx context.Context, deploymentID string, after i
 
 // SetResourceStatuses met à jour le statut des applications et des bases d'un serveur (hors PR) ;
 // celles absentes de statuses passent à « stopped ».
-func (s *Store) SetResourceStatuses(ctx context.Context, serverID string, statuses map[string]string) error {
-	rows, err := s.Pool.Query(ctx, `SELECT x.id::text, x.status, x.kind FROM (
-			SELECT id, status, destination_id, 'applications' AS kind FROM applications
-			UNION ALL SELECT id, status, destination_id, 'databases' FROM databases
-			UNION ALL SELECT id, status, destination_id, 'services' FROM services
+// StatusChange : changement de statut d'une ressource relevé par la synchronisation des conteneurs.
+type StatusChange struct {
+	ID, TeamID, Type, Name, Old, New string
+}
+
+func (s *Store) SetResourceStatuses(ctx context.Context, serverID string, statuses map[string]string) ([]StatusChange, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT x.id::text, x.status, x.kind, x.team_id::text, x.name FROM (
+			SELECT id, status, destination_id, team_id, name, 'applications' AS kind FROM applications
+			UNION ALL SELECT id, status, destination_id, team_id, name, 'databases' FROM databases
+			UNION ALL SELECT id, status, destination_id, team_id, name, 'services' FROM services
 		) x JOIN destinations d ON d.id = x.destination_id WHERE d.server_id = $1`, serverID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	type row struct{ status, table string }
+	type row struct{ status, table, team, name string }
 	current := map[string]row{}
 	for rows.Next() {
 		var id string
 		var r row
-		if err := rows.Scan(&id, &r.status, &r.table); err != nil {
+		if err := rows.Scan(&id, &r.status, &r.table, &r.team, &r.name); err != nil {
 			rows.Close()
-			return err
+			return nil, err
 		}
 		current[id] = r
 	}
 	rows.Close()
+	var changes []StatusChange
 	for id, old := range current {
 		st, ok := statuses[id]
 		if !ok {
@@ -214,9 +221,11 @@ func (s *Store) SetResourceStatuses(ctx context.Context, serverID string, status
 		if st != old.status {
 			// table : constante de la requête ci-dessus
 			if _, err := s.Pool.Exec(ctx, `UPDATE `+old.table+` SET status = $2 WHERE id = $1`, id, st); err != nil {
-				return err
+				return nil, err
 			}
+			changes = append(changes, StatusChange{ID: id, TeamID: old.team, Type: strings.TrimSuffix(old.table, "s"), Name: old.name,
+				Old: old.status, New: st})
 		}
 	}
-	return nil
+	return changes, nil
 }

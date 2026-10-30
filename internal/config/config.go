@@ -17,6 +17,8 @@ type Config struct {
 	// ServerDataDir : dossier de travail de Nodra sur les serveurs gérés (applications, bases, services,
 	// sauvegardes). /data/nodra par défaut ; le proxy reste dans /data/nodra/proxy.
 	ServerDataDir string
+	// PublicURL : URL publique de l'instance (liens des e-mails et notifications) si le domaine n'est pas réglé.
+	PublicURL string
 	// TrustProxy : faire confiance à X-Forwarded-For / X-Real-IP (uniquement derrière un proxy maîtrisé).
 	TrustProxy bool
 }
@@ -27,6 +29,7 @@ func Load() (*Config, error) {
 		DatabaseURL:   os.Getenv("NODRA_DATABASE_URL"),
 		Env:           getenv("NODRA_ENV", "production"),
 		TrustProxy:    os.Getenv("NODRA_TRUST_PROXY") == "true",
+		PublicURL:     strings.TrimSuffix(os.Getenv("NODRA_PUBLIC_URL"), "/"),
 		ServerDataDir: strings.TrimSuffix(getenv("NODRA_SERVER_DATA_DIR", "/data/nodra"), "/"),
 	}
 	if c.DatabaseURL == "" {

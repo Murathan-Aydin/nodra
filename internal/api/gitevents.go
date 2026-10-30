@@ -15,6 +15,7 @@ import (
 
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/git"
+	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
 
@@ -454,7 +455,11 @@ func (s *Server) deletePreview(w http.ResponseWriter, r *http.Request) {
 // DeploymentFinished publie (ou met à jour) un commentaire sur la PR GitHub à la fin d'un déploiement de preview.
 // Branché sur deploy.Runner.OnFinish.
 func (s *Server) DeploymentFinished(ctx context.Context, d *store.Deployment) {
-	if d.PRNumber == 0 || (d.Status != "finished" && d.Status != "failed") {
+	if d.Status != "finished" && d.Status != "failed" {
+		return
+	}
+	s.notifyDeployment(ctx, d)
+	if d.PRNumber == 0 {
 		return
 	}
 	if err := s.commentPreview(ctx, d); err != nil {
@@ -505,4 +510,27 @@ func previewComment(a *store.Application, pv *store.Preview, d *store.Deployment
 		fmt.Fprintf(&b, "❌ Échec du déploiement (commit `%s`) : consultez les logs dans Nodra.\n", shortCommit(d.CommitSHA))
 	}
 	return b.String()
+}
+
+// notifyDeployment publie le résultat d'un déploiement.
+func (s *Server) notifyDeployment(ctx context.Context, d *store.Deployment) {
+	name := d.ApplicationID
+	if a, err := s.Store.ApplicationByIDAny(ctx, d.ApplicationID); err == nil {
+		name = a.Name
+	}
+	if d.PRNumber > 0 {
+		name += fmt.Sprintf(" (PR #%d)", d.PRNumber)
+	}
+	ok := d.Status == "finished"
+	e := notify.Event{TeamID: d.TeamID, URL: "/applications/" + d.ApplicationID + "/deployments/" + d.ID,
+		Fields: map[string]string{"Déclencheur": d.Trigger}}
+	if d.CommitSHA != "" {
+		e.Fields["Commit"] = d.CommitSHA[:min(12, len(d.CommitSHA))] + " " + d.CommitMessage
+	}
+	if ok {
+		e.Type, e.Title, e.Level, e.Message = notify.DeploymentSuccess, "Déploiement réussi", "success", name
+	} else {
+		e.Type, e.Title, e.Level, e.Message = notify.DeploymentFailure, "Échec du déploiement", "error", name+" : "+d.Error
+	}
+	s.publish(ctx, e)
 }

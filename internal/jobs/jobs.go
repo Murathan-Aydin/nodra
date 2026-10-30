@@ -5,7 +5,9 @@ package jobs
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -15,6 +17,7 @@ import (
 	"github.com/riverqueue/river/rivermigrate"
 
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
+	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
@@ -104,6 +107,28 @@ func (w *backupSchedulerWorker) Work(ctx context.Context, _ *river.Job[BackupSch
 	return w.j.RunSchedules(ctx, time.Now())
 }
 
+// NotifyArgs : diffusion d'une notification aux canaux de l'équipe.
+type NotifyArgs struct {
+	Event notify.Event `json:"event"`
+}
+
+func (NotifyArgs) Kind() string { return "notify" }
+func (NotifyArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: "notifications", MaxAttempts: 3}
+}
+
+type notifyWorker struct {
+	river.WorkerDefaults[NotifyArgs]
+	d *notify.Dispatcher
+}
+
+func (w *notifyWorker) Work(ctx context.Context, job *river.Job[NotifyArgs]) error {
+	if w.d == nil {
+		return nil
+	}
+	return w.d.Dispatch(ctx, job.Args.Event)
+}
+
 type MetricsArgs struct{}
 
 func (MetricsArgs) Kind() string { return "collect_metrics" }
@@ -156,12 +181,13 @@ func (w *cleanupSchedulerWorker) Work(ctx context.Context, _ *river.Job[CleanupS
 type maintenanceWorker struct {
 	river.WorkerDefaults[MaintenanceArgs]
 	st *store.Store
+	j  *Jobs
 }
 
 func (w *maintenanceWorker) Work(ctx context.Context, _ *river.Job[MaintenanceArgs]) error {
 	for _, f := range []func(context.Context) error{
 		w.st.DeleteExpiredSessions, w.st.PurgeServerMetrics, w.st.ExpireApprovalRequests, w.st.FailStaleServerTasks,
-		w.st.FailStaleDeployments, w.st.FailStaleBackups,
+		w.st.FailStaleDeployments, w.st.FailStaleBackups, w.st.PurgeDeliveries, w.j.notifyExpirations,
 	} {
 		if err := f(ctx); err != nil {
 			return err
@@ -173,7 +199,8 @@ func (w *maintenanceWorker) Work(ctx context.Context, _ *river.Job[MaintenanceAr
 // --- Client ---
 
 type Options struct {
-	Periodic bool // planifier les jobs périodiques (désactivé dans les tests)
+	Periodic bool               // planifier les jobs périodiques (désactivé dans les tests)
+	Notifier *notify.Dispatcher // diffusion des notifications (nil : ignorées)
 }
 
 type Jobs struct {
@@ -190,13 +217,15 @@ func New(st *store.Store, svc *servers.Service, runner *deploy.Runner, log *slog
 	river.AddWorker(workers, &metricsWorker{svc: svc})
 	river.AddWorker(workers, &cleanupSchedulerWorker{j: j})
 	river.AddWorker(workers, &backupSchedulerWorker{j: j})
-	river.AddWorker(workers, &maintenanceWorker{st: st})
+	river.AddWorker(workers, &notifyWorker{d: opts.Notifier})
+	river.AddWorker(workers, &maintenanceWorker{st: st, j: j})
 
 	cfg := &river.Config{
 		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: 10},
 			"servers":          {MaxWorkers: 20},
 			"deployments":      {MaxWorkers: 50},
+			"notifications":    {MaxWorkers: 10},
 		},
 		Workers: workers,
 		Logger:  log,
@@ -224,6 +253,42 @@ func New(st *store.Store, svc *servers.Service, runner *deploy.Runner, log *slog
 func (j *Jobs) Start(ctx context.Context) error { return j.Client.Start(ctx) }
 
 func (j *Jobs) Stop(ctx context.Context) error { return j.Client.Stop(ctx) }
+
+// Publish enfile une notification (envoi asynchrone par le worker notify).
+func (j *Jobs) Publish(ctx context.Context, e notify.Event) {
+	if e.At.IsZero() {
+		e.At = time.Now()
+	}
+	if _, err := j.Client.Insert(ctx, NotifyArgs{Event: e}, nil); err != nil {
+		j.log.Error("notification non enfilée", "event", e.Type, "err", err)
+	}
+}
+
+// notifyExpirations prévient (une fois par jour) des certificats et jetons API qui expirent bientôt.
+func (j *Jobs) notifyExpirations(ctx context.Context) error {
+	certs, teams, err := j.st.ExpiringCertificates(ctx, 14*24*time.Hour)
+	if err != nil {
+		return err
+	}
+	for i, c := range certs {
+		if send, err := j.st.Throttle(ctx, "cert:"+c.ID, 24*time.Hour); err == nil && send {
+			j.Publish(ctx, notify.Event{Type: notify.CertificateExpiring, TeamID: teams[i], Title: "Certificat bientôt expiré",
+				Message: fmt.Sprintf("Le certificat %s (%s) expire le %s", c.Name, strings.Join(c.Domains, ", "), c.ExpiresAt.Format("02/01/2006")),
+				Level:   "warning", URL: "/servers/" + c.ServerID})
+		}
+	}
+	tokens, emails, err := j.st.ExpiringAPITokens(ctx, 7*24*time.Hour)
+	if err != nil {
+		return err
+	}
+	for i, t := range tokens {
+		if send, err := j.st.Throttle(ctx, "token:"+t.ID, 24*time.Hour); err == nil && send {
+			j.Publish(ctx, notify.Event{Type: notify.APITokenExpiring, TeamID: *t.TeamID, Title: "Jeton API bientôt expiré",
+				Message: fmt.Sprintf("Le jeton « %s » de %s expire le %s", t.Name, emails[i], t.ExpiresAt.Format("02/01/2006")), Level: "warning"})
+		}
+	}
+	return nil
+}
 
 // EnqueueDeployment crée le déploiement et son job dans une même transaction.
 func (j *Jobs) EnqueueDeployment(ctx context.Context, d *store.Deployment, timeout int) (*store.Deployment, error) {

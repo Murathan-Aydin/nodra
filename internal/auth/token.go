@@ -28,4 +28,5 @@ const (
 	PrefixAPIToken = "ndt_"
 	PrefixReset    = "ndr_"
 	PrefixInvite   = "ndi_"
+	PrefixVerify   = "ndv_"
 )

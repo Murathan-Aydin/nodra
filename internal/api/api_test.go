@@ -25,6 +25,7 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/crypto"
 	"github.com/Murathan-Aydin/nodra/internal/deploy"
 	"github.com/Murathan-Aydin/nodra/internal/jobs"
+	"github.com/Murathan-Aydin/nodra/internal/notify"
 	"github.com/Murathan-Aydin/nodra/internal/rbac"
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/ssh"
@@ -42,6 +43,7 @@ type testEnv struct {
 	runner   *deploy.Runner
 	backups  *backup.Service
 	jobs     *jobs.Jobs
+	notifier *notify.Dispatcher
 	executed []*store.ApprovalRequest
 }
 
@@ -87,7 +89,8 @@ func newTestEnv(t *testing.T) *testEnv {
 	for k, v := range env.backups.Tasks() {
 		env.svc.Tasks[k] = v
 	}
-	jq, err := jobs.New(st, env.svc, env.runner, log, jobs.Options{})
+	env.notifier = &notify.Dispatcher{Store: st, Box: box, Log: log, BaseURL: func(context.Context) string { return "https://nodra.example.com" }}
+	jq, err := jobs.New(st, env.svc, env.runner, log, jobs.Options{Notifier: env.notifier})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,6 +100,7 @@ func newTestEnv(t *testing.T) *testEnv {
 	}
 	env.api = &Server{
 		Store: st, Box: box, Mailer: env.mailer, AuthRateLimit: 1000, Jobs: jq, Log: log, Deployer: env.runner, Backups: env.backups, Targets: env.svc,
+		Notify: jq, Notifier: env.notifier,
 		Web: fstest.MapFS{"index.html": {Data: []byte("spa")}},
 		Executors: map[string]Executor{"resource.deploy": func(_ context.Context, req *store.ApprovalRequest) error {
 			env.executed = append(env.executed, req)
@@ -138,12 +142,13 @@ func newTestEnv(t *testing.T) *testEnv {
 	return env
 }
 
-type fakeMailer struct{ lastToken, lastInvite string }
+type fakeMailer struct{ lastToken, lastInvite, lastVerify string }
 
 func (f *fakeMailer) PasswordReset(_ context.Context, _, token string) { f.lastToken = token }
 func (f *fakeMailer) TeamInvitation(_ context.Context, _, _, token string) {
 	f.lastInvite = token
 }
+func (f *fakeMailer) EmailVerification(_ context.Context, _, token string) { f.lastVerify = token }
 
 type client struct {
 	t      *testing.T

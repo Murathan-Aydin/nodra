@@ -29,6 +29,7 @@ Derrière un reverse proxy, définir `NODRA_TRUST_PROXY=true` pour utiliser l'IP
 | POST | `/auth/logout` | — | `204` |
 | POST | `/auth/password/forgot` | `{email}` | `204` toujours (ne révèle pas l'existence du compte). Jeton valable 1 h, envoyé par e-mail (journalisé tant que l'e-mail n'est pas configuré). |
 | POST | `/auth/password/reset` | `{token, password}` | `204`, révoque toutes les sessions. `400` si jeton invalide/expiré/déjà utilisé. |
+| POST | `/auth/verify-email` | `{token}` | `204`, marque l'adresse comme vérifiée. `400` si jeton invalide/expiré/déjà utilisé. Le lien (`/verify-email?token=ndv_…`, 24 h) est envoyé à l'inscription si l'envoi d'e-mails est configuré. |
 
 ## Compte (`/me`, authentifié)
 
@@ -37,6 +38,7 @@ Derrière un reverse proxy, définir `NODRA_TRUST_PROXY=true` pour utiliser l'IP
 | GET | `/me` | — | `200 {"user": User, "two_factor_enabled": bool}` (session ou jeton) |
 | PATCH | `/me` | `{name}` | `204` |
 | POST | `/me/password` | `{current_password, new_password}` | `204`, révoque les autres sessions. `401` si mot de passe actuel faux. |
+| POST | `/me/verify-email` | — | `204`, renvoie le lien de vérification. `409` si déjà vérifiée. |
 | POST | `/me/2fa/setup` | — | `200 {secret, otpauth_url}` (à afficher en QR code) |
 | POST | `/me/2fa/enable` | `{code}` | `200 {"recovery_codes": [8 codes]}` (affichés une seule fois). `422` si code faux. |
 | POST | `/me/2fa/disable` | `{password}` | `204` |
@@ -439,3 +441,43 @@ Commandes exécutées selon une expression cron (fuseau horaire du serveur) dans
 | GET | `/scheduled-tasks/{id}/executions` | `resource.logs.read` | 50 dernières exécutions (`ServerTask` avec `output`) |
 
 Si plusieurs conteneurs tournent (service, compose), `container` est obligatoire. Une exécution dépassant `timeout` est interrompue.
+
+## Notifications
+
+Événements (`GET /notifications/catalog` → `{events: [{key, label, default}], channel_types}`) :
+`deployment.success`, `deployment.failure`, `status.change` (ressource qui n'est plus en cours d'exécution, 15 min entre deux alertes), `backup.success`, `backup.failure`, `scheduled_task.success`, `scheduled_task.failure`, `docker_cleanup.success`, `docker_cleanup.failure`, `server.disk_usage` (seuil = `docker_cleanup_threshold`, 1 alerte / 24 h), `server.unreachable` (1 alerte / 6 h), `server.reachable`, `server.patch` (mises à jour de paquets disponibles), `certificate.expiring` (14 jours), `api_token.expiring` (7 jours), `approval.requested`, `test`.
+
+Un canal de l'équipe reçoit aussi les événements de ses sous-équipes. Les envois passent par la file `notifications` (River) et sont journalisés ; les liens relatifs sont complétés avec le domaine de l'instance (`fqdn`, sinon `NODRA_PUBLIC_URL`).
+
+### Canaux (`/teams/{team}/notification-channels`)
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/notification-channels` | `team.read` | Configurations déchiffrées, secrets masqués (`********`) |
+| POST | `/notification-channels` | `notification.manage` | `{type, name, config, events?: [défaut], enabled?: true}` → `201` |
+| PATCH | `/notification-channels/{id}` | `notification.manage` | Champs partiels ; un secret renvoyé `********` est conservé |
+| DELETE | `/notification-channels/{id}` | `notification.manage` | `204` |
+| POST | `/notification-channels/{id}/test` | `notification.manage` | Envoi immédiat → `200 {"sent": true}` ou `502` (sans le corps de la réponse distante) |
+| GET | `/notification-deliveries?limit=100` | `team.read` | Journal des envois `[{id, channel_id, event, title, status: sent|failed, error, created_at}]` (30 jours) |
+
+`config` selon le type :
+
+| Type | Champs |
+|---|---|
+| `email` | `recipients: [adresses]` — utilise l'envoi d'e-mails de l'instance |
+| `discord` | `webhook_url`, `ping?` (mention `@here` sur les erreurs) |
+| `slack` | `webhook_url` |
+| `telegram` | `bot_token`, `chat_id`, `threads?: {événement: id_sujet}` |
+| `pushover` | `user_key`, `api_token` |
+| `webhook` | `webhook_url` — reçoit l'événement en JSON `{type, team_id, title, message, url, level, fields, at}` |
+
+### E-mail de l'instance (`/admin/mail`, administrateur de l'instance, session uniquement)
+
+| Méthode | Route | Description |
+|---|---|---|
+| GET | `/admin/mail` | `{configured, config?}` (secrets masqués) |
+| PUT | `/admin/mail` | `{provider: smtp|resend, from_address, from_name?, host, port, encryption: tls|starttls|none, username?, password?}` ou `{provider: "resend", resend_api_key, from_address, from_name?}` ; `********` conserve le secret existant |
+| DELETE | `/admin/mail` | `204` |
+| POST | `/admin/mail/test` | `{to?}` (défaut : l'administrateur) → `200 {"sent": true}` ou `502` |
+
+Utilisé pour la réinitialisation de mot de passe, les invitations, la vérification d'adresse et les canaux `email`.
