@@ -50,6 +50,8 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 
 - **Étape 11 — S3 et sauvegardes** (2026-10-30) : migration `00013_backups.sql` (s3_storages, backup_schedules, backup_executions). `internal/backup` : scripts de dump/restauration par type (identifiants lus dans le conteneur), archives de volumes, client S3 côté instance (`minio-go` : vérification du bucket, rétention, liens présignés) et côté serveur **rclone** (les images MinIO ne sont plus publiées sur Docker Hub ; configuration par variables d'environnement, fournisseur AWS ou « Other »), rétention (`Expired`), échéancier cron (`Due`), tâches serveur `backup_run`, `backup_restore`, `database_import`, envoi/lecture de fichiers par SSH (`Upload`/`Stream`). Planificateur River chaque minute (`jobs.ScheduleBackups`). API `s3.go`, `backups.go` (planifications, exécution immédiate, historique, restauration et import soumis aux approbations `resource.backup.restore`, téléchargement, suppression). Garde CSRF : corps non-JSON accepté avec `X-Requested-With`. Nouveau réglage `NODRA_SERVER_DATA_DIR` (dossier de travail sur les serveurs, `/data/nodra` par défaut). Tests : `internal/backup`, `internal/api/backups_test.go` (faux S3). **Vérifié en vrai** : PostgreSQL réel → dump envoyé sur S3 (SeaweedFS), table supprimée, restauration depuis S3 → données revenues, lien présigné téléchargeable.
 
+- **Étape 12 — Tâches planifiées** (2026-10-30) : migration `00014_scheduled_tasks.sql` ; tâche serveur `scheduled_task` (`internal/deploy/scheduled.go` : conteneur en cours de la ressource, service compose ciblé, délai maximal) ; planificateur commun `jobs.RunSchedules` (sauvegardes + tâches, chaque minute, une exécution à la fois par tâche) ; API `scheduled.go` (permission `resource.terminal`, historique via `TasksWithParam`). Tests : `internal/api/scheduled_test.go` (échec sans conteneur, exécution après un vrai déploiement sur le faux hôte, planificateur, droits par ressource).
+
 ## Comment brancher un nouveau module sur le RBAC (à suivre aux étapes suivantes)
 1. Routes sous `/teams/{team}/...` (middleware `withTeam` déjà en place).
 2. Enregistrer la portée parente dans `scopeParents` (ex. `scopeParents["project"] = func(...) { return Scope{team, project.team_id} }`) pour que `ScopeChain` fonctionne.
@@ -68,7 +70,7 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [x] 9. Bases de données — vérifiées sur un vrai Docker (étape 10) ; **reste** : SSL des bases (CA de l'instance), import de dump et sauvegardes (étape 11), démarrage automatique à la création (`instant_deploy`), SQLite, clonage avec l'environnement
 - [x] 10. Services one-click — **reste** : prévisualisations de PR (sans objet pour les services), stockages par sous-service (les volumes du compose suffisent)
 - [x] 11. S3 & sauvegardes — **reste** : alertes de sauvegarde manquante/en échec (étape 13, crochet `backup.Service.OnResult` prêt)
-- [ ] 12. Tâches planifiées
+- [x] 12. Tâches planifiées — **reste** : notification en cas d'échec (étape 13)
 - [ ] 13. Notifications
 - [ ] 14. Temps réel (WebSocket)
 - [ ] 15. Réglages d'instance
@@ -79,7 +81,7 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [ ] Socle, dashboard, serveurs, projets/ressources, logs/terminal, catalogue services, équipes, paramètres
 
 ## Prochaine action
-Étape 12 : tâches planifiées (commandes cron exécutées dans les conteneurs d'une application, d'un service ou d'une base ; historique des exécutions). Référence Coolify : `app/Models/ScheduledTask.php`, `app/Jobs/ScheduledTaskJob.php`.
+Étape 13 : notifications (e-mail SMTP/Resend, Discord, Slack, Telegram, Pushover, webhook ; abonnements par événement ; envoi réel des e-mails de réinitialisation et d'invitation via `api.Mailer` ; alertes aux approbateurs, déploiements, sauvegardes (`backup.Service.OnResult`), tâches planifiées, serveur injoignable, disque plein). Référence Coolify : `app/Notifications/*`, `app/Models/*NotificationSettings.php`.
 
 ## Notes pour la reprise
 - Le serveur de test Oracle (84.235.231.3) fait tourner l'**ancienne** version de Nodra, qui suit le même dépôt GitHub : ne pas lancer `deploy/update.sh` dessus avant que la nouvelle version ait son install/update (étape « Dockerfile + install.sh »). La clé SSH `.dev/vm_ed25519` n'existe plus en local.

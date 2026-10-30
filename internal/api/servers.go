@@ -22,6 +22,7 @@ type JobQueue interface {
 	EnqueueServerTask(ctx context.Context, t *store.ServerTask) (*store.ServerTask, error)
 	EnqueueDeployment(ctx context.Context, d *store.Deployment, timeout int) (*store.Deployment, error)
 	EnqueueBackup(ctx context.Context, b *store.BackupSchedule, by *string) (*store.ServerTask, error)
+	EnqueueScheduledTask(ctx context.Context, t *store.ScheduledTask, by *string) (*store.ServerTask, error)
 }
 
 var (

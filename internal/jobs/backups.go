@@ -9,6 +9,15 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/store"
 )
 
+// RunSchedules lance chaque minute les sauvegardes et les tâches planifiées arrivées à échéance.
+func (j *Jobs) RunSchedules(ctx context.Context, now time.Time) error {
+	errTasks := j.ScheduleTasks(ctx, now)
+	if err := j.ScheduleBackups(ctx, now); err != nil {
+		return err
+	}
+	return errTasks
+}
+
 // ScheduleBackups enfile une sauvegarde pour chaque planification arrivée à échéance.
 func (j *Jobs) ScheduleBackups(ctx context.Context, now time.Time) error {
 	list, tzs, err := j.st.EnabledBackupSchedules(ctx)

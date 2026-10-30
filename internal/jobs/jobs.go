@@ -92,7 +92,7 @@ func (w *deployWorker) Timeout(job *river.Job[DeployArgs]) time.Duration {
 
 type BackupSchedulerArgs struct{}
 
-func (BackupSchedulerArgs) Kind() string                 { return "backup_scheduler" }
+func (BackupSchedulerArgs) Kind() string                 { return "scheduler" }
 func (BackupSchedulerArgs) InsertOpts() river.InsertOpts { return river.InsertOpts{MaxAttempts: 1} }
 
 type backupSchedulerWorker struct {
@@ -101,7 +101,7 @@ type backupSchedulerWorker struct {
 }
 
 func (w *backupSchedulerWorker) Work(ctx context.Context, _ *river.Job[BackupSchedulerArgs]) error {
-	return w.j.ScheduleBackups(ctx, time.Now())
+	return w.j.RunSchedules(ctx, time.Now())
 }
 
 type MetricsArgs struct{}
@@ -208,7 +208,7 @@ func New(st *store.Store, svc *servers.Service, runner *deploy.Runner, log *slog
 			river.NewPeriodicJob(river.PeriodicInterval(5*time.Minute),
 				func() (river.JobArgs, *river.InsertOpts) { return CleanupSchedulerArgs{}, nil }, &river.PeriodicJobOpts{ID: "cleanup"}),
 			river.NewPeriodicJob(river.PeriodicInterval(time.Minute),
-				func() (river.JobArgs, *river.InsertOpts) { return BackupSchedulerArgs{}, nil }, &river.PeriodicJobOpts{ID: "backups"}),
+				func() (river.JobArgs, *river.InsertOpts) { return BackupSchedulerArgs{}, nil }, &river.PeriodicJobOpts{ID: "scheduler"}),
 			river.NewPeriodicJob(river.PeriodicInterval(time.Hour),
 				func() (river.JobArgs, *river.InsertOpts) { return MaintenanceArgs{}, nil }, &river.PeriodicJobOpts{ID: "maintenance", RunOnStart: true}),
 		}

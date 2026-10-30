@@ -425,3 +425,17 @@ Dumps de PostgreSQL (`pg_dump` format custom, ou `pg_dumpall` compressé), MySQL
 | POST | `/databases/{id}/import?filename=&database=` | `resource.backup.restore` | Corps brut (`.dump`, `.sql`, `.sql.gz`, `.archive[.gz]`, 20 Go max., en-tête `X-Requested-With` requis par cookie) envoyé en flux vers le serveur puis restauré ; soumis aux approbations |
 
 Planificateur : chaque minute, les planifications arrivées à échéance (fuseau horaire du serveur) sont lancées ; rétention locale et S3 appliquée après chaque exécution (nombre et/ou âge).
+
+## Tâches planifiées (`/teams/{team}/scheduled-tasks`)
+
+Commandes exécutées selon une expression cron (fuseau horaire du serveur) dans un conteneur en cours d'exécution d'une application, d'un service ou d'une base. Exécuter une commande dans un conteneur équivaut à un accès terminal : création, modification et exécution exigent `resource.terminal`. L'historique (sortie, statut, durée) est conservé dans les tâches serveur.
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/scheduled-tasks?resource_id=` | `resource.read` | |
+| POST | `/scheduled-tasks` | `resource.terminal` | `{resource_id, name, command, frequency, container? (service compose), timeout?: 3600 (10-86400 s), enabled?: true}` |
+| PATCH / DELETE | `/scheduled-tasks/{id}` | `resource.terminal` | |
+| POST | `/scheduled-tasks/{id}/run` | `resource.terminal` | Exécution immédiate → `202 ServerTask` ; `409` si une exécution est en cours |
+| GET | `/scheduled-tasks/{id}/executions` | `resource.logs.read` | 50 dernières exécutions (`ServerTask` avec `output`) |
+
+Si plusieurs conteneurs tournent (service, compose), `container` est obligatoire. Une exécution dépassant `timeout` est interrompue.

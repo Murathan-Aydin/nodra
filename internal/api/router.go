@@ -309,6 +309,13 @@ func (s *Server) Router() http.Handler {
 					r.Get("/backup-executions/{id}/download", s.downloadBackup)
 					r.Delete("/backup-executions/{id}", s.deleteBackupExecution)
 
+					r.Get("/scheduled-tasks", s.listScheduledTasks)
+					r.Post("/scheduled-tasks", s.createScheduledTask)
+					r.Patch("/scheduled-tasks/{id}", s.updateScheduledTask)
+					r.Delete("/scheduled-tasks/{id}", s.deleteScheduledTask)
+					r.Post("/scheduled-tasks/{id}/run", s.runScheduledTask)
+					r.Get("/scheduled-tasks/{id}/executions", s.scheduledTaskExecutions)
+
 					r.Get("/services", s.listServices)
 					r.Post("/services", s.createService)
 					r.Route("/services/{svc}", func(r chi.Router) {

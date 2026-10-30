@@ -336,6 +336,7 @@ func (r *Runner) Tasks() map[string]servers.TaskFunc {
 	for k, v := range r.ServiceTasks() {
 		out[k] = v
 	}
+	out[TaskScheduled] = r.scheduledTask()
 	return out
 }
 
