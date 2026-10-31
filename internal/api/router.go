@@ -175,6 +175,7 @@ func (s *Server) Router() http.Handler {
 					r.Get("/users", s.listAdminUsers)
 					r.Patch("/users/{user}", s.updateAdminUser)
 					r.Post("/users/{user}/logout", s.logoutAdminUser)
+					r.Delete("/users/{user}", s.deleteAdminUser)
 					r.Get("/audit", s.adminAudit)
 					r.Get("/oauth", s.listOAuthSettings)
 					r.Put("/oauth/{provider}", s.updateOAuthSettings)

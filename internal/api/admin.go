@@ -465,3 +465,60 @@ func (s *Server) startUpdate(w http.ResponseWriter, r *http.Request) {
 	s.audit(r, nil, "instance.update.started", "instance", "update", map[string]string{"version": in.Version, "from": version.Version})
 	writeJSON(w, http.StatusAccepted, task)
 }
+
+// deleteAdminUser supprime un compte : son équipe personnelle (si elle est vide) est supprimée avec lui ;
+// refus s'il est le seul propriétaire d'une équipe partagée (transfert de propriété d'abord).
+func (s *Server) deleteAdminUser(w http.ResponseWriter, r *http.Request) {
+	u, ok := s.adminTarget(w, r)
+	if !ok {
+		return
+	}
+	ctx := r.Context()
+	teams, err := s.Store.UserTeams(ctx, u.ID)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	var personal []string
+	for _, t := range teams {
+		owners, err := s.Store.OwnerIDs(ctx, t.ID)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		if len(owners) != 1 || owners[0] != u.ID {
+			continue
+		}
+		if !t.Personal {
+			writeError(w, http.StatusConflict, "seul propriétaire de l'équipe « "+t.Name+" » : transférez d'abord la propriété ou supprimez l'équipe")
+			return
+		}
+		res, err := s.Store.TeamResources(ctx, t.ID, store.ResourceFilter{})
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		svs, err := s.Store.ListServers(ctx, t.ID)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		if len(res) > 0 || len(svs) > 0 {
+			writeError(w, http.StatusConflict, "l'équipe personnelle a encore des ressources ou des serveurs : supprimez-les ou désactivez le compte")
+			return
+		}
+		personal = append(personal, t.ID)
+	}
+	for _, id := range personal {
+		if err := s.Store.DeleteTeam(ctx, id); err != nil {
+			s.internal(w, err)
+			return
+		}
+	}
+	if err := s.Store.DeleteUser(ctx, u.ID); err != nil {
+		s.internal(w, err)
+		return
+	}
+	s.audit(r, nil, "instance.user.deleted", "user", u.ID, map[string]string{"email": u.Email})
+	w.WriteHeader(http.StatusNoContent)
+}

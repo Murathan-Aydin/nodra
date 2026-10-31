@@ -204,3 +204,12 @@ func (s *Store) DeleteUserSessions(ctx context.Context, id string) error {
 	_, err := s.Pool.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, id)
 	return err
 }
+
+// DeleteUser supprime un compte (sessions, jetons, adhésions et attributions en cascade ; l'audit garde l'e-mail).
+func (s *Store) DeleteUser(ctx context.Context, id string) error {
+	tag, err := s.Pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+	if err == nil && tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return err
+}

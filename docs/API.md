@@ -546,6 +546,7 @@ Les jetons API sont refusés sur ces routes (`403`).
 | GET | `/admin/users?search=&limit=200` | `[User + {two_factor_enabled, teams, last_seen_at, disabled_at}]`, plus récents d'abord |
 | PATCH | `/admin/users/{id}` | `{is_instance_admin?, disabled?}` → `User` ; `409` sur son propre compte. Désactiver révoque les sessions, refuse la connexion (`403`) et les jetons (`401`). |
 | POST | `/admin/users/{id}/logout` | Révoque toutes les sessions → `204` |
+| DELETE | `/admin/users/{id}` | Supprime le compte et son équipe personnelle → `204` ; `409` sur soi-même, si l'utilisateur est le seul propriétaire d'une équipe partagée (transfert d'abord) ou si son équipe personnelle a encore des ressources ou des serveurs. L'audit conserve son e-mail. |
 | GET | `/admin/oauth` | Fournisseurs `github`, `gitlab`, `google`, `microsoft`, `discord`, `oidc` : `[{provider, name, enabled, client_id, client_secret: "********"\|"", base_url, tenant, redirect_uri}]` (`redirect_uri` à déclarer chez le fournisseur) |
 | PUT | `/admin/oauth/{provider}` | `{enabled, client_id, client_secret ("********" conserve), base_url (GitHub Enterprise, GitLab auto-hébergé, émetteur OIDC : obligatoire pour oidc), tenant (Microsoft, common par défaut)}` → `204` |
 | GET | `/admin/audit?scope=instance\|all&action=&actor=&target_type=&target_id=&since=&until=&before=&limit=` | Journal sans équipe (`auth.*`, `instance.*`) par défaut, toute l'instance avec `scope=all` ; `{events, next_before}` |

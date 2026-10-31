@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -141,4 +142,25 @@ func TestIPAllowed(t *testing.T) {
 			t.Errorf("ipAllowed(%s) = %v", ip, got)
 		}
 	}
+}
+
+func TestDeleteUser(t *testing.T) {
+	e := newTestEnv(t)
+	alice, aliceID := register(t, e, "alice@example.com")
+	_, bobID := register(t, e, "bob@example.com")
+	carol, carolID := register(t, e, "carol@example.com")
+	expect(t, "soi-même", alice.do("DELETE", "/admin/users/"+aliceID, nil, nil), 409)
+	expect(t, "suppression", alice.do("DELETE", "/admin/users/"+bobID, nil, nil), 204)
+	expect(t, "connexion impossible", newClient(t, e.srv).do("POST", "/auth/login", map[string]string{"email": "bob@example.com", "password": "motdepasse1"}, nil), 401)
+	expect(t, "déjà supprimé", alice.do("DELETE", "/admin/users/"+bobID, nil, nil), 404)
+	var audit struct{ Events []store.AuditEvent }
+	expect(t, "audit", alice.do("GET", "/admin/audit?action=instance.user.deleted", nil, &audit), 200)
+	if len(audit.Events) != 1 || !strings.Contains(string(audit.Events[0].Metadata), "bob@example.com") {
+		t.Fatalf("audit : %+v", audit.Events)
+	}
+	var acme store.Team
+	expect(t, "équipe partagée", carol.do("POST", "/teams", map[string]string{"name": "Acme"}, &acme), 201)
+	expect(t, "seule propriétaire", alice.do("DELETE", "/admin/users/"+carolID, nil, nil), 409)
+	expect(t, "suppression de l'équipe", carol.do("DELETE", "/teams/"+acme.ID, nil, nil), 204)
+	expect(t, "suppression de carol", alice.do("DELETE", "/admin/users/"+carolID, nil, nil), 204)
 }
