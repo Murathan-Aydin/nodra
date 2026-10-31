@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import { tasksQuery } from "@/features/servers/queries"
 
 export const Route = createFileRoute("/t/$team/servers/$server/tasks")({
-  validateSearch: (s: Record<string, unknown>) => ({ task: typeof s.task === "string" ? s.task : undefined }),
+  validateSearch: (s: Record<string, unknown>): { task?: string } => (typeof s.task === "string" ? { task: s.task } : {}),
   component: ServerTasks,
 })
 

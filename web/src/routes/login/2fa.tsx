@@ -12,7 +12,7 @@ import { meQuery } from "@/lib/queries"
 import { safeRedirect } from "@/lib/utils"
 
 export const Route = createFileRoute("/login/2fa")({
-  validateSearch: (s: Record<string, unknown>) => ({ redirect: typeof s.redirect === "string" ? s.redirect : undefined }),
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => (typeof s.redirect === "string" ? { redirect: s.redirect } : {}),
   component: TwoFactorPage,
 })
 

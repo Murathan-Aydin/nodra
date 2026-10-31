@@ -13,7 +13,7 @@ import { safeRedirect } from "@/lib/utils"
 import { OAuthButtons } from "@/features/auth/oauth-buttons"
 
 export const Route = createFileRoute("/register")({
-  validateSearch: (s: Record<string, unknown>) => ({ redirect: typeof s.redirect === "string" ? s.redirect : undefined }),
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => (typeof s.redirect === "string" ? { redirect: s.redirect } : {}),
   component: RegisterPage,
 })
 

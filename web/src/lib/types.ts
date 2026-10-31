@@ -286,3 +286,32 @@ export interface Tag {
   color: string
   created_at: string
 }
+
+export interface GitSource {
+  id: string
+  team_id: string
+  type: "github" | "gitlab" | "gitea"
+  name: string
+  html_url: string
+  api_url: string
+  organization: string
+  is_public: boolean
+  app_id: number
+  app_slug: string
+  client_id: string
+  installation_id: number
+  configured: boolean
+  installed: boolean
+  has_private_key: boolean
+  has_webhook_secret: boolean
+  has_access_token: boolean
+  created_at: string
+}
+
+export interface Repo {
+  full_name: string
+  name: string
+  private: boolean
+  default_branch: string
+  html_url: string
+}

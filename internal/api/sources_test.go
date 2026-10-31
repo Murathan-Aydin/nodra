@@ -105,7 +105,7 @@ func TestSources(t *testing.T) {
 	req, _ = http.NewRequest("GET", alice.base+"/sources/github/install?installation_id=77&setup_action=install&state="+url.QueryEscape(state2), nil)
 	resp, _ = alice.http.Do(req)
 	resp.Body.Close()
-	if resp.StatusCode != 302 || resp.Header.Get("Location") != "/sources/"+sid+"?installed=1" {
+	if resp.StatusCode != 302 || resp.Header.Get("Location") != "/t/"+acme.ID+"/sources/"+sid+"?installed=1" {
 		t.Fatalf("installation : %d %s", resp.StatusCode, resp.Header.Get("Location"))
 	}
 	var src map[string]any

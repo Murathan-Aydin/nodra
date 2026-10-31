@@ -267,7 +267,7 @@ Types : **GitHub App** (github.com ou GitHub Enterprise Server), **GitLab** (git
 
 1. `POST /sources/github/manifest` → le navigateur poste le manifeste sur GitHub (nom `nodra-<nom>-NNNN`, permissions contents/metadata/emails/administration en lecture, pull requests en écriture, événements push et pull_request, webhook `<instance>/webhooks/github`).
 2. GitHub redirige vers `GET /api/v1/sources/github/callback?code=&state=` (session requise, `source.manage`) : Nodra récupère les identifiants de l'App et redirige vers la page d'installation.
-3. Après installation, GitHub redirige vers `GET /api/v1/sources/github/install?installation_id=&state=` → redirection vers `/sources/{id}?installed=1`.
+3. Après installation, GitHub redirige vers `GET /api/v1/sources/github/install?installation_id=&state=` → redirection vers la page du front `/t/{team}/sources/{id}?installed=1`.
 
 L'URL publique de l'instance vient du réglage d'instance (FQDN), sinon de la requête.
 

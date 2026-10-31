@@ -439,7 +439,7 @@ func (s *Server) githubInstall(w http.ResponseWriter, r *http.Request) {
 	}
 	git.ForgetToken(g.ID)
 	s.audit(r2, &g.TeamID, "source.github_app.installed", "git_source", g.ID, map[string]any{"installation_id": id})
-	http.Redirect(w, r, "/sources/"+g.ID+"?installed=1", http.StatusFound)
+	http.Redirect(w, r, "/t/"+g.TeamID+"/sources/"+g.ID+"?installed=1", http.StatusFound)
 }
 
 // --- Événements Git ---

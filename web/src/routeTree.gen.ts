@@ -29,6 +29,7 @@ import { Route as TTeamRegistriesIndexRouteImport } from './routes/t/$team/regis
 import { Route as TTeamServersIndexRouteImport } from './routes/t/$team/servers/index'
 import { Route as TTeamServersServerRouteRouteImport } from './routes/t/$team/servers/$server/route'
 import { Route as TTeamSourcesIndexRouteImport } from './routes/t/$team/sources/index'
+import { Route as TTeamSourcesSourceRouteImport } from './routes/t/$team/sources/$source'
 import { Route as TTeamStoragesIndexRouteImport } from './routes/t/$team/storages/index'
 import { Route as TTeamTeamIndexRouteImport } from './routes/t/$team/team/index'
 import { Route as TTeamApplicationsAppIndexRouteImport } from './routes/t/$team/applications/$app/index'
@@ -143,6 +144,11 @@ const TTeamSourcesIndexRoute = TTeamSourcesIndexRouteImport.update({
   path: '/sources/',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
+const TTeamSourcesSourceRoute = TTeamSourcesSourceRouteImport.update({
+  id: '/sources/$source',
+  path: '/sources/$source',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
 const TTeamStoragesIndexRoute = TTeamStoragesIndexRouteImport.update({
   id: '/storages/',
   path: '/storages/',
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/login/': typeof LoginIndexRoute
   '/t/$team/': typeof TTeamIndexRoute
   '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
+  '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/account/': typeof TTeamAccountIndexRoute
   '/t/$team/admin/': typeof TTeamAdminIndexRoute
   '/t/$team/approvals/': typeof TTeamApprovalsIndexRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/login/2fa': typeof Login2faRoute
   '/login': typeof LoginIndexRoute
   '/t/$team': typeof TTeamIndexRoute
+  '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/account': typeof TTeamAccountIndexRoute
   '/t/$team/admin': typeof TTeamAdminIndexRoute
   '/t/$team/approvals': typeof TTeamApprovalsIndexRoute
@@ -296,6 +304,7 @@ export interface FileRoutesById {
   '/login/': typeof LoginIndexRoute
   '/t/$team/': typeof TTeamIndexRoute
   '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
+  '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/account/': typeof TTeamAccountIndexRoute
   '/t/$team/admin/': typeof TTeamAdminIndexRoute
   '/t/$team/approvals/': typeof TTeamApprovalsIndexRoute
@@ -333,6 +342,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/t/$team/'
     | '/t/$team/servers/$server'
+    | '/t/$team/sources/$source'
     | '/t/$team/account/'
     | '/t/$team/admin/'
     | '/t/$team/approvals/'
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/login/2fa'
     | '/login'
     | '/t/$team'
+    | '/t/$team/sources/$source'
     | '/t/$team/account'
     | '/t/$team/admin'
     | '/t/$team/approvals'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/t/$team/'
     | '/t/$team/servers/$server'
+    | '/t/$team/sources/$source'
     | '/t/$team/account/'
     | '/t/$team/admin/'
     | '/t/$team/approvals/'
@@ -579,6 +591,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamSourcesIndexRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
+    '/t/$team/sources/$source': {
+      id: '/t/$team/sources/$source'
+      path: '/sources/$source'
+      fullPath: '/t/$team/sources/$source'
+      preLoaderRoute: typeof TTeamSourcesSourceRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
     '/t/$team/storages/': {
       id: '/t/$team/storages/'
       path: '/storages'
@@ -698,6 +717,7 @@ const TTeamServersServerRouteRouteWithChildren =
 interface TTeamRouteRouteChildren {
   TTeamIndexRoute: typeof TTeamIndexRoute
   TTeamServersServerRouteRoute: typeof TTeamServersServerRouteRouteWithChildren
+  TTeamSourcesSourceRoute: typeof TTeamSourcesSourceRoute
   TTeamAccountIndexRoute: typeof TTeamAccountIndexRoute
   TTeamAdminIndexRoute: typeof TTeamAdminIndexRoute
   TTeamApprovalsIndexRoute: typeof TTeamApprovalsIndexRoute
@@ -720,6 +740,7 @@ interface TTeamRouteRouteChildren {
 const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamIndexRoute: TTeamIndexRoute,
   TTeamServersServerRouteRoute: TTeamServersServerRouteRouteWithChildren,
+  TTeamSourcesSourceRoute: TTeamSourcesSourceRoute,
   TTeamAccountIndexRoute: TTeamAccountIndexRoute,
   TTeamAdminIndexRoute: TTeamAdminIndexRoute,
   TTeamApprovalsIndexRoute: TTeamApprovalsIndexRoute,
