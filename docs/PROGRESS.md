@@ -91,10 +91,10 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [x] Dockerfile + install.sh + mise à jour + serveur localhost + images ghcr.io
 
 ## Reste à faire (front React, phase 2)
-- [ ] Socle, dashboard, serveurs, projets/ressources, logs/terminal, catalogue services, équipes, paramètres
+- [ ] Front React : **réalisé par l'utilisateur**, d'après le kanban [KANBAN_FRONT.md](KANBAN_FRONT.md) (14 lots, cartes avec routes API et critères de fin). Ne pas coder le front sans demande explicite ; quand l'utilisateur demande de reprendre, partir des cartes « À faire » / « En cours » du kanban.
 
 ## Prochaine action
-Restes du backend, par ordre d'intérêt (annulation des tâches, OAuth, registres, clonage, suppression d'équipe, démarrage immédiat et TLS des bases, previews Compose, commentaires GitLab/Gitea, log drains et serveur MCP faits) : plus aucun reste prioritaire (restes mineurs assumés : SQLite, `/migrate` couvert par `/clone` vers une autre destination, certificats wildcard DNS-01 prévus en v1.1). Ensuite, **ne pas coder le front** : l'utilisateur fera la phase 2 lui-même. Quand la phase 1 est terminée, lui livrer un **kanban détaillé des tâches du front** (fichier `docs/KANBAN_FRONT.md` : colonnes À faire / En cours / Fait, tâches fines par écran avec les routes API utilisées, critères de fin) ; il demandera plus tard de reprendre certaines parties.
+**Phase 1 (backend) terminée** (2026-10-31). Restes mineurs assumés : SQLite, `/migrate` (couvert par `/clone` vers une autre destination), certificats wildcard DNS-01 (v1.1). Kanban du front livré dans `docs/KANBAN_FRONT.md`. Attendre les demandes de l'utilisateur (reprise d'une partie du front, essai de `install/install.sh` sur un vrai serveur, première release `v0.1.0`).
 
 ## Notes pour la reprise
 - Le serveur de test Oracle (84.235.231.3) fait tourner l'**ancienne** version de Nodra, qui suit le même dépôt GitHub : ne pas lancer son ancien `deploy/update.sh`. Le nouvel installateur existe (`install/install.sh`) mais n'a pas encore été essayé sur un vrai serveur : le faire avec l'accord de l'utilisateur (réinstallation propre, l'ancienne version et ses données seront remplacées).
