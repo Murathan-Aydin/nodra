@@ -31,11 +31,17 @@ import { Route as TTeamServersServerRouteRouteImport } from './routes/t/$team/se
 import { Route as TTeamSourcesIndexRouteImport } from './routes/t/$team/sources/index'
 import { Route as TTeamStoragesIndexRouteImport } from './routes/t/$team/storages/index'
 import { Route as TTeamTeamIndexRouteImport } from './routes/t/$team/team/index'
+import { Route as TTeamApplicationsAppIndexRouteImport } from './routes/t/$team/applications/$app/index'
+import { Route as TTeamDatabasesDbIndexRouteImport } from './routes/t/$team/databases/$db/index'
+import { Route as TTeamProjectsProjectIndexRouteImport } from './routes/t/$team/projects/$project/index'
 import { Route as TTeamServersServerIndexRouteImport } from './routes/t/$team/servers/$server/index'
 import { Route as TTeamServersServerProxyRouteImport } from './routes/t/$team/servers/$server/proxy'
 import { Route as TTeamServersServerSettingsRouteImport } from './routes/t/$team/servers/$server/settings'
 import { Route as TTeamServersServerTasksRouteImport } from './routes/t/$team/servers/$server/tasks'
 import { Route as TTeamServersServerTerminalRouteImport } from './routes/t/$team/servers/$server/terminal'
+import { Route as TTeamServicesSvcIndexRouteImport } from './routes/t/$team/services/$svc/index'
+import { Route as TTeamProjectsProjectEnvIndexRouteImport } from './routes/t/$team/projects/$project/$env/index'
+import { Route as TTeamProjectsProjectEnvNewRouteImport } from './routes/t/$team/projects/$project/$env/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -147,6 +153,23 @@ const TTeamTeamIndexRoute = TTeamTeamIndexRouteImport.update({
   path: '/team/',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
+const TTeamApplicationsAppIndexRoute =
+  TTeamApplicationsAppIndexRouteImport.update({
+    id: '/applications/$app/',
+    path: '/applications/$app/',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamDatabasesDbIndexRoute = TTeamDatabasesDbIndexRouteImport.update({
+  id: '/databases/$db/',
+  path: '/databases/$db/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamProjectsProjectIndexRoute =
+  TTeamProjectsProjectIndexRouteImport.update({
+    id: '/projects/$project/',
+    path: '/projects/$project/',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
 const TTeamServersServerIndexRoute = TTeamServersServerIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -173,6 +196,23 @@ const TTeamServersServerTerminalRoute =
     id: '/terminal',
     path: '/terminal',
     getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServicesSvcIndexRoute = TTeamServicesSvcIndexRouteImport.update({
+  id: '/services/$svc/',
+  path: '/services/$svc/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamProjectsProjectEnvIndexRoute =
+  TTeamProjectsProjectEnvIndexRouteImport.update({
+    id: '/projects/$project/$env/',
+    path: '/projects/$project/$env/',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamProjectsProjectEnvNewRoute =
+  TTeamProjectsProjectEnvNewRouteImport.update({
+    id: '/projects/$project/$env/new',
+    path: '/projects/$project/$env/new',
+    getParentRoute: () => TTeamRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -202,7 +242,13 @@ export interface FileRoutesByFullPath {
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
   '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/applications/$app/': typeof TTeamApplicationsAppIndexRoute
+  '/t/$team/databases/$db/': typeof TTeamDatabasesDbIndexRoute
+  '/t/$team/projects/$project/': typeof TTeamProjectsProjectIndexRoute
   '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
+  '/t/$team/services/$svc/': typeof TTeamServicesSvcIndexRoute
+  '/t/$team/projects/$project/$env/new': typeof TTeamProjectsProjectEnvNewRoute
+  '/t/$team/projects/$project/$env/': typeof TTeamProjectsProjectEnvIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -229,7 +275,13 @@ export interface FileRoutesByTo {
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
   '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/applications/$app': typeof TTeamApplicationsAppIndexRoute
+  '/t/$team/databases/$db': typeof TTeamDatabasesDbIndexRoute
+  '/t/$team/projects/$project': typeof TTeamProjectsProjectIndexRoute
   '/t/$team/servers/$server': typeof TTeamServersServerIndexRoute
+  '/t/$team/services/$svc': typeof TTeamServicesSvcIndexRoute
+  '/t/$team/projects/$project/$env/new': typeof TTeamProjectsProjectEnvNewRoute
+  '/t/$team/projects/$project/$env': typeof TTeamProjectsProjectEnvIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -259,7 +311,13 @@ export interface FileRoutesById {
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
   '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/applications/$app/': typeof TTeamApplicationsAppIndexRoute
+  '/t/$team/databases/$db/': typeof TTeamDatabasesDbIndexRoute
+  '/t/$team/projects/$project/': typeof TTeamProjectsProjectIndexRoute
   '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
+  '/t/$team/services/$svc/': typeof TTeamServicesSvcIndexRoute
+  '/t/$team/projects/$project/$env/new': typeof TTeamProjectsProjectEnvNewRoute
+  '/t/$team/projects/$project/$env/': typeof TTeamProjectsProjectEnvIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -290,7 +348,13 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
     | '/t/$team/servers/$server/terminal'
+    | '/t/$team/applications/$app/'
+    | '/t/$team/databases/$db/'
+    | '/t/$team/projects/$project/'
     | '/t/$team/servers/$server/'
+    | '/t/$team/services/$svc/'
+    | '/t/$team/projects/$project/$env/new'
+    | '/t/$team/projects/$project/$env/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -317,7 +381,13 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
     | '/t/$team/servers/$server/terminal'
+    | '/t/$team/applications/$app'
+    | '/t/$team/databases/$db'
+    | '/t/$team/projects/$project'
     | '/t/$team/servers/$server'
+    | '/t/$team/services/$svc'
+    | '/t/$team/projects/$project/$env/new'
+    | '/t/$team/projects/$project/$env'
   id:
     | '__root__'
     | '/'
@@ -346,7 +416,13 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
     | '/t/$team/servers/$server/terminal'
+    | '/t/$team/applications/$app/'
+    | '/t/$team/databases/$db/'
+    | '/t/$team/projects/$project/'
     | '/t/$team/servers/$server/'
+    | '/t/$team/services/$svc/'
+    | '/t/$team/projects/$project/$env/new'
+    | '/t/$team/projects/$project/$env/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -517,6 +593,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamTeamIndexRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
+    '/t/$team/applications/$app/': {
+      id: '/t/$team/applications/$app/'
+      path: '/applications/$app'
+      fullPath: '/t/$team/applications/$app/'
+      preLoaderRoute: typeof TTeamApplicationsAppIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/databases/$db/': {
+      id: '/t/$team/databases/$db/'
+      path: '/databases/$db'
+      fullPath: '/t/$team/databases/$db/'
+      preLoaderRoute: typeof TTeamDatabasesDbIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/projects/$project/': {
+      id: '/t/$team/projects/$project/'
+      path: '/projects/$project'
+      fullPath: '/t/$team/projects/$project/'
+      preLoaderRoute: typeof TTeamProjectsProjectIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
     '/t/$team/servers/$server/': {
       id: '/t/$team/servers/$server/'
       path: '/'
@@ -551,6 +648,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/t/$team/servers/$server/terminal'
       preLoaderRoute: typeof TTeamServersServerTerminalRouteImport
       parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/services/$svc/': {
+      id: '/t/$team/services/$svc/'
+      path: '/services/$svc'
+      fullPath: '/t/$team/services/$svc/'
+      preLoaderRoute: typeof TTeamServicesSvcIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/projects/$project/$env/': {
+      id: '/t/$team/projects/$project/$env/'
+      path: '/projects/$project/$env'
+      fullPath: '/t/$team/projects/$project/$env/'
+      preLoaderRoute: typeof TTeamProjectsProjectEnvIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/projects/$project/$env/new': {
+      id: '/t/$team/projects/$project/$env/new'
+      path: '/projects/$project/$env/new'
+      fullPath: '/t/$team/projects/$project/$env/new'
+      preLoaderRoute: typeof TTeamProjectsProjectEnvNewRouteImport
+      parentRoute: typeof TTeamRouteRoute
     }
   }
 }
@@ -591,6 +709,12 @@ interface TTeamRouteRouteChildren {
   TTeamSourcesIndexRoute: typeof TTeamSourcesIndexRoute
   TTeamStoragesIndexRoute: typeof TTeamStoragesIndexRoute
   TTeamTeamIndexRoute: typeof TTeamTeamIndexRoute
+  TTeamApplicationsAppIndexRoute: typeof TTeamApplicationsAppIndexRoute
+  TTeamDatabasesDbIndexRoute: typeof TTeamDatabasesDbIndexRoute
+  TTeamProjectsProjectIndexRoute: typeof TTeamProjectsProjectIndexRoute
+  TTeamServicesSvcIndexRoute: typeof TTeamServicesSvcIndexRoute
+  TTeamProjectsProjectEnvNewRoute: typeof TTeamProjectsProjectEnvNewRoute
+  TTeamProjectsProjectEnvIndexRoute: typeof TTeamProjectsProjectEnvIndexRoute
 }
 
 const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
@@ -607,6 +731,12 @@ const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamSourcesIndexRoute: TTeamSourcesIndexRoute,
   TTeamStoragesIndexRoute: TTeamStoragesIndexRoute,
   TTeamTeamIndexRoute: TTeamTeamIndexRoute,
+  TTeamApplicationsAppIndexRoute: TTeamApplicationsAppIndexRoute,
+  TTeamDatabasesDbIndexRoute: TTeamDatabasesDbIndexRoute,
+  TTeamProjectsProjectIndexRoute: TTeamProjectsProjectIndexRoute,
+  TTeamServicesSvcIndexRoute: TTeamServicesSvcIndexRoute,
+  TTeamProjectsProjectEnvNewRoute: TTeamProjectsProjectEnvNewRoute,
+  TTeamProjectsProjectEnvIndexRoute: TTeamProjectsProjectEnvIndexRoute,
 }
 
 const TTeamRouteRouteWithChildren = TTeamRouteRoute._addFileChildren(

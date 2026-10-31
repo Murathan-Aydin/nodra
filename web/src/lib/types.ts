@@ -249,3 +249,40 @@ export interface Certificate {
   certificate: string
   expires_at: string
 }
+
+export interface Project {
+  id: string
+  team_id: string
+  name: string
+  description: string
+  created_at: string
+}
+
+export interface Environment {
+  id: string
+  project_id: string
+  name: string
+  description: string
+  created_at: string
+}
+
+export interface SharedVariable {
+  id: string
+  team_id: string
+  scope: Scope
+  key: string
+  value: string
+  comment: string
+  is_secret: boolean
+  is_multiline: boolean
+  is_literal: boolean
+  updated_at: string
+}
+
+export interface Tag {
+  id: string
+  team_id: string
+  name: string
+  color: string
+  created_at: string
+}
