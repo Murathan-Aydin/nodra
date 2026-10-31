@@ -8,7 +8,6 @@ Le backend (phase 1) est terminé : toutes les routes sont décrites dans [API.m
 
 ## 🟦 À faire
 
-**Lot 2 — Compte** : F2-01 · F2-02 · F2-03 · F2-04 · F2-05
 **Lot 3 — Équipes et accès** : F3-02 · F3-03 · F3-04 · F3-05 · F3-06 · F3-07 · F3-08
 **Lot 4 — Tableau de bord** : F4-02
 **Lot 11 — Intégrations d'équipe** : F11-01 · F11-02 · F11-03
@@ -23,6 +22,7 @@ _(rien)_
 
 **Lot 0 — Socle** : F0-01 · F0-02 (composants de base, sans page catalogue) · F0-03 · F0-04 · F0-05 · F0-06 · F0-07
 **Lot 1 — Authentification** : F1-01 · F1-02 · F1-03 · F1-04 · F1-05 · F1-06
+**Lot 2 — Compte** : F2-01 · F2-02 · F2-03 · F2-04 · F2-05
 **Lot 3** : F3-01 (sélecteur d'équipe et création)
 **Lot 4** : F4-01 (tableau de bord)
 **Lot 5 — Serveurs** : F5-01 · F5-02 · F5-03 · F5-04 · F5-05 · F5-06 · F5-07 · F5-08 · F5-09 · F5-10

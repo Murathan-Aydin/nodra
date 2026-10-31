@@ -608,3 +608,30 @@ export interface ServiceApp {
   url_var: string
   exclude_from_status: boolean
 }
+
+export interface APIToken {
+  id: string
+  team_id: string | null
+  name: string
+  scopes: string[]
+  expires_at: string | null
+  last_used_at: string | null
+  created_at: string
+}
+
+export interface Identity {
+  provider: string
+  subject: string
+  email: string
+  created_at: string
+}
+
+export interface UserSession {
+  id: string
+  ip: string
+  user_agent: string
+  created_at: string
+  last_seen_at: string
+  expires_at: string
+  current: boolean
+}
