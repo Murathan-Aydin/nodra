@@ -570,3 +570,41 @@ export interface BackupExecution {
   created_at: string
   finished_at: string | null
 }
+
+export interface ServiceTemplate {
+  slug: string
+  name: string
+  slogan: string
+  documentation: string
+  category: string
+  tags: string[] | null
+  logo: string
+  port: string
+  compose?: string
+}
+
+export interface Service {
+  id: string
+  team_id: string
+  environment_id: string
+  destination_id: string
+  name: string
+  description: string
+  template: string
+  docker_compose_raw: string
+  status: string
+  log_drain_enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ServiceApp {
+  id: string
+  service_id: string
+  name: string
+  image: string
+  domains: string[]
+  port: string
+  url_var: string
+  exclude_from_status: boolean
+}

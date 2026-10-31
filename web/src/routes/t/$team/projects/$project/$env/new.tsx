@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { ComingSoon } from "@/components/coming-soon"
 import { PageHeader } from "@/components/page-header"
 import { CreateApplication } from "@/features/applications/create-app"
 import { CreateDatabase } from "@/features/databases/create-db"
+import { CreateService } from "@/features/services/create-service"
 
 type ResourceType = "application" | "database" | "service"
 
@@ -30,5 +30,10 @@ function NewResource() {
         <CreateDatabase team={team} environment={env} />
       </>
     )
-  return <ComingSoon title="Nouvelle ressource" card="F10-02" />
+  return (
+    <>
+      <PageHeader title="Nouveau service" description="Plus de 340 services prêts à l'emploi, ou votre propre docker-compose." />
+      <CreateService team={team} environment={env} />
+    </>
+  )
 }

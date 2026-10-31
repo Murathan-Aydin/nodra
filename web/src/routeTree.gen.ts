@@ -30,6 +30,7 @@ import { Route as TTeamProjectsIndexRouteImport } from './routes/t/$team/project
 import { Route as TTeamRegistriesIndexRouteImport } from './routes/t/$team/registries/index'
 import { Route as TTeamServersIndexRouteImport } from './routes/t/$team/servers/index'
 import { Route as TTeamServersServerRouteRouteImport } from './routes/t/$team/servers/$server/route'
+import { Route as TTeamServicesSvcRouteRouteImport } from './routes/t/$team/services/$svc/route'
 import { Route as TTeamSourcesIndexRouteImport } from './routes/t/$team/sources/index'
 import { Route as TTeamSourcesSourceRouteImport } from './routes/t/$team/sources/$source'
 import { Route as TTeamStoragesIndexRouteImport } from './routes/t/$team/storages/index'
@@ -60,6 +61,13 @@ import { Route as TTeamServersServerSettingsRouteImport } from './routes/t/$team
 import { Route as TTeamServersServerTasksRouteImport } from './routes/t/$team/servers/$server/tasks'
 import { Route as TTeamServersServerTerminalRouteImport } from './routes/t/$team/servers/$server/terminal'
 import { Route as TTeamServicesSvcIndexRouteImport } from './routes/t/$team/services/$svc/index'
+import { Route as TTeamServicesSvcAdvancedRouteImport } from './routes/t/$team/services/$svc/advanced'
+import { Route as TTeamServicesSvcBackupsRouteImport } from './routes/t/$team/services/$svc/backups'
+import { Route as TTeamServicesSvcEnvsRouteImport } from './routes/t/$team/services/$svc/envs'
+import { Route as TTeamServicesSvcHistoryRouteImport } from './routes/t/$team/services/$svc/history'
+import { Route as TTeamServicesSvcLogsRouteImport } from './routes/t/$team/services/$svc/logs'
+import { Route as TTeamServicesSvcTasksRouteImport } from './routes/t/$team/services/$svc/tasks'
+import { Route as TTeamServicesSvcTerminalRouteImport } from './routes/t/$team/services/$svc/terminal'
 import { Route as TTeamProjectsProjectEnvIndexRouteImport } from './routes/t/$team/projects/$project/$env/index'
 import { Route as TTeamProjectsProjectEnvNewRouteImport } from './routes/t/$team/projects/$project/$env/new'
 
@@ -167,6 +175,11 @@ const TTeamServersIndexRoute = TTeamServersIndexRouteImport.update({
 const TTeamServersServerRouteRoute = TTeamServersServerRouteRouteImport.update({
   id: '/servers/$server',
   path: '/servers/$server',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamServicesSvcRouteRoute = TTeamServicesSvcRouteRouteImport.update({
+  id: '/services/$svc',
+  path: '/services/$svc',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
 const TTeamSourcesIndexRoute = TTeamSourcesIndexRouteImport.update({
@@ -331,10 +344,47 @@ const TTeamServersServerTerminalRoute =
     getParentRoute: () => TTeamServersServerRouteRoute,
   } as any)
 const TTeamServicesSvcIndexRoute = TTeamServicesSvcIndexRouteImport.update({
-  id: '/services/$svc/',
-  path: '/services/$svc/',
-  getParentRoute: () => TTeamRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => TTeamServicesSvcRouteRoute,
 } as any)
+const TTeamServicesSvcAdvancedRoute =
+  TTeamServicesSvcAdvancedRouteImport.update({
+    id: '/advanced',
+    path: '/advanced',
+    getParentRoute: () => TTeamServicesSvcRouteRoute,
+  } as any)
+const TTeamServicesSvcBackupsRoute = TTeamServicesSvcBackupsRouteImport.update({
+  id: '/backups',
+  path: '/backups',
+  getParentRoute: () => TTeamServicesSvcRouteRoute,
+} as any)
+const TTeamServicesSvcEnvsRoute = TTeamServicesSvcEnvsRouteImport.update({
+  id: '/envs',
+  path: '/envs',
+  getParentRoute: () => TTeamServicesSvcRouteRoute,
+} as any)
+const TTeamServicesSvcHistoryRoute = TTeamServicesSvcHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => TTeamServicesSvcRouteRoute,
+} as any)
+const TTeamServicesSvcLogsRoute = TTeamServicesSvcLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => TTeamServicesSvcRouteRoute,
+} as any)
+const TTeamServicesSvcTasksRoute = TTeamServicesSvcTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => TTeamServicesSvcRouteRoute,
+} as any)
+const TTeamServicesSvcTerminalRoute =
+  TTeamServicesSvcTerminalRouteImport.update({
+    id: '/terminal',
+    path: '/terminal',
+    getParentRoute: () => TTeamServicesSvcRouteRoute,
+  } as any)
 const TTeamProjectsProjectEnvIndexRoute =
   TTeamProjectsProjectEnvIndexRouteImport.update({
     id: '/projects/$project/$env/',
@@ -362,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/applications/$app': typeof TTeamApplicationsAppRouteRouteWithChildren
   '/t/$team/databases/$db': typeof TTeamDatabasesDbRouteRouteWithChildren
   '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
+  '/t/$team/services/$svc': typeof TTeamServicesSvcRouteRouteWithChildren
   '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/account/': typeof TTeamAccountIndexRoute
   '/t/$team/admin/': typeof TTeamAdminIndexRoute
@@ -395,6 +446,13 @@ export interface FileRoutesByFullPath {
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
   '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/services/$svc/advanced': typeof TTeamServicesSvcAdvancedRoute
+  '/t/$team/services/$svc/backups': typeof TTeamServicesSvcBackupsRoute
+  '/t/$team/services/$svc/envs': typeof TTeamServicesSvcEnvsRoute
+  '/t/$team/services/$svc/history': typeof TTeamServicesSvcHistoryRoute
+  '/t/$team/services/$svc/logs': typeof TTeamServicesSvcLogsRoute
+  '/t/$team/services/$svc/tasks': typeof TTeamServicesSvcTasksRoute
+  '/t/$team/services/$svc/terminal': typeof TTeamServicesSvcTerminalRoute
   '/t/$team/applications/$app/': typeof TTeamApplicationsAppIndexRoute
   '/t/$team/databases/$db/': typeof TTeamDatabasesDbIndexRoute
   '/t/$team/projects/$project/': typeof TTeamProjectsProjectIndexRoute
@@ -446,6 +504,13 @@ export interface FileRoutesByTo {
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
   '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/services/$svc/advanced': typeof TTeamServicesSvcAdvancedRoute
+  '/t/$team/services/$svc/backups': typeof TTeamServicesSvcBackupsRoute
+  '/t/$team/services/$svc/envs': typeof TTeamServicesSvcEnvsRoute
+  '/t/$team/services/$svc/history': typeof TTeamServicesSvcHistoryRoute
+  '/t/$team/services/$svc/logs': typeof TTeamServicesSvcLogsRoute
+  '/t/$team/services/$svc/tasks': typeof TTeamServicesSvcTasksRoute
+  '/t/$team/services/$svc/terminal': typeof TTeamServicesSvcTerminalRoute
   '/t/$team/applications/$app': typeof TTeamApplicationsAppIndexRoute
   '/t/$team/databases/$db': typeof TTeamDatabasesDbIndexRoute
   '/t/$team/projects/$project': typeof TTeamProjectsProjectIndexRoute
@@ -469,6 +534,7 @@ export interface FileRoutesById {
   '/t/$team/applications/$app': typeof TTeamApplicationsAppRouteRouteWithChildren
   '/t/$team/databases/$db': typeof TTeamDatabasesDbRouteRouteWithChildren
   '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
+  '/t/$team/services/$svc': typeof TTeamServicesSvcRouteRouteWithChildren
   '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/account/': typeof TTeamAccountIndexRoute
   '/t/$team/admin/': typeof TTeamAdminIndexRoute
@@ -502,6 +568,13 @@ export interface FileRoutesById {
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
   '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/services/$svc/advanced': typeof TTeamServicesSvcAdvancedRoute
+  '/t/$team/services/$svc/backups': typeof TTeamServicesSvcBackupsRoute
+  '/t/$team/services/$svc/envs': typeof TTeamServicesSvcEnvsRoute
+  '/t/$team/services/$svc/history': typeof TTeamServicesSvcHistoryRoute
+  '/t/$team/services/$svc/logs': typeof TTeamServicesSvcLogsRoute
+  '/t/$team/services/$svc/tasks': typeof TTeamServicesSvcTasksRoute
+  '/t/$team/services/$svc/terminal': typeof TTeamServicesSvcTerminalRoute
   '/t/$team/applications/$app/': typeof TTeamApplicationsAppIndexRoute
   '/t/$team/databases/$db/': typeof TTeamDatabasesDbIndexRoute
   '/t/$team/projects/$project/': typeof TTeamProjectsProjectIndexRoute
@@ -526,6 +599,7 @@ export interface FileRouteTypes {
     | '/t/$team/applications/$app'
     | '/t/$team/databases/$db'
     | '/t/$team/servers/$server'
+    | '/t/$team/services/$svc'
     | '/t/$team/sources/$source'
     | '/t/$team/account/'
     | '/t/$team/admin/'
@@ -559,6 +633,13 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
     | '/t/$team/servers/$server/terminal'
+    | '/t/$team/services/$svc/advanced'
+    | '/t/$team/services/$svc/backups'
+    | '/t/$team/services/$svc/envs'
+    | '/t/$team/services/$svc/history'
+    | '/t/$team/services/$svc/logs'
+    | '/t/$team/services/$svc/tasks'
+    | '/t/$team/services/$svc/terminal'
     | '/t/$team/applications/$app/'
     | '/t/$team/databases/$db/'
     | '/t/$team/projects/$project/'
@@ -610,6 +691,13 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
     | '/t/$team/servers/$server/terminal'
+    | '/t/$team/services/$svc/advanced'
+    | '/t/$team/services/$svc/backups'
+    | '/t/$team/services/$svc/envs'
+    | '/t/$team/services/$svc/history'
+    | '/t/$team/services/$svc/logs'
+    | '/t/$team/services/$svc/tasks'
+    | '/t/$team/services/$svc/terminal'
     | '/t/$team/applications/$app'
     | '/t/$team/databases/$db'
     | '/t/$team/projects/$project'
@@ -632,6 +720,7 @@ export interface FileRouteTypes {
     | '/t/$team/applications/$app'
     | '/t/$team/databases/$db'
     | '/t/$team/servers/$server'
+    | '/t/$team/services/$svc'
     | '/t/$team/sources/$source'
     | '/t/$team/account/'
     | '/t/$team/admin/'
@@ -665,6 +754,13 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
     | '/t/$team/servers/$server/terminal'
+    | '/t/$team/services/$svc/advanced'
+    | '/t/$team/services/$svc/backups'
+    | '/t/$team/services/$svc/envs'
+    | '/t/$team/services/$svc/history'
+    | '/t/$team/services/$svc/logs'
+    | '/t/$team/services/$svc/tasks'
+    | '/t/$team/services/$svc/terminal'
     | '/t/$team/applications/$app/'
     | '/t/$team/databases/$db/'
     | '/t/$team/projects/$project/'
@@ -833,6 +929,13 @@ declare module '@tanstack/react-router' {
       path: '/servers/$server'
       fullPath: '/t/$team/servers/$server'
       preLoaderRoute: typeof TTeamServersServerRouteRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/services/$svc': {
+      id: '/t/$team/services/$svc'
+      path: '/services/$svc'
+      fullPath: '/t/$team/services/$svc'
+      preLoaderRoute: typeof TTeamServicesSvcRouteRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
     '/t/$team/sources/': {
@@ -1040,10 +1143,59 @@ declare module '@tanstack/react-router' {
     }
     '/t/$team/services/$svc/': {
       id: '/t/$team/services/$svc/'
-      path: '/services/$svc'
+      path: '/'
       fullPath: '/t/$team/services/$svc/'
       preLoaderRoute: typeof TTeamServicesSvcIndexRouteImport
-      parentRoute: typeof TTeamRouteRoute
+      parentRoute: typeof TTeamServicesSvcRouteRoute
+    }
+    '/t/$team/services/$svc/advanced': {
+      id: '/t/$team/services/$svc/advanced'
+      path: '/advanced'
+      fullPath: '/t/$team/services/$svc/advanced'
+      preLoaderRoute: typeof TTeamServicesSvcAdvancedRouteImport
+      parentRoute: typeof TTeamServicesSvcRouteRoute
+    }
+    '/t/$team/services/$svc/backups': {
+      id: '/t/$team/services/$svc/backups'
+      path: '/backups'
+      fullPath: '/t/$team/services/$svc/backups'
+      preLoaderRoute: typeof TTeamServicesSvcBackupsRouteImport
+      parentRoute: typeof TTeamServicesSvcRouteRoute
+    }
+    '/t/$team/services/$svc/envs': {
+      id: '/t/$team/services/$svc/envs'
+      path: '/envs'
+      fullPath: '/t/$team/services/$svc/envs'
+      preLoaderRoute: typeof TTeamServicesSvcEnvsRouteImport
+      parentRoute: typeof TTeamServicesSvcRouteRoute
+    }
+    '/t/$team/services/$svc/history': {
+      id: '/t/$team/services/$svc/history'
+      path: '/history'
+      fullPath: '/t/$team/services/$svc/history'
+      preLoaderRoute: typeof TTeamServicesSvcHistoryRouteImport
+      parentRoute: typeof TTeamServicesSvcRouteRoute
+    }
+    '/t/$team/services/$svc/logs': {
+      id: '/t/$team/services/$svc/logs'
+      path: '/logs'
+      fullPath: '/t/$team/services/$svc/logs'
+      preLoaderRoute: typeof TTeamServicesSvcLogsRouteImport
+      parentRoute: typeof TTeamServicesSvcRouteRoute
+    }
+    '/t/$team/services/$svc/tasks': {
+      id: '/t/$team/services/$svc/tasks'
+      path: '/tasks'
+      fullPath: '/t/$team/services/$svc/tasks'
+      preLoaderRoute: typeof TTeamServicesSvcTasksRouteImport
+      parentRoute: typeof TTeamServicesSvcRouteRoute
+    }
+    '/t/$team/services/$svc/terminal': {
+      id: '/t/$team/services/$svc/terminal'
+      path: '/terminal'
+      fullPath: '/t/$team/services/$svc/terminal'
+      preLoaderRoute: typeof TTeamServicesSvcTerminalRouteImport
+      parentRoute: typeof TTeamServicesSvcRouteRoute
     }
     '/t/$team/projects/$project/$env/': {
       id: '/t/$team/projects/$project/$env/'
@@ -1145,11 +1297,39 @@ const TTeamServersServerRouteRouteWithChildren =
     TTeamServersServerRouteRouteChildren,
   )
 
+interface TTeamServicesSvcRouteRouteChildren {
+  TTeamServicesSvcAdvancedRoute: typeof TTeamServicesSvcAdvancedRoute
+  TTeamServicesSvcBackupsRoute: typeof TTeamServicesSvcBackupsRoute
+  TTeamServicesSvcEnvsRoute: typeof TTeamServicesSvcEnvsRoute
+  TTeamServicesSvcHistoryRoute: typeof TTeamServicesSvcHistoryRoute
+  TTeamServicesSvcLogsRoute: typeof TTeamServicesSvcLogsRoute
+  TTeamServicesSvcTasksRoute: typeof TTeamServicesSvcTasksRoute
+  TTeamServicesSvcTerminalRoute: typeof TTeamServicesSvcTerminalRoute
+  TTeamServicesSvcIndexRoute: typeof TTeamServicesSvcIndexRoute
+}
+
+const TTeamServicesSvcRouteRouteChildren: TTeamServicesSvcRouteRouteChildren = {
+  TTeamServicesSvcAdvancedRoute: TTeamServicesSvcAdvancedRoute,
+  TTeamServicesSvcBackupsRoute: TTeamServicesSvcBackupsRoute,
+  TTeamServicesSvcEnvsRoute: TTeamServicesSvcEnvsRoute,
+  TTeamServicesSvcHistoryRoute: TTeamServicesSvcHistoryRoute,
+  TTeamServicesSvcLogsRoute: TTeamServicesSvcLogsRoute,
+  TTeamServicesSvcTasksRoute: TTeamServicesSvcTasksRoute,
+  TTeamServicesSvcTerminalRoute: TTeamServicesSvcTerminalRoute,
+  TTeamServicesSvcIndexRoute: TTeamServicesSvcIndexRoute,
+}
+
+const TTeamServicesSvcRouteRouteWithChildren =
+  TTeamServicesSvcRouteRoute._addFileChildren(
+    TTeamServicesSvcRouteRouteChildren,
+  )
+
 interface TTeamRouteRouteChildren {
   TTeamIndexRoute: typeof TTeamIndexRoute
   TTeamApplicationsAppRouteRoute: typeof TTeamApplicationsAppRouteRouteWithChildren
   TTeamDatabasesDbRouteRoute: typeof TTeamDatabasesDbRouteRouteWithChildren
   TTeamServersServerRouteRoute: typeof TTeamServersServerRouteRouteWithChildren
+  TTeamServicesSvcRouteRoute: typeof TTeamServicesSvcRouteRouteWithChildren
   TTeamSourcesSourceRoute: typeof TTeamSourcesSourceRoute
   TTeamAccountIndexRoute: typeof TTeamAccountIndexRoute
   TTeamAdminIndexRoute: typeof TTeamAdminIndexRoute
@@ -1163,7 +1343,6 @@ interface TTeamRouteRouteChildren {
   TTeamStoragesIndexRoute: typeof TTeamStoragesIndexRoute
   TTeamTeamIndexRoute: typeof TTeamTeamIndexRoute
   TTeamProjectsProjectIndexRoute: typeof TTeamProjectsProjectIndexRoute
-  TTeamServicesSvcIndexRoute: typeof TTeamServicesSvcIndexRoute
   TTeamProjectsProjectEnvNewRoute: typeof TTeamProjectsProjectEnvNewRoute
   TTeamProjectsProjectEnvIndexRoute: typeof TTeamProjectsProjectEnvIndexRoute
 }
@@ -1173,6 +1352,7 @@ const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamApplicationsAppRouteRoute: TTeamApplicationsAppRouteRouteWithChildren,
   TTeamDatabasesDbRouteRoute: TTeamDatabasesDbRouteRouteWithChildren,
   TTeamServersServerRouteRoute: TTeamServersServerRouteRouteWithChildren,
+  TTeamServicesSvcRouteRoute: TTeamServicesSvcRouteRouteWithChildren,
   TTeamSourcesSourceRoute: TTeamSourcesSourceRoute,
   TTeamAccountIndexRoute: TTeamAccountIndexRoute,
   TTeamAdminIndexRoute: TTeamAdminIndexRoute,
@@ -1186,7 +1366,6 @@ const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamStoragesIndexRoute: TTeamStoragesIndexRoute,
   TTeamTeamIndexRoute: TTeamTeamIndexRoute,
   TTeamProjectsProjectIndexRoute: TTeamProjectsProjectIndexRoute,
-  TTeamServicesSvcIndexRoute: TTeamServicesSvcIndexRoute,
   TTeamProjectsProjectEnvNewRoute: TTeamProjectsProjectEnvNewRoute,
   TTeamProjectsProjectEnvIndexRoute: TTeamProjectsProjectEnvIndexRoute,
 }

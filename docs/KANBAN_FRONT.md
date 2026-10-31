@@ -11,7 +11,6 @@ Le backend (phase 1) est terminé : toutes les routes sont décrites dans [API.m
 **Lot 2 — Compte** : F2-01 · F2-02 · F2-03 · F2-04 · F2-05
 **Lot 3 — Équipes et accès** : F3-02 · F3-03 · F3-04 · F3-05 · F3-06 · F3-07 · F3-08
 **Lot 4 — Tableau de bord** : F4-02
-**Lot 10 — Services one-click** : F10-01 · F10-02 · F10-03 · F10-04
 **Lot 11 — Intégrations d'équipe** : F11-01 · F11-02 · F11-03
 **Lot 12 — Administration de l'instance** : F12-01 · F12-02 · F12-03 · F12-04 · F12-05
 **Lot 13 — Transverse et qualité** : F13-01 · F13-02 · F13-03 · F13-04 · F13-05
@@ -31,6 +30,7 @@ _(rien)_
 **Lot 7 — Sources Git** : F7-01 · F7-02 · F7-03
 **Lot 8 — Applications** : F8-01 · F8-02 · F8-03 · F8-04 · F8-05 · F8-06 · F8-07 · F8-08 · F8-09 · F8-10 · F8-11 · F8-12
 **Lot 9 — Bases de données** : F9-01 · F9-02 · F9-03 · F9-04 · F9-05 · F9-06
+**Lot 10 — Services one-click** : F10-01 · F10-02 · F10-03 · F10-04
 
 ---
 
