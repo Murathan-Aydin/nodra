@@ -168,3 +168,84 @@ export interface TeamEvent {
   server?: string
   status?: string
 }
+
+export interface ServerSettings {
+  concurrent_builds: number
+  deployment_timeout: number
+  is_build_server: boolean
+  docker_cleanup_frequency: string
+  docker_cleanup_threshold: number
+  delete_unused_volumes: boolean
+  delete_unused_networks: boolean
+  metrics_enabled: boolean
+  metrics_retention_days: number
+  timezone: string
+  wildcard_domain: string
+  connection_timeout: number
+  cloudflare_tunnel: boolean
+}
+
+export interface Server extends ServerSummary {
+  private_key_id: string
+  host_key: string
+  os_id: string
+  os_version: string
+  compose_version: string
+  validated_at: string | null
+  last_cleanup_at: string | null
+  settings: ServerSettings
+}
+
+export interface Destination {
+  id: string
+  server_id: string
+  name: string
+  network: string
+  is_default: boolean
+  created_at: string
+}
+
+export interface PrivateKey {
+  id: string
+  team_id: string
+  name: string
+  description: string
+  public_key: string
+  fingerprint: string
+  created_at: string
+}
+
+export interface ServerMetric {
+  ts: string
+  cpu_percent: number
+  mem_used: number
+  mem_total: number
+  disk_used: number
+  disk_total: number
+  load1: number
+}
+
+export interface ProxyState {
+  type: "traefik" | "caddy" | "none"
+  status: string
+  acme_email: string
+  compose: string
+  is_custom: boolean
+  default_compose: string
+}
+
+export interface ProxyConfig {
+  id: string
+  server_id: string
+  name: string
+  content: string
+  updated_at: string
+}
+
+export interface Certificate {
+  id: string
+  name: string
+  domains: string[]
+  certificate: string
+  expires_at: string
+}

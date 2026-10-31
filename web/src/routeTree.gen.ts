@@ -27,9 +27,15 @@ import { Route as TTeamNotificationsIndexRouteImport } from './routes/t/$team/no
 import { Route as TTeamProjectsIndexRouteImport } from './routes/t/$team/projects/index'
 import { Route as TTeamRegistriesIndexRouteImport } from './routes/t/$team/registries/index'
 import { Route as TTeamServersIndexRouteImport } from './routes/t/$team/servers/index'
+import { Route as TTeamServersServerRouteRouteImport } from './routes/t/$team/servers/$server/route'
 import { Route as TTeamSourcesIndexRouteImport } from './routes/t/$team/sources/index'
 import { Route as TTeamStoragesIndexRouteImport } from './routes/t/$team/storages/index'
 import { Route as TTeamTeamIndexRouteImport } from './routes/t/$team/team/index'
+import { Route as TTeamServersServerIndexRouteImport } from './routes/t/$team/servers/$server/index'
+import { Route as TTeamServersServerProxyRouteImport } from './routes/t/$team/servers/$server/proxy'
+import { Route as TTeamServersServerSettingsRouteImport } from './routes/t/$team/servers/$server/settings'
+import { Route as TTeamServersServerTasksRouteImport } from './routes/t/$team/servers/$server/tasks'
+import { Route as TTeamServersServerTerminalRouteImport } from './routes/t/$team/servers/$server/terminal'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -121,6 +127,11 @@ const TTeamServersIndexRoute = TTeamServersIndexRouteImport.update({
   path: '/servers/',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
+const TTeamServersServerRouteRoute = TTeamServersServerRouteRouteImport.update({
+  id: '/servers/$server',
+  path: '/servers/$server',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
 const TTeamSourcesIndexRoute = TTeamSourcesIndexRouteImport.update({
   id: '/sources/',
   path: '/sources/',
@@ -136,6 +147,33 @@ const TTeamTeamIndexRoute = TTeamTeamIndexRouteImport.update({
   path: '/team/',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
+const TTeamServersServerIndexRoute = TTeamServersServerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TTeamServersServerRouteRoute,
+} as any)
+const TTeamServersServerProxyRoute = TTeamServersServerProxyRouteImport.update({
+  id: '/proxy',
+  path: '/proxy',
+  getParentRoute: () => TTeamServersServerRouteRoute,
+} as any)
+const TTeamServersServerSettingsRoute =
+  TTeamServersServerSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerTasksRoute = TTeamServersServerTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => TTeamServersServerRouteRoute,
+} as any)
+const TTeamServersServerTerminalRoute =
+  TTeamServersServerTerminalRouteImport.update({
+    id: '/terminal',
+    path: '/terminal',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -148,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/login/2fa': typeof Login2faRoute
   '/login/': typeof LoginIndexRoute
   '/t/$team/': typeof TTeamIndexRoute
+  '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
   '/t/$team/account/': typeof TTeamAccountIndexRoute
   '/t/$team/admin/': typeof TTeamAdminIndexRoute
   '/t/$team/approvals/': typeof TTeamApprovalsIndexRoute
@@ -159,6 +198,11 @@ export interface FileRoutesByFullPath {
   '/t/$team/sources/': typeof TTeamSourcesIndexRoute
   '/t/$team/storages/': typeof TTeamStoragesIndexRoute
   '/t/$team/team/': typeof TTeamTeamIndexRoute
+  '/t/$team/servers/$server/proxy': typeof TTeamServersServerProxyRoute
+  '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
+  '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
+  '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -181,6 +225,11 @@ export interface FileRoutesByTo {
   '/t/$team/sources': typeof TTeamSourcesIndexRoute
   '/t/$team/storages': typeof TTeamStoragesIndexRoute
   '/t/$team/team': typeof TTeamTeamIndexRoute
+  '/t/$team/servers/$server/proxy': typeof TTeamServersServerProxyRoute
+  '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
+  '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
+  '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/servers/$server': typeof TTeamServersServerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -194,6 +243,7 @@ export interface FileRoutesById {
   '/login/2fa': typeof Login2faRoute
   '/login/': typeof LoginIndexRoute
   '/t/$team/': typeof TTeamIndexRoute
+  '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
   '/t/$team/account/': typeof TTeamAccountIndexRoute
   '/t/$team/admin/': typeof TTeamAdminIndexRoute
   '/t/$team/approvals/': typeof TTeamApprovalsIndexRoute
@@ -205,6 +255,11 @@ export interface FileRoutesById {
   '/t/$team/sources/': typeof TTeamSourcesIndexRoute
   '/t/$team/storages/': typeof TTeamStoragesIndexRoute
   '/t/$team/team/': typeof TTeamTeamIndexRoute
+  '/t/$team/servers/$server/proxy': typeof TTeamServersServerProxyRoute
+  '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
+  '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
+  '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -219,6 +274,7 @@ export interface FileRouteTypes {
     | '/login/2fa'
     | '/login/'
     | '/t/$team/'
+    | '/t/$team/servers/$server'
     | '/t/$team/account/'
     | '/t/$team/admin/'
     | '/t/$team/approvals/'
@@ -230,6 +286,11 @@ export interface FileRouteTypes {
     | '/t/$team/sources/'
     | '/t/$team/storages/'
     | '/t/$team/team/'
+    | '/t/$team/servers/$server/proxy'
+    | '/t/$team/servers/$server/settings'
+    | '/t/$team/servers/$server/tasks'
+    | '/t/$team/servers/$server/terminal'
+    | '/t/$team/servers/$server/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -252,6 +313,11 @@ export interface FileRouteTypes {
     | '/t/$team/sources'
     | '/t/$team/storages'
     | '/t/$team/team'
+    | '/t/$team/servers/$server/proxy'
+    | '/t/$team/servers/$server/settings'
+    | '/t/$team/servers/$server/tasks'
+    | '/t/$team/servers/$server/terminal'
+    | '/t/$team/servers/$server'
   id:
     | '__root__'
     | '/'
@@ -264,6 +330,7 @@ export interface FileRouteTypes {
     | '/login/2fa'
     | '/login/'
     | '/t/$team/'
+    | '/t/$team/servers/$server'
     | '/t/$team/account/'
     | '/t/$team/admin/'
     | '/t/$team/approvals/'
@@ -275,6 +342,11 @@ export interface FileRouteTypes {
     | '/t/$team/sources/'
     | '/t/$team/storages/'
     | '/t/$team/team/'
+    | '/t/$team/servers/$server/proxy'
+    | '/t/$team/servers/$server/settings'
+    | '/t/$team/servers/$server/tasks'
+    | '/t/$team/servers/$server/terminal'
+    | '/t/$team/servers/$server/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -417,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamServersIndexRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
+    '/t/$team/servers/$server': {
+      id: '/t/$team/servers/$server'
+      path: '/servers/$server'
+      fullPath: '/t/$team/servers/$server'
+      preLoaderRoute: typeof TTeamServersServerRouteRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
     '/t/$team/sources/': {
       id: '/t/$team/sources/'
       path: '/sources'
@@ -438,11 +517,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamTeamIndexRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
+    '/t/$team/servers/$server/': {
+      id: '/t/$team/servers/$server/'
+      path: '/'
+      fullPath: '/t/$team/servers/$server/'
+      preLoaderRoute: typeof TTeamServersServerIndexRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/proxy': {
+      id: '/t/$team/servers/$server/proxy'
+      path: '/proxy'
+      fullPath: '/t/$team/servers/$server/proxy'
+      preLoaderRoute: typeof TTeamServersServerProxyRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/settings': {
+      id: '/t/$team/servers/$server/settings'
+      path: '/settings'
+      fullPath: '/t/$team/servers/$server/settings'
+      preLoaderRoute: typeof TTeamServersServerSettingsRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/tasks': {
+      id: '/t/$team/servers/$server/tasks'
+      path: '/tasks'
+      fullPath: '/t/$team/servers/$server/tasks'
+      preLoaderRoute: typeof TTeamServersServerTasksRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/terminal': {
+      id: '/t/$team/servers/$server/terminal'
+      path: '/terminal'
+      fullPath: '/t/$team/servers/$server/terminal'
+      preLoaderRoute: typeof TTeamServersServerTerminalRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
   }
 }
 
+interface TTeamServersServerRouteRouteChildren {
+  TTeamServersServerProxyRoute: typeof TTeamServersServerProxyRoute
+  TTeamServersServerSettingsRoute: typeof TTeamServersServerSettingsRoute
+  TTeamServersServerTasksRoute: typeof TTeamServersServerTasksRoute
+  TTeamServersServerTerminalRoute: typeof TTeamServersServerTerminalRoute
+  TTeamServersServerIndexRoute: typeof TTeamServersServerIndexRoute
+}
+
+const TTeamServersServerRouteRouteChildren: TTeamServersServerRouteRouteChildren =
+  {
+    TTeamServersServerProxyRoute: TTeamServersServerProxyRoute,
+    TTeamServersServerSettingsRoute: TTeamServersServerSettingsRoute,
+    TTeamServersServerTasksRoute: TTeamServersServerTasksRoute,
+    TTeamServersServerTerminalRoute: TTeamServersServerTerminalRoute,
+    TTeamServersServerIndexRoute: TTeamServersServerIndexRoute,
+  }
+
+const TTeamServersServerRouteRouteWithChildren =
+  TTeamServersServerRouteRoute._addFileChildren(
+    TTeamServersServerRouteRouteChildren,
+  )
+
 interface TTeamRouteRouteChildren {
   TTeamIndexRoute: typeof TTeamIndexRoute
+  TTeamServersServerRouteRoute: typeof TTeamServersServerRouteRouteWithChildren
   TTeamAccountIndexRoute: typeof TTeamAccountIndexRoute
   TTeamAdminIndexRoute: typeof TTeamAdminIndexRoute
   TTeamApprovalsIndexRoute: typeof TTeamApprovalsIndexRoute
@@ -458,6 +595,7 @@ interface TTeamRouteRouteChildren {
 
 const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamIndexRoute: TTeamIndexRoute,
+  TTeamServersServerRouteRoute: TTeamServersServerRouteRouteWithChildren,
   TTeamAccountIndexRoute: TTeamAccountIndexRoute,
   TTeamAdminIndexRoute: TTeamAdminIndexRoute,
   TTeamApprovalsIndexRoute: TTeamApprovalsIndexRoute,
