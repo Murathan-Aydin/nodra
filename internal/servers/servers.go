@@ -122,6 +122,10 @@ func (s *Service) RunTask(ctx context.Context, id string) error {
 		return err // annulée entre-temps
 	}
 	r := &taskRun{svc: s, task: task, out: newOutputWriter(s.Store, id)}
+	// Annulation demandée par un utilisateur : relue toutes les 2 s, elle interrompt la commande distante.
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	stopWatch := s.watchCancel(ctx, id, cancel)
 	err = func() error {
 		h := handlers[task.Kind]
 		if fn := s.Tasks[task.Kind]; h == nil && fn != nil {
@@ -141,9 +145,15 @@ func (s *Service) RunTask(ctx context.Context, id string) error {
 		}
 		return h(ctx, r)
 	}()
+	stopWatch()
 	r.out.Close()
 	status, msg := "success", ""
-	if err != nil {
+	switch {
+	case errors.Is(context.Cause(ctx), errTaskCancelled):
+		status, msg = "cancelled", errTaskCancelled.Error()
+		r.out.logf("%s\n", msg)
+		r.out.Close()
+	case err != nil:
 		status, msg = "failed", err.Error()
 		r.out.logf("Erreur : %s\n", msg)
 		r.out.Close()
@@ -607,3 +617,32 @@ func InstanceUpdateCommand(srcDir, tag string) string {
 		"nohup " + q + "/update.sh " + ssh.Quote(tag) + " >> " + q + "/update.log 2>&1 &\n" +
 		"echo 'mise à jour vers '" + ssh.Quote(tag) + "' lancée (journal : '" + q + "'/update.log)'"
 }
+
+var errTaskCancelled = errors.New("tâche annulée par un utilisateur")
+
+// watchCancel annule ctx quand l'arrêt de la tâche est demandé ; la fonction renvoyée arrête la surveillance.
+func (s *Service) watchCancel(ctx context.Context, id string, cancel context.CancelCauseFunc) func() {
+	done := make(chan struct{})
+	go func() {
+		t := time.NewTicker(cancelPoll)
+		defer t.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				if c, err := s.Store.TaskCancelRequested(ctx, id); err == nil && c {
+					cancel(errTaskCancelled)
+					return
+				}
+			}
+		}
+	}()
+	var once sync.Once
+	return func() { once.Do(func() { close(done) }) }
+}
+
+// cancelPoll : fréquence de relecture des demandes d'annulation (variable pour les tests).
+var cancelPoll = 2 * time.Second

@@ -233,3 +233,39 @@ func TestServers(t *testing.T) {
 	expect(t, "serveur supprimé", alice.do("GET", base+"/servers/"+sid, nil, nil), 404)
 	expect(t, "clé libérée", alice.do("DELETE", base+"/private-keys/"+key.ID, nil, nil), 204)
 }
+
+func TestCancelRunningTask(t *testing.T) {
+	f := newAppFixture(t)
+	f.ssh.SetInputHandler(func(cmd string, _ io.Reader, stdout, _ io.Writer) int {
+		if strings.Contains(cmd, "sleep") { // commande longue : écrit jusqu'à la coupure de la session
+			fmt.Fprintln(stdout, "début")
+			for {
+				time.Sleep(100 * time.Millisecond)
+				if _, err := io.WriteString(stdout, "."); err != nil {
+					return 137
+				}
+			}
+		}
+		return 0
+	})
+	base := f.base + "/servers/" + f.serverID
+	var task store.ServerTask
+	expect(t, "commande", f.alice.do("POST", base+"/commands", map[string]string{"command": "sleep 300"}, &task), 202)
+	deadline := time.Now().Add(10 * time.Second)
+	for task.Status != "running" {
+		if time.Now().After(deadline) {
+			t.Fatalf("tâche non démarrée : %s %s %s", task.Status, task.Error, task.Output)
+		}
+		time.Sleep(50 * time.Millisecond)
+		expect(t, "tâche", f.alice.do("GET", base+"/tasks/"+task.ID, nil, &task), 200)
+	}
+	var resp map[string]string
+	expect(t, "annulation", f.alice.do("POST", base+"/tasks/"+task.ID+"/cancel", nil, &resp), 202)
+	if resp["status"] != "cancelling" {
+		t.Fatalf("réponse : %v", resp)
+	}
+	if task = waitTask(t, f.alice, f.team, f.serverID, task.ID); task.Status != "cancelled" || !strings.Contains(task.Error, "annulée") {
+		t.Fatalf("tâche : %s %s", task.Status, task.Error)
+	}
+	expect(t, "déjà terminée", f.alice.do("POST", base+"/tasks/"+task.ID+"/cancel", nil, nil), 409)
+}

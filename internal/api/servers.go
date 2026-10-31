@@ -392,16 +392,20 @@ func (s *Server) cancelServerTask(w http.ResponseWriter, r *http.Request) {
 	if !ok || !s.authorize(w, r, "server.update", rbac.Scope{Type: rbac.ScopeServer, ID: t.ServerID}) {
 		return
 	}
-	done, err := s.Store.CancelServerTask(r.Context(), t.ID)
+	state, err := s.Store.CancelServerTask(r.Context(), t.ID)
 	if err != nil {
 		s.internal(w, err)
 		return
 	}
-	if !done {
-		writeError(w, http.StatusConflict, "seule une tâche encore en file peut être annulée")
+	if state == "" {
+		writeError(w, http.StatusConflict, "la tâche est déjà terminée")
 		return
 	}
-	s.auditTeam(r, "server.task.cancelled", "server_task", t.ID, nil)
+	s.auditTeam(r, "server.task.cancelled", "server_task", t.ID, map[string]string{"state": state})
+	if state == "cancelling" { // en cours : arrêtée par le processus qui l'exécute
+		writeJSON(w, http.StatusAccepted, map[string]string{"status": state})
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

@@ -454,13 +454,31 @@ func (s *Store) FailStaleServerTasks(ctx context.Context) error {
 	return err
 }
 
-// CancelServerTask annule une tâche encore en file.
-func (s *Store) CancelServerTask(ctx context.Context, id string) (bool, error) {
-	tag, err := s.Pool.Exec(ctx, `UPDATE server_tasks SET status = 'cancelled', finished_at = now() WHERE id = $1 AND status = 'queued'`, id)
-	if err == nil && tag.RowsAffected() == 1 {
-		s.emitTask(ctx, s.Pool, id, EventTaskStatus)
+// CancelServerTask annule une tâche en file ("cancelled") ou demande l'arrêt d'une tâche en cours
+// ("cancelling") ; "" si la tâche est déjà terminée.
+func (s *Store) CancelServerTask(ctx context.Context, id string) (string, error) {
+	var status string
+	err := s.Pool.QueryRow(ctx, `UPDATE server_tasks SET cancel_requested = true,
+		status = CASE WHEN status = 'queued' THEN 'cancelled' ELSE status END,
+		finished_at = CASE WHEN status = 'queued' THEN now() ELSE finished_at END
+		WHERE id = $1 AND status IN ('queued', 'running') RETURNING status`, id).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	} else if err != nil {
+		return "", err
 	}
-	return tag.RowsAffected() == 1, err
+	if status == "cancelled" {
+		s.emitTask(ctx, s.Pool, id, EventTaskStatus)
+		return status, nil
+	}
+	return "cancelling", nil
+}
+
+// TaskCancelRequested indique si l'arrêt d'une tâche en cours a été demandé.
+func (s *Store) TaskCancelRequested(ctx context.Context, id string) (bool, error) {
+	var c bool
+	err := s.Pool.QueryRow(ctx, `SELECT cancel_requested FROM server_tasks WHERE id = $1`, id).Scan(&c)
+	return c, err
 }
 
 // ResetServerHostKey oublie la clé d'hôte (serveur réinstallé) : une nouvelle validation est nécessaire.

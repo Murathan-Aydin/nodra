@@ -158,7 +158,7 @@ Les opérations distantes sont des **tâches** asynchrones (`202 ServerTask`) do
 | POST | `/servers/{id}/host-key/reset` | `server.update` | Oublie la clé d'hôte (serveur réinstallé) ; revalider ensuite |
 | GET | `/servers/{id}/tasks` | `server.read` | 50 dernières tâches (sans `output`) |
 | GET | `/servers/{id}/tasks/{task}` | `server.read` | Tâche avec sa sortie |
-| POST | `/servers/{id}/tasks/{task}/cancel` | `server.update` | Uniquement si encore en file |
+| POST | `/servers/{id}/tasks/{task}/cancel` | `server.update` | En file : `204` (annulée) ; en cours : `202 {"status": "cancelling"}`, la commande distante est interrompue sous 2 s et la tâche passe à `cancelled` ; terminée : `409` |
 | GET | `/servers/{id}/metrics?since=` | `server.read` | Points `{ts, cpu_percent, mem_used, mem_total, disk_used, disk_total, load1}` (dernière heure par défaut) |
 | GET / POST | `/servers/{id}/destinations` | `server.read` / `server.update` | POST `{name?, network}` crée un réseau Docker (tâche) |
 | DELETE | `/servers/{id}/destinations/{dest}` | `server.update` | `409` pour la destination par défaut |
