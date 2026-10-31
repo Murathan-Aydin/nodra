@@ -565,6 +565,7 @@ Les jetons API sont refusés sur ces routes (`403`).
 | `dns_servers` | Serveurs DNS utilisés par `/teams/{team}/dns-check` (IP ou IP:port, 5 max. ; vide : résolveur système) |
 | `api_enabled` | Si `false`, toute requête par jeton API est refusée (`403`) |
 | `api_allowed_ips` | IP ou plages CIDR autorisées pour les jetons API (vide : toutes) |
+| `mcp_enabled` | Serveur MCP (`/api/v1/mcp`) activé (désactivé par défaut) |
 | `latest_version`, `update_checked_at` | Dernière release connue (lecture seule) |
 
 ## Vue d'ensemble et actions groupées (`/teams/{team}`)
@@ -578,3 +579,16 @@ Les jetons API sont refusés sur ces routes (`403`).
 | GET | `/servers/{id}/domains` | `server.read` + `resource.read` | `[{domain, resource_id, type, name}]` (applications et sous-services) |
 | POST | `/applications/{id}/clone`, `/databases/{id}/clone`, `/services/{id}/clone` | `resource.read` + `resource.create` sur l'environnement cible | `{name? ("<nom> (copie)"), environment_id?, destination_id?}` (même équipe, original par défaut) → `201 {id}`. Copie la configuration, les variables, les stockages (volumes renommés : **données non copiées**), les tags et les tâches planifiées (désactivées) ; arrêtée, nouveaux domaines générés (jamais ceux de l'original), base sans exposition publique, sous-services pour un service |
 | POST | `/applications/{id}/move`, `/databases/{id}/move`, `/services/{id}/move` | `resource.update` + `resource.create` sur l'environnement cible | `{environment_id}` (même équipe) → `204` ; serveur et conteneurs inchangés, les variables partagées du nouvel environnement s'appliquent au prochain déploiement |
+
+## Serveur MCP (`/api/v1/mcp`)
+
+Model Context Protocol pour assistants IA (Claude, etc.), transport « Streamable HTTP » : messages JSON-RPC 2.0 en `POST` (réponses JSON, pas de flux SSE ; `GET` → `405`). Nécessite `mcp_enabled` sur l'instance (`404` sinon) et un **jeton API rattaché à une équipe** (`401` sinon) : les outils agissent sur l'équipe du jeton et rejouent les routes REST pour le même appelant (scopes du jeton, droits, approbations et audit identiques ; un jeton `read` ne peut pas déployer).
+
+Méthodes : `initialize` (protocole `2025-06-18`), `ping`, `tools/list`, `tools/call`. Outils : `list_projects`, `list_servers`, `list_resources {type?, tag?}`, `get_resource {id}`, `deploy {resources?, tags?, force_rebuild?}`, `resource_action {id, action: start|stop|restart}`, `container_logs {id, lines?}`, `list_deployments {status?}`, `deployment_logs {application_id, deployment_id}`. Résultat : `{content: [{type: "text", text: <réponse JSON de la route>}], isError}`.
+
+Exemple de configuration d'un client MCP :
+
+```json
+{"mcpServers": {"nodra": {"type": "http", "url": "https://nodra.example.com/api/v1/mcp",
+  "headers": {"Authorization": "Bearer ndt_…"}}}}
+```

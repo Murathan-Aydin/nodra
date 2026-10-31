@@ -161,6 +161,7 @@ func (s *Server) Router() http.Handler {
 				r.Get("/permissions", s.listPermissions)
 				r.Get("/notifications/catalog", s.notificationCatalog)
 				r.Get("/version", s.getVersion)
+				r.HandleFunc("/mcp", s.mcp)
 				r.Route("/admin", func(r chi.Router) {
 					r.Use(requireInstanceAdmin)
 					r.Get("/mail", s.getMailConfig)

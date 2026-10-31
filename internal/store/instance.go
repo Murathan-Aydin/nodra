@@ -23,6 +23,7 @@ type InstanceSettings struct {
 	DNSServers           []string   `json:"dns_servers"`
 	APIEnabled           bool       `json:"api_enabled"`
 	APIAllowedIPs        []string   `json:"api_allowed_ips"`
+	MCPEnabled           bool       `json:"mcp_enabled"`
 	LatestVersion        string     `json:"latest_version"`
 	UpdateCheckedAt      *time.Time `json:"update_checked_at"`
 }
@@ -31,10 +32,10 @@ func (s *Store) InstanceSettings(ctx context.Context) (*InstanceSettings, error)
 	i := &InstanceSettings{}
 	err := s.Pool.QueryRow(ctx, `SELECT fqdn, instance_name, public_ipv4, public_ipv6, timezone, registration_enabled,
 		auto_update_enabled, auto_update_frequency, update_check_frequency, dns_validation_enabled, dns_servers, api_enabled,
-		api_allowed_ips, latest_version, update_checked_at FROM instance_settings WHERE id = 1`).
+		api_allowed_ips, mcp_enabled, latest_version, update_checked_at FROM instance_settings WHERE id = 1`).
 		Scan(&i.FQDN, &i.InstanceName, &i.PublicIPv4, &i.PublicIPv6, &i.Timezone, &i.RegistrationEnabled, &i.AutoUpdateEnabled,
 			&i.AutoUpdateFrequency, &i.UpdateCheckFrequency, &i.DNSValidationEnabled, &i.DNSServers, &i.APIEnabled, &i.APIAllowedIPs,
-			&i.LatestVersion, &i.UpdateCheckedAt)
+			&i.MCPEnabled, &i.LatestVersion, &i.UpdateCheckedAt)
 	return i, err
 }
 
@@ -42,9 +43,10 @@ func (s *Store) InstanceSettings(ctx context.Context) (*InstanceSettings, error)
 func (s *Store) UpdateInstanceSettings(ctx context.Context, i *InstanceSettings) error {
 	_, err := s.Pool.Exec(ctx, `UPDATE instance_settings SET fqdn = $1, instance_name = $2, public_ipv4 = $3, public_ipv6 = $4,
 		timezone = $5, registration_enabled = $6, auto_update_enabled = $7, auto_update_frequency = $8, update_check_frequency = $9,
-		dns_validation_enabled = $10, dns_servers = $11, api_enabled = $12, api_allowed_ips = $13, updated_at = now() WHERE id = 1`,
+		dns_validation_enabled = $10, dns_servers = $11, api_enabled = $12, api_allowed_ips = $13, mcp_enabled = $14, updated_at = now()
+		WHERE id = 1`,
 		i.FQDN, i.InstanceName, i.PublicIPv4, i.PublicIPv6, i.Timezone, i.RegistrationEnabled, i.AutoUpdateEnabled,
-		i.AutoUpdateFrequency, i.UpdateCheckFrequency, i.DNSValidationEnabled, i.DNSServers, i.APIEnabled, i.APIAllowedIPs)
+		i.AutoUpdateFrequency, i.UpdateCheckFrequency, i.DNSValidationEnabled, i.DNSServers, i.APIEnabled, i.APIAllowedIPs, i.MCPEnabled)
 	return err
 }
 

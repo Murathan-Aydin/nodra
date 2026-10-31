@@ -104,6 +104,7 @@ type settingsInput struct {
 	DNSServers           *[]string `json:"dns_servers"`
 	APIEnabled           *bool     `json:"api_enabled"`
 	APIAllowedIPs        *[]string `json:"api_allowed_ips"`
+	MCPEnabled           *bool     `json:"mcp_enabled"`
 }
 
 // normalizeFQDN : URL http(s) de l'instance, sans chemin (https:// par défaut).
@@ -238,6 +239,7 @@ func applySettings(in *settingsInput, i *store.InstanceSettings) ([]string, erro
 		"auto_update_enabled":    {in.AutoUpdateEnabled, &i.AutoUpdateEnabled},
 		"dns_validation_enabled": {in.DNSValidationEnabled, &i.DNSValidationEnabled},
 		"api_enabled":            {in.APIEnabled, &i.APIEnabled},
+		"mcp_enabled":            {in.MCPEnabled, &i.MCPEnabled},
 	} {
 		if b.in != nil {
 			*b.dst = *b.in
