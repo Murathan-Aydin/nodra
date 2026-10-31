@@ -8,7 +8,7 @@ import { Field } from "@/components/field"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ApiError, get, post, teamPath } from "@/lib/api"
-import { instanceQuery, teamsQuery } from "@/lib/queries"
+import { instanceQuery, teamQueries, teamsQuery } from "@/lib/queries"
 import { requireSession } from "@/lib/session"
 import type { Project, Server } from "@/lib/types"
 import { LocalhostConnection, RemoteConnection } from "@/features/onboarding/connection"
@@ -50,7 +50,7 @@ function Onboarding() {
       {step !== "welcome" && <Stepper current={step === "server" ? 0 : step === "connection" ? 1 : 2} />}
       <div className="mt-6 w-full">
         {step === "welcome" && <Welcome onStart={() => go({ step: "server" })} />}
-        {step === "server" && <ChooseServer selected={search.type} onChoose={(type) => go({ step: "connection", type })} />}
+        {step === "server" && team && <ChooseServer team={team} selected={search.type} onChoose={(type) => go({ step: "connection", type })} />}
         {step === "connection" && team && (
           <Panel
             title={search.type === "localhost" ? "Cette machine" : "Connexion SSH"}
@@ -146,8 +146,10 @@ function Welcome({ onStart }: { onStart: () => void }) {
   )
 }
 
-function ChooseServer({ selected, onChoose }: { selected?: string; onChoose: (t: "localhost" | "remote") => void }) {
+function ChooseServer({ team, selected, onChoose }: { team: string; selected?: string; onChoose: (t: "localhost" | "remote") => void }) {
   const instance = useQuery(instanceQuery).data
+  // Une équipe = un serveur : s'il existe déjà (hôte créé par install.sh), c'est lui qu'on valide.
+  const existing = useQuery(teamQueries.servers(team)).data?.[0]
   return (
     <Panel title="Où déployer ?" description="Choisissez le serveur qui hébergera vos applications et bases de données. Vous pourrez en ajouter d'autres ensuite.">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -160,14 +162,15 @@ function ChooseServer({ selected, onChoose }: { selected?: string; onChoose: (t:
               : "Indisponible : Nodra n'a pas été installé avec install.sh sur cette machine."
           }
           selected={selected === "localhost"}
-          disabled={!instance?.localhost}
+          disabled={!instance?.localhost || (!!existing && !existing.is_localhost)}
           onClick={() => onChoose("localhost")}
         />
         <ChoiceCard
           icon={<CloudIcon />}
           title="Adresse IP ou domaine"
-          text="Connecter en SSH un serveur que vous gérez déjà (VPS, machine dédiée…)."
+          text={existing ? "Indisponible : l'équipe a déjà son serveur (un seul par équipe)." : "Connecter en SSH un serveur que vous gérez déjà (VPS, machine dédiée…)."}
           selected={selected === "remote"}
+          disabled={!!existing}
           onClick={() => onChoose("remote")}
         />
       </div>

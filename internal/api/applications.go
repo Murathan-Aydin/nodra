@@ -449,6 +449,11 @@ func (s *Server) createApplication(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	team := teamFrom(ctx).Team
+	if in.DestinationID == "" && isUUID(in.EnvironmentID) { // par défaut : le serveur (unique) de l'équipe
+		if !s.defaultDestination(w, r, &in.DestinationID) {
+			return
+		}
+	}
 	if !isUUID(in.EnvironmentID) || !isUUID(in.DestinationID) {
 		writeError(w, http.StatusUnprocessableEntity, "environment_id et destination_id requis")
 		return

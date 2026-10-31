@@ -528,3 +528,21 @@ func (s *Store) SaveServerCA(ctx context.Context, serverID, certPEM, keyEnc stri
 		serverID, certPEM, keyEnc)
 	return err
 }
+
+// TeamServerCount : nombre de serveurs de l'équipe (un seul autorisé).
+func (s *Store) TeamServerCount(ctx context.Context, teamID string) (int, error) {
+	var n int
+	err := s.Pool.QueryRow(ctx, `SELECT count(*) FROM servers WHERE team_id = $1`, teamID).Scan(&n)
+	return n, err
+}
+
+// TeamDefaultDestination : destination par défaut du serveur de l'équipe (ErrNotFound sans serveur).
+func (s *Store) TeamDefaultDestination(ctx context.Context, teamID string) (string, error) {
+	var id string
+	err := s.Pool.QueryRow(ctx, `SELECT d.id::text FROM destinations d JOIN servers sv ON sv.id = d.server_id
+		WHERE sv.team_id = $1 ORDER BY d.is_default DESC, d.created_at LIMIT 1`, teamID).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return id, err
+}

@@ -215,13 +215,15 @@ func TestDatabaseInstantDeploy(t *testing.T) {
 	if task := waitTask(t, f.alice, f.team, f.serverID, created.Task.ID); task.Status != "success" {
 		t.Fatalf("démarrage : %s %s\n%s", task.Status, task.Error, task.Output)
 	}
-	var plain struct {
-		Task *store.ServerTask `json:"task"`
+	// Sans destination_id : la destination par défaut du serveur (unique) de l'équipe.
+	var plainDB struct {
+		Task          *store.ServerTask `json:"task"`
+		DestinationID string            `json:"destination_id"`
 	}
-	expect(t, "sans démarrage", f.alice.do("POST", f.base+"/databases", map[string]any{"environment_id": f.envID,
-		"destination_id": f.destID, "type": "redis", "name": "Cache 2"}, &plain), 201)
-	if plain.Task != nil {
-		t.Fatal("aucune tâche sans instant_deploy")
+	expect(t, "sans démarrage ni destination", f.alice.do("POST", f.base+"/databases", map[string]any{"environment_id": f.envID,
+		"type": "redis", "name": "Cache 2"}, &plainDB), 201)
+	if plainDB.Task != nil || plainDB.DestinationID != f.destID {
+		t.Fatalf("aucune tâche sans instant_deploy, destination du serveur de l'équipe : %+v", plainDB)
 	}
 }
 

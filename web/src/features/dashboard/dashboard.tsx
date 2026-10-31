@@ -175,13 +175,16 @@ function Servers({ team }: { team: string }) {
   return (
     <section>
       <SectionTitle
-        title="Serveurs"
+        title="Serveur"
         action={
-          <Button variant="ghost" size="icon-sm" aria-label="Nouveau serveur" asChild>
-            <Link to={to(team, "/servers/new")}>
-              <PlusIcon />
-            </Link>
-          </Button>
+          // Une équipe = un serveur : l'ajout n'est proposé que s'il n'y en a pas encore.
+          servers.data?.length === 0 && (
+            <Button variant="ghost" size="icon-sm" aria-label="Ajouter le serveur" asChild>
+              <Link to={to(team, "/servers/new")}>
+                <PlusIcon />
+              </Link>
+            </Button>
+          )
         }
       />
       {servers.isPending ? (
@@ -189,10 +192,10 @@ function Servers({ team }: { team: string }) {
       ) : !servers.data?.length ? (
         <Empty
           icon={<ServerIcon />}
-          text="Aucun serveur connecté."
+          text="Cette équipe n'a pas encore de serveur : toutes ses ressources y seront déployées."
           action={
             <Button asChild>
-              <Link to={to(team, "/servers/new")}>Ajouter un serveur</Link>
+              <Link to={to(team, "/servers/new")}>Ajouter le serveur</Link>
             </Button>
           }
         />

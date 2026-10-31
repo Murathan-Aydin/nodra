@@ -147,7 +147,7 @@ Les opérations distantes sont des **tâches** asynchrones (`202 ServerTask`) do
 | Méthode | Route | Permission (portée serveur) | Description |
 |---|---|---|---|
 | GET | `/servers` | `server.read` (équipe) | |
-| POST | `/servers` | `server.create` (équipe) | `{name, ip, port?: 22, user?: "root", private_key_id, description?, settings?}` → `201 {server, task}` (validation lancée automatiquement) |
+| POST | `/servers` | `server.create` (équipe) | `{name, ip, port?: 22, user?: "root", private_key_id, description?, settings?}` → `201 {server, task}` (validation lancée automatiquement). **Un seul serveur par équipe** : `409` si l'équipe en a déjà un |
 | GET | `/servers/{id}` | `server.read` | `{server, destinations}` |
 | PATCH | `/servers/{id}` | `server.update` | Champs partiels ; `settings` est fusionné. Changer IP/port/clé efface la clé d'hôte ; changer IP/port/utilisateur/clé repasse le serveur en non validé. |
 | DELETE | `/servers/{id}` | `server.delete` | Soumis aux règles d'approbation (`server.delete`) ; `409` si des ressources y sont déployées |
@@ -302,7 +302,7 @@ Source du code : dépôt public (`git_repository` = URL https), source Git de l'
 | POST | `/applications/{id}/webhooks/rotate` | `resource.update` | Nouveau secret |
 | PUT | `/applications/{id}/tags` | `resource.update` | `{tag_ids}` → tags |
 
-**Champs** : `environment_id`, `destination_id` (création uniquement), `name`, `description`, `git_repository`, `git_branch` (`main`), `git_commit_sha` (`HEAD` ou SHA), `source_id`, `private_key_id`, `build_pack`, `docker_image`, `docker_image_tag`, `static_image`, `base_directory` (`/`), `publish_directory`, `dockerfile`, `dockerfile_location` (`/Dockerfile`), `dockerfile_target`, `docker_compose_location` (`/docker-compose.yaml`), `docker_compose_raw`, `docker_compose_domains` (`{service: [domaines]}`), `install_command`, `build_command`, `start_command`, `watch_paths`, `ports_exposes` (`3000` nixpacks, `80` sinon), `ports_mappings` (`8080:80`), `domains` (URL ; `https://` ajouté si absent ; un chemin est possible), `redirect` (`both`/`www`/`non-www`), `preview_url_template` (`{{pr_id}}.{{domain}}`), `custom_labels`, `custom_docker_run_options`, `pre_deployment_command`/`_container`, `post_deployment_command`/`_container`, `health_check`, `limits`, `settings`, `basic_auth_password` (écriture seule, stocké en bcrypt ; la réponse indique `basic_auth_password_set`), `force_domain_override`.
+**Champs** : `environment_id`, `destination_id` (création uniquement ; facultatif : destination par défaut du serveur de l'équipe, `422` si l'équipe n'a pas de serveur), `name`, `description`, `git_repository`, `git_branch` (`main`), `git_commit_sha` (`HEAD` ou SHA), `source_id`, `private_key_id`, `build_pack`, `docker_image`, `docker_image_tag`, `static_image`, `base_directory` (`/`), `publish_directory`, `dockerfile`, `dockerfile_location` (`/Dockerfile`), `dockerfile_target`, `docker_compose_location` (`/docker-compose.yaml`), `docker_compose_raw`, `docker_compose_domains` (`{service: [domaines]}`), `install_command`, `build_command`, `start_command`, `watch_paths`, `ports_exposes` (`3000` nixpacks, `80` sinon), `ports_mappings` (`8080:80`), `domains` (URL ; `https://` ajouté si absent ; un chemin est possible), `redirect` (`both`/`www`/`non-www`), `preview_url_template` (`{{pr_id}}.{{domain}}`), `custom_labels`, `custom_docker_run_options`, `pre_deployment_command`/`_container`, `post_deployment_command`/`_container`, `health_check`, `limits`, `settings`, `basic_auth_password` (écriture seule, stocké en bcrypt ; la réponse indique `basic_auth_password_set`), `force_domain_override`.
 
 **health_check** (défauts) : `enabled` false, `type` http|cmd, `path` `/`, `port` (premier port exposé), `host` localhost, `method` GET, `return_code` 200, `scheme` http, `response_text`, `interval` 5, `timeout` 5, `retries` 10, `start_period` 5, `command`.
 
@@ -404,7 +404,7 @@ Catalogue de 347 modèles docker-compose repris de Coolify (`internal/services/t
 | GET | `/service-templates?q=&category=` (racine) | connecté | `{templates: [{slug, name, slogan, documentation, category, tags, logo, port}], categories}` |
 | GET | `/service-templates/{slug}` (racine) | connecté | Modèle avec `compose` |
 | GET | `/services?environment_id=` | `resource.read` | |
-| POST | `/services` | `resource.create` (environnement) + `server.read` | `{environment_id, destination_id, template? \| docker_compose_raw, name?, description?, instant_deploy?}` → `201 {service, apps, tags, task?, approval_request?}` |
+| POST | `/services` | `resource.create` (environnement) + `server.read` | `{environment_id, destination_id? (défaut : serveur de l'équipe), template? \| docker_compose_raw, name?, description?, instant_deploy?}` → `201 {service, apps, tags, task?, approval_request?}` |
 | GET | `/services/{id}` | `resource.read` | `{service, apps, tags}` |
 | PATCH | `/services/{id}` | `resource.update` | `{name?, description?, docker_compose_raw?}` ; un nouveau compose est ré-analysé (nouveaux secrets générés, valeurs et domaines existants conservés) |
 | DELETE | `/services/{id}?delete_volumes=true` | `resource.delete` | Soumis aux approbations |

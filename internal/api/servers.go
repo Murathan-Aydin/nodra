@@ -145,6 +145,14 @@ func (s *Server) createServer(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "clé privée inconnue")
 		return
 	}
+	// Une équipe = un serveur : ses ressources y sont déployées sans avoir à le choisir.
+	if n, err := s.Store.TeamServerCount(ctx, team.ID); err != nil {
+		s.internal(w, err)
+		return
+	} else if n > 0 {
+		writeError(w, http.StatusConflict, "cette équipe a déjà un serveur (un seul serveur par équipe)")
+		return
+	}
 	created, err := s.Store.CreateServer(ctx, sv)
 	if err != nil {
 		s.fail(w, err)
@@ -490,4 +498,18 @@ func (s *Server) deleteDestination(w http.ResponseWriter, r *http.Request) {
 	}
 	p := servers.NetworkParams{Name: d.Name, Network: d.Network, DestinationID: d.ID}
 	s.startTask(w, r, sv, servers.TaskNetworkDelete, p, p)
+}
+
+// defaultDestination remplit la destination par défaut du serveur de l'équipe (422 si l'équipe n'a pas de serveur).
+func (s *Server) defaultDestination(w http.ResponseWriter, r *http.Request, dst *string) bool {
+	id, err := s.Store.TeamDefaultDestination(r.Context(), teamFrom(r.Context()).Team.ID)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusUnprocessableEntity, "cette équipe n'a pas encore de serveur")
+		return false
+	} else if err != nil {
+		s.internal(w, err)
+		return false
+	}
+	*dst = id
+	return true
 }

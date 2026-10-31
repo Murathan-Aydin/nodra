@@ -105,6 +105,8 @@ L'ancien front complet **et** la refonte visuelle (y compris `app-shell.tsx`, `a
 
 **Swagger** (demande de l'utilisateur, en plus de `docs/API.md` qui reste la référence) : `GET /api/docs` (Swagger UI depuis unpkg, version épinglée ; « Try it out » avec le cookie de session et l'en-tête anti-CSRF, ou un jeton via Authorize) et `GET /api/openapi.json` (OpenAPI 3 généré une fois par `chi.Walk` sur les routes réelles, enrichi par les tableaux de `docs/API.md` embarqué via le paquet `docs` : section, résumé, permission ; routes relatives rattachées au préfixe de leur section, tableau WebSocket traité en GET). Test : 291 opérations, 97 % documentées (les autres ne sont décrites qu'en texte). Schémas des corps et réponses non détaillés (objets libres).
 
+**Un serveur par équipe** (décision de l'utilisateur, 2026-10-31) : `POST /servers` renvoie `409` si l'équipe a déjà un serveur ; `destination_id` devient facultatif à la création des applications, bases et services (destination par défaut du serveur de l'équipe). Front : plus d'étapes serveur et destination dans « Nouvelle ressource » (type → configuration, bandeau « Déployé sur … », blocage si l'équipe n'a pas de serveur), « + » du serveur masqué s'il existe, configuration guidée sans second serveur. Tests Go ajoutés.
+
 Côté backend, le correctif `PATCH /backups/{id}` (paramètres SQL inutilisés) trouvé pendant le front v1 est conservé, avec son test.
 
 ## Prochaine action

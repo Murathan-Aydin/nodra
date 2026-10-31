@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
-import { ArrowLeftIcon, BookOpenIcon, NetworkIcon, SearchIcon, ServerIcon } from "lucide-react"
+import { ArrowLeftIcon, BookOpenIcon, SearchIcon, ServerIcon } from "lucide-react"
 import { toast } from "sonner"
 import { EmptyPanel, PageHeader, Section } from "@/components/page"
 import { Button } from "@/components/ui/button"
@@ -10,20 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError, get, post, teamPath } from "@/lib/api"
 import { projectQueries, teamQueries } from "@/lib/queries"
-import type { Destination, Server, ServiceTemplate } from "@/lib/types"
+import type { Server, ServiceTemplate } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { AppForm } from "@/features/new-resource/app-forms"
 import { ALL_OPTIONS, APPLICATIONS, DATABASES, isDatabase, SERVICE_ICON, type Kind, type Option } from "@/features/new-resource/options"
 
-type Step = "type" | "server" | "destination" | "configure"
-type Search = { step?: Step; kind?: string; server?: string; destination?: string }
+type Step = "type" | "configure"
+type Search = { step?: Step; kind?: string }
 
 export const Route = createFileRoute("/t/$team/projects/$project/$env/new")({
   validateSearch: (s: Record<string, unknown>): Search => ({
-    step: ["type", "server", "destination", "configure"].includes(s.step as string) ? (s.step as Step) : undefined,
+    step: s.step === "configure" ? "configure" : undefined,
     kind: typeof s.kind === "string" ? s.kind : undefined,
-    server: typeof s.server === "string" ? s.server : undefined,
-    destination: typeof s.destination === "string" ? s.destination : undefined,
   }),
   component: NewResource,
 })
@@ -36,6 +34,9 @@ function NewResource() {
   const data = useQuery(projectQueries.environment(team, project, env)).data
   const step = search.step ?? "type"
   const option = ALL_OPTIONS.find((o) => o.id === search.kind)
+  // Une équipe = un serveur : la ressource y est créée directement (destination par défaut).
+  const servers = useQuery(teamQueries.servers(team))
+  const server = servers.data?.[0]
   const service = search.kind?.startsWith("service:") ? search.kind.slice(8) : undefined
 
   return (
@@ -56,13 +57,19 @@ function NewResource() {
           )
         }
       />
-      {step === "type" && <ChooseType onPick={(kind) => go({ step: "server", kind })} />}
-      {step === "server" && <ChooseServer team={team} onPick={(server) => go({ step: "destination", server })} />}
-      {step === "destination" && search.server && (
-        <ChooseDestination team={team} server={search.server} onPick={(destination) => go({ step: "configure", destination })} />
-      )}
-      {step === "configure" && search.destination && search.kind && (
-        <Configure team={team} environment={env} destination={search.destination} kind={search.kind} />
+      {!server ? (
+        servers.isPending ? (
+          <Skeleton className="h-32 rounded-2xl" />
+        ) : (
+          <NoServer team={team} />
+        )
+      ) : step === "type" ? (
+        <>
+          <TeamServer server={server} />
+          <ChooseType onPick={(kind) => go({ step: "configure", kind })} />
+        </>
+      ) : (
+        search.kind && <Configure team={team} environment={env} kind={search.kind} />
       )}
     </>
   )
@@ -202,76 +209,53 @@ function Tile({ icon, tint, title, text, onClick }: { icon: React.ReactNode; tin
   )
 }
 
-function ChooseServer({ team, onPick }: { team: string; onPick: (id: string) => void }) {
-  const servers = useQuery(teamQueries.servers(team))
-  const usable = servers.data?.filter((s) => s.is_usable) ?? []
+function NoServer({ team }: { team: string }) {
   return (
-    <Section title="Choisir un serveur" description="La machine qui hébergera cette ressource.">
-      {servers.isPending ? (
-        <Skeleton className="h-20 rounded-xl" />
-      ) : !usable.length ? (
-        <EmptyPanel
-          icon={<ServerIcon />}
-          title="Aucun serveur disponible"
-          text="Validez un serveur joignable avant de créer cette ressource."
-          action={
-            <Button asChild>
-              <Link to={`/t/${team}/servers/new` as "/"}>Ajouter un serveur</Link>
-            </Button>
-          }
-        />
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {usable.map((s: Server) => (
-            <Tile key={s.id} icon={<ServerIcon />} tint="text-primary" title={s.name} text={s.description || (s.is_localhost ? "Serveur hôte de Nodra" : s.ip)} onClick={() => onPick(s.id)} />
-          ))}
-        </div>
-      )}
-    </Section>
+    <EmptyPanel
+      icon={<ServerIcon />}
+      title="Cette équipe n'a pas encore de serveur"
+      text="Chaque équipe dispose d'un serveur : toutes ses ressources y sont déployées."
+      action={
+        <Button asChild>
+          <Link to={`/t/${team}/servers/new` as "/"}>Ajouter le serveur</Link>
+        </Button>
+      }
+    />
   )
 }
 
-function ChooseDestination({ team, server, onPick }: { team: string; server: string; onPick: (id: string) => void }) {
-  const data = useQuery({
-    queryKey: ["team", team, "server", server, "detail"],
-    queryFn: () => get<{ server: Server; destinations: Destination[] }>(teamPath(team, `/servers/${server}`)),
-  }).data
-  const dests = data?.destinations ?? []
-  // Une seule destination : on passe directement à la suite (comme Coolify).
-  const only = dests.length === 1 ? dests[0].id : undefined
-  useEffect(() => {
-    if (only) onPick(only)
-  }, [only, onPick])
-  if (!data || only) return <Skeleton className="h-20 rounded-2xl" />
+/** Serveur de l'équipe, sur lequel la ressource sera créée. */
+function TeamServer({ server }: { server: Server }) {
   return (
-    <Section title="Choisir une destination" description="Les destinations séparent les ressources par réseau Docker. En cas de doute, prenez celle par défaut.">
-      <div className="grid gap-3 sm:grid-cols-2">
-        {dests.map((d) => (
-          <Tile key={d.id} icon={<NetworkIcon />} tint="text-primary" title={d.name} text={`Réseau ${d.network}${d.is_default ? " · par défaut" : ""}`} onClick={() => onPick(d.id)} />
-        ))}
-      </div>
-    </Section>
+    <div className="glass-panel mb-6 flex flex-wrap items-center gap-3 rounded-2xl px-4 py-3 text-sm">
+      <ServerIcon className="size-4 text-muted-foreground" />
+      <span>
+        Déployé sur <strong>{server.name}</strong>
+        <span className="text-muted-foreground"> · {server.is_localhost ? "serveur hôte de Nodra" : server.ip}</span>
+      </span>
+      {!server.is_usable && <span className="text-warning">Serveur pas encore validé : la ressource sera créée mais ne pourra démarrer qu'après validation.</span>}
+    </div>
   )
 }
 
-function Configure({ team, environment, destination, kind }: { team: string; environment: string; destination: string; kind: string }) {
+function Configure({ team, environment, kind }: { team: string; environment: string; kind: string }) {
   const navigate = useNavigate()
   const open = (path: string) => void navigate({ to: `/t/${team}/${path}` as "/" })
-  if (kind.startsWith("service:")) return <OneClick team={team} kind={kind} environment={environment} destination={destination} onCreated={(id) => open(`services/${id}`)} />
-  if (isDatabase(kind)) return <OneClick team={team} kind={kind} environment={environment} destination={destination} onCreated={(id) => open(`databases/${id}`)} />
-  return <AppForm kind={kind as Kind} team={team} environment={environment} destination={destination} onCreated={(id) => open(`applications/${id}`)} />
+  if (kind.startsWith("service:")) return <OneClick team={team} kind={kind} environment={environment} onCreated={(id) => open(`services/${id}`)} />
+  if (isDatabase(kind)) return <OneClick team={team} kind={kind} environment={environment} onCreated={(id) => open(`databases/${id}`)} />
+  return <AppForm kind={kind as Kind} team={team} environment={environment} onCreated={(id) => open(`applications/${id}`)} />
 }
 
 /** Bases de données et services : créés directement, comme dans Coolify (démarrage depuis leur page). */
-function OneClick({ team, kind, environment, destination, onCreated }: { team: string; kind: string; environment: string; destination: string; onCreated: (id: string) => void }) {
+function OneClick({ team, kind, environment, onCreated }: { team: string; kind: string; environment: string; onCreated: (id: string) => void }) {
   const slug = kind.startsWith("service:") ? kind.slice(8) : undefined
   const template = useQuery({ queryKey: ["service-template", slug], queryFn: () => get<ServiceTemplate & { documentation: string }>(`/service-templates/${slug}`), enabled: !!slug })
   const started = useRef(false)
   const create = useMutation({
     mutationFn: async () =>
       slug
-        ? (await post<{ service: { id: string } }>(teamPath(team, "/services"), { environment_id: environment, destination_id: destination, template: slug })).service.id
-        : (await post<{ id: string }>(teamPath(team, "/databases"), { environment_id: environment, destination_id: destination, type: kind, name: `${kind}-${Math.random().toString(36).slice(2, 8)}` })).id,
+        ? (await post<{ service: { id: string } }>(teamPath(team, "/services"), { environment_id: environment, template: slug })).service.id
+        : (await post<{ id: string }>(teamPath(team, "/databases"), { environment_id: environment, type: kind, name: `${kind}-${Math.random().toString(36).slice(2, 8)}` })).id,
     onSuccess: onCreated,
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Création impossible"),
   })

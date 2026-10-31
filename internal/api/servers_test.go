@@ -90,6 +90,8 @@ func TestServers(t *testing.T) {
 	expect(t, "création", alice.do("POST", base+"/servers", map[string]any{"name": "prod-1", "ip": srv.Host, "port": srv.Port,
 		"private_key_id": key.ID}, &created), 201)
 	sid := created.Server.ID
+	expect(t, "second serveur de l'équipe", alice.do("POST", base+"/servers", map[string]any{"name": "prod-2", "ip": srv.Host, "port": srv.Port,
+		"private_key_id": key.ID}, nil), 409)
 	task := waitTask(t, alice, acme.ID, sid, created.Task.ID)
 	if task.Status != "success" || !strings.Contains(task.Output, "Serveur prêt") {
 		t.Fatalf("validation : %s %s\n%s", task.Status, task.Error, task.Output)

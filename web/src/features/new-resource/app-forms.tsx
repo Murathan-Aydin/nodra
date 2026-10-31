@@ -11,7 +11,7 @@ import { ApiError, get, post, teamPath } from "@/lib/api"
 import type { GitSource, PrivateKey, Repo } from "@/lib/types"
 import type { Kind } from "./options"
 
-type Ctx = { team: string; environment: string; destination: string; onCreated: (id: string) => void }
+type Ctx = { team: string; environment: string; onCreated: (id: string) => void }
 
 const BUILD_PACKS = [
   { id: "nixpacks", label: "Nixpacks (détection automatique)" },
@@ -20,10 +20,10 @@ const BUILD_PACKS = [
   { id: "dockercompose", label: "Docker Compose du dépôt" },
 ]
 
-/** Création d'une application ; les champs vides prennent les valeurs par défaut de l'API. */
-function useCreateApp({ team, environment, destination, onCreated }: Ctx) {
+/** Création d'une application sur le serveur de l'équipe ; les champs vides prennent les valeurs par défaut de l'API. */
+function useCreateApp({ team, environment, onCreated }: Ctx) {
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => post<{ id: string }>(teamPath(team, "/applications"), { environment_id: environment, destination_id: destination, ...body }),
+    mutationFn: (body: Record<string, unknown>) => post<{ id: string }>(teamPath(team, "/applications"), { environment_id: environment, ...body }),
     onSuccess: (a) => onCreated(a.id),
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Création impossible"),
   })
