@@ -1,6 +1,7 @@
 #!/bin/sh
 # Faux docker pour les tests : l'état (images, conteneurs) est conservé dans $STATE.
 echo "docker $*" >> "$STATE/calls"
+if [ -n "$DOCKER_CONFIG" ]; then echo "DOCKER_CONFIG=$DOCKER_CONFIG" >> "$STATE/calls"; fi
 mkdir -p "$STATE/images" "$STATE/containers"
 key() { echo "$1" | tr '/:' '__'; }
 cmd="$1"; shift

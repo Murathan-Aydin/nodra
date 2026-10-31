@@ -55,6 +55,8 @@ var Catalog = []Permission{
 	{"key.manage", "Intégrations", "Gérer les clés SSH"},
 	{"storage.read", "Intégrations", "Voir les stockages S3"},
 	{"storage.manage", "Intégrations", "Gérer les stockages S3"},
+	{"registry.read", "Intégrations", "Voir les registres Docker (sans les mots de passe)"},
+	{"registry.manage", "Intégrations", "Gérer les registres Docker privés"},
 	{"notification.manage", "Intégrations", "Configurer les notifications"},
 	{"variable.read", "Intégrations", "Lire les variables partagées"},
 	{"variable.manage", "Intégrations", "Gérer les variables partagées"},
@@ -108,11 +110,11 @@ func SystemRoles() []Role {
 			"team.read", "project.read", "project.create", "project.update", "environment.create", "environment.update",
 			"server.read", "resource.read", "resource.create", "resource.update", "resource.deploy", "resource.env.read",
 			"resource.env.write", "resource.logs.read", "resource.terminal", "resource.backup.manage",
-			"source.read", "key.read", "storage.read", "variable.read",
+			"source.read", "key.read", "storage.read", "registry.read", "variable.read",
 		}},
 		{RoleViewer, "Lecteur", "Lecture seule, sans accès aux secrets", []string{
 			"team.read", "project.read", "server.read", "resource.read", "resource.logs.read",
-			"source.read", "key.read", "storage.read",
+			"source.read", "key.read", "storage.read", "registry.read",
 		}},
 	}
 }

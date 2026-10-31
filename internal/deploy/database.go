@@ -307,24 +307,38 @@ func (r *Runner) databasesDir() string {
 
 // dbRun : action en cours sur une base (sortie enregistrée dans la tâche serveur).
 type dbRun struct {
-	r   *Runner
-	db  *store.Database
-	t   ssh.Target
-	out io.Writer
-	dir string
+	r         *Runner
+	db        *store.Database
+	t         ssh.Target
+	out       io.Writer
+	dir       string
+	dockerEnv string // DOCKER_CONFIG des registres privés de l'équipe
 }
 
 func (d *dbRun) sh(ctx context.Context, label, script string) error {
 	if label != "" {
 		fmt.Fprintf(d.out, "$ %s\n", label)
 	}
-	code, err := d.r.SSH.RunInput(ctx, d.t, "sh -s", strings.NewReader("set -e\n"+script), d.out, d.out)
+	code, err := d.r.SSH.RunInput(ctx, d.t, "sh -s", strings.NewReader("set -e\n"+d.dockerEnv+script), d.out, d.out)
 	if err != nil {
 		return err
 	}
 	if code != 0 {
 		return fmt.Errorf("%s : échec (code %d)", label, code)
 	}
+	return nil
+}
+
+// registries active les registres privés de l'équipe pour les scripts suivants.
+func (d *dbRun) registries(ctx context.Context) error {
+	setup, env, err := d.r.dockerConfig(ctx, d.db.TeamID)
+	if err != nil {
+		return err
+	}
+	if err := d.sh(ctx, "", setup); err != nil {
+		return err
+	}
+	d.dockerEnv = env
 	return nil
 }
 
@@ -409,6 +423,9 @@ func (d *dbRun) env(ctx context.Context, loc *store.ResourceLocation) (map[strin
 func (d *dbRun) start(ctx context.Context) error {
 	db, st := d.db, d.r.Store
 	fmt.Fprintf(d.out, "Démarrage de %s (%s, %s).\n", db.Name, db.Type, db.Image)
+	if err := d.registries(ctx); err != nil {
+		return err
+	}
 	loc, err := st.ResourceLocation(ctx, db.ID)
 	if err != nil {
 		return err

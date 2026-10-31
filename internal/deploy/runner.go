@@ -176,6 +176,7 @@ type pipe struct {
 	containerName string
 	rolling       bool
 	certs         map[string][2]string
+	dockerEnv     string // DOCKER_CONFIG des registres privés de l'équipe
 }
 
 func (p *pipe) info(format string, args ...any) {
@@ -190,7 +191,7 @@ func (p *pipe) sh(ctx context.Context, label, script string, hidden bool) error 
 	if label != "" {
 		p.log.line("command", hidden, label)
 	}
-	code, err := p.r.SSH.RunInput(ctx, p.t, "sh -s", strings.NewReader("set -e\n"+script),
+	code, err := p.r.SSH.RunInput(ctx, p.t, "sh -s", strings.NewReader("set -e\n"+p.dockerEnv+script),
 		logWriter{p.log, "stdout", hidden}, logWriter{p.log, "stderr", hidden})
 	if err != nil {
 		if ctx.Err() != nil {
@@ -301,6 +302,9 @@ func (p *pipe) run(ctx context.Context) error {
 		return errors.New("le serveur n'est pas validé")
 	}
 	if p.t, err = r.Servers.Target(ctx, p.sv); err != nil {
+		return err
+	}
+	if err := p.registries(ctx); err != nil {
 		return err
 	}
 	p.appDir = r.appsDir() + "/" + a.ID
@@ -1114,3 +1118,19 @@ func (r *Runner) Images(ctx context.Context, a *store.Application) ([]Image, err
 }
 
 var _ io.Writer = logWriter{}
+
+// registries écrit les identifiants des registres privés de l'équipe et les active pour la suite.
+func (p *pipe) registries(ctx context.Context) error {
+	setup, env, err := p.r.dockerConfig(ctx, p.a.TeamID)
+	if err != nil {
+		return err
+	}
+	if _, err := p.out(ctx, setup); err != nil {
+		return fmt.Errorf("identifiants des registres : %w", err)
+	}
+	if env != "" {
+		p.debug("Registres privés de l'équipe activés.")
+	}
+	p.dockerEnv = env
+	return nil
+}

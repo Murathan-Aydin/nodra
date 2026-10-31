@@ -373,6 +373,11 @@ func (s *Server) Router() http.Handler {
 					r.Get("/backup-executions/{id}/download", s.downloadBackup)
 					r.Delete("/backup-executions/{id}", s.deleteBackupExecution)
 
+					r.Get("/docker-registries", s.listRegistries)
+					r.Post("/docker-registries", s.createRegistry)
+					r.Patch("/docker-registries/{id}", s.updateRegistry)
+					r.Delete("/docker-registries/{id}", s.deleteRegistry)
+
 					r.Get("/notification-channels", s.listChannels)
 					r.Post("/notification-channels", s.createChannel)
 					r.Patch("/notification-channels/{id}", s.updateChannel)

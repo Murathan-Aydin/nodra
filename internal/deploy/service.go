@@ -271,18 +271,19 @@ func ServiceURLVars(raw string, apps []*store.ServiceApp) map[string]string {
 // --- Tâches ---
 
 type svcRun struct {
-	r   *Runner
-	svc *store.Service
-	t   ssh.Target
-	out io.Writer
-	dir string
+	r         *Runner
+	svc       *store.Service
+	t         ssh.Target
+	out       io.Writer
+	dir       string
+	dockerEnv string // DOCKER_CONFIG des registres privés de l'équipe
 }
 
 func (d *svcRun) sh(ctx context.Context, label, script string) error {
 	if label != "" {
 		fmt.Fprintf(d.out, "$ %s\n", label)
 	}
-	code, err := d.r.SSH.RunInput(ctx, d.t, "sh -s", strings.NewReader("set -e\n"+script), d.out, d.out)
+	code, err := d.r.SSH.RunInput(ctx, d.t, "sh -s", strings.NewReader("set -e\n"+d.dockerEnv+script), d.out, d.out)
 	if err != nil {
 		return err
 	}
@@ -381,6 +382,14 @@ func (r *Runner) resourceEnv(ctx context.Context, resourceID, teamID string, loc
 func (d *svcRun) start(ctx context.Context) error {
 	r, svc := d.r, d.svc
 	fmt.Fprintf(d.out, "Démarrage du service %s.\n", svc.Name)
+	regSetup, regEnv, err := r.dockerConfig(ctx, svc.TeamID)
+	if err != nil {
+		return err
+	}
+	if err := d.sh(ctx, "", regSetup); err != nil {
+		return err
+	}
+	d.dockerEnv = regEnv
 	loc, err := r.Store.ResourceLocation(ctx, svc.ID)
 	if err != nil {
 		return err

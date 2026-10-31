@@ -405,6 +405,16 @@ Catalogue de 347 modèles docker-compose repris de Coolify (`internal/services/t
 
 Au démarrage, Nodra écrit dans `/data/nodra/services/<id>/` le compose transformé (`KEY` sans valeur → `KEY: ${KEY}`, conteneurs `<service>-<id>`, labels `nodra.*` et de routage, réseau de la destination sauf `network_mode`, volumes nommés déclarés, montages relatifs vers `data/`), le `.env` (variables, partagées interpolées, `SERVICE_URL_*`/`SERVICE_FQDN_*` recalculées depuis les domaines) et les fichiers générés, puis `docker compose pull` + `up -d` et attend les conteneurs (hors exclus).
 
+## Registres Docker privés (`/teams/{team}/docker-registries`)
+
+Identifiants utilisés pour tirer et construire les images (applications, bases, services) : écrits avant chaque déploiement ou démarrage dans `<NODRA_SERVER_DATA_DIR>/docker-config/<équipe>/config.json` sur le serveur (dossier 700, fichier 600), activés par `DOCKER_CONFIG` ; retirés dès que l'équipe n'a plus de registre. Une sous-équipe hérite des registres de ses parents (le plus proche l'emporte pour un même hôte).
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/docker-registries` | `registry.read` | `[{id, name, host, username, created_at}]` (mot de passe jamais renvoyé) |
+| POST | `/docker-registries` | `registry.manage` | `{name, host (ghcr.io, registry.gitlab.com, docker.io…, port facultatif), username, password}` → `201` ; `409` si l'hôte existe déjà |
+| PATCH / DELETE | `/docker-registries/{id}` | `registry.manage` | Champs partiels ; mot de passe vide ou `********` conservé |
+
 ## Stockages S3 (`/teams/{team}/s3-storages`)
 
 Tout stockage compatible S3 (AWS, Cloudflare R2, Garage, SeaweedFS, MinIO…). L'accès au bucket est vérifié à la création et à la modification (`is_usable`, `last_error`). Clés chiffrées, jamais renvoyées.
