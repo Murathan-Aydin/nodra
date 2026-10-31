@@ -19,14 +19,14 @@ export function notifyPending(res: unknown): boolean {
  */
 export function useApiMutation<TVars, TRes>(
   fn: (vars: TVars) => Promise<TRes>,
-  opts: { success?: string | ((res: TRes) => string | undefined); invalidate?: QueryKey[]; onSuccess?: (res: TRes, vars: TVars) => void } = {},
+  opts: { success?: string | ((res: TRes, vars: TVars) => string | undefined); invalidate?: QueryKey[]; onSuccess?: (res: TRes, vars: TVars) => void } = {},
 ) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: fn,
     onSuccess: (res, vars) => {
       if (!notifyPending(res)) {
-        const msg = typeof opts.success === "function" ? opts.success(res) : opts.success
+        const msg = typeof opts.success === "function" ? opts.success(res, vars) : opts.success
         if (msg) toast.success(msg)
       }
       for (const key of opts.invalidate ?? []) qc.invalidateQueries({ queryKey: key })

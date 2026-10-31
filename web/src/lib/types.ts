@@ -315,3 +315,158 @@ export interface Repo {
   default_branch: string
   html_url: string
 }
+
+export interface HealthCheck {
+  enabled: boolean
+  type: "http" | "cmd"
+  path: string
+  port: string
+  host: string
+  method: string
+  return_code: number
+  scheme: string
+  response_text: string
+  interval: number
+  timeout: number
+  retries: number
+  start_period: number
+  command: string
+}
+
+export interface Limits {
+  memory: string
+  memory_swap: string
+  memory_reservation: string
+  memory_swappiness: number
+  cpus: string
+  cpuset: string
+  cpu_shares: number
+}
+
+export interface Application {
+  id: string
+  team_id: string
+  environment_id: string
+  destination_id: string
+  name: string
+  description: string
+  status: string
+  git_repository: string
+  git_branch: string
+  git_commit_sha: string
+  source_id: string | null
+  private_key_id: string | null
+  build_pack: "nixpacks" | "dockerfile" | "dockercompose" | "dockerimage" | "static"
+  docker_image: string
+  docker_image_tag: string
+  static_image: string
+  base_directory: string
+  publish_directory: string
+  dockerfile: string
+  dockerfile_location: string
+  dockerfile_target: string
+  docker_compose_location: string
+  docker_compose_raw: string
+  docker_compose_domains: Record<string, string[]>
+  install_command: string
+  build_command: string
+  start_command: string
+  watch_paths: string
+  ports_exposes: string
+  ports_mappings: string
+  domains: string[]
+  redirect: "both" | "www" | "non-www"
+  preview_url_template: string
+  custom_labels: string
+  custom_docker_run_options: string
+  pre_deployment_command: string
+  pre_deployment_container: string
+  post_deployment_command: string
+  post_deployment_container: string
+  health_check: HealthCheck
+  limits: Limits
+  settings: Record<string, unknown> & { log_drain_enabled?: boolean; auto_deploy?: boolean; preview_deployments?: boolean }
+  basic_auth_password_set: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface EnvVar {
+  id: string
+  resource_type: string
+  resource_id: string
+  key: string
+  value: string
+  is_buildtime: boolean
+  is_runtime: boolean
+  is_preview: boolean
+  is_literal: boolean
+  is_multiline: boolean
+  is_secret: boolean
+  comment: string
+  updated_at: string
+}
+
+export interface Storage {
+  id: string
+  resource_type: string
+  resource_id: string
+  kind: "volume" | "bind" | "file"
+  name: string
+  host_path: string
+  mount_path: string
+  content: string
+  created_at: string
+}
+
+export interface Container {
+  name: string
+  service?: string
+  state: string
+  status: string
+  image: string
+}
+
+export interface Preview {
+  id: string
+  application_id: string
+  pr_number: number
+  pr_url: string
+  title: string
+  domains: string[]
+  compose_domains: Record<string, string[]>
+  status: string
+  last_commit: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DeploymentLog {
+  id: number
+  created_at: string
+  kind: string
+  hidden: boolean
+  message: string
+}
+
+export interface ImageInfo {
+  tag: string
+  image: string
+  created: string
+  size: string
+  current: boolean
+}
+
+export interface ScheduledTask {
+  id: string
+  team_id: string
+  resource_id: string
+  name: string
+  command: string
+  frequency: string
+  container: string
+  timeout: number
+  enabled: boolean
+  last_run_at: string | null
+  created_at: string
+}

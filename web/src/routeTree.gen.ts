@@ -21,6 +21,7 @@ import { Route as TTeamRouteRouteImport } from './routes/t/$team/route'
 import { Route as TTeamIndexRouteImport } from './routes/t/$team/index'
 import { Route as TTeamAccountIndexRouteImport } from './routes/t/$team/account/index'
 import { Route as TTeamAdminIndexRouteImport } from './routes/t/$team/admin/index'
+import { Route as TTeamApplicationsAppRouteRouteImport } from './routes/t/$team/applications/$app/route'
 import { Route as TTeamApprovalsIndexRouteImport } from './routes/t/$team/approvals/index'
 import { Route as TTeamAuditIndexRouteImport } from './routes/t/$team/audit/index'
 import { Route as TTeamNotificationsIndexRouteImport } from './routes/t/$team/notifications/index'
@@ -33,6 +34,15 @@ import { Route as TTeamSourcesSourceRouteImport } from './routes/t/$team/sources
 import { Route as TTeamStoragesIndexRouteImport } from './routes/t/$team/storages/index'
 import { Route as TTeamTeamIndexRouteImport } from './routes/t/$team/team/index'
 import { Route as TTeamApplicationsAppIndexRouteImport } from './routes/t/$team/applications/$app/index'
+import { Route as TTeamApplicationsAppAdvancedRouteImport } from './routes/t/$team/applications/$app/advanced'
+import { Route as TTeamApplicationsAppDeploymentsRouteImport } from './routes/t/$team/applications/$app/deployments'
+import { Route as TTeamApplicationsAppEnvsRouteImport } from './routes/t/$team/applications/$app/envs'
+import { Route as TTeamApplicationsAppLogsRouteImport } from './routes/t/$team/applications/$app/logs'
+import { Route as TTeamApplicationsAppPreviewsRouteImport } from './routes/t/$team/applications/$app/previews'
+import { Route as TTeamApplicationsAppStoragesRouteImport } from './routes/t/$team/applications/$app/storages'
+import { Route as TTeamApplicationsAppTasksRouteImport } from './routes/t/$team/applications/$app/tasks'
+import { Route as TTeamApplicationsAppTerminalRouteImport } from './routes/t/$team/applications/$app/terminal'
+import { Route as TTeamApplicationsAppWebhooksRouteImport } from './routes/t/$team/applications/$app/webhooks'
 import { Route as TTeamDatabasesDbIndexRouteImport } from './routes/t/$team/databases/$db/index'
 import { Route as TTeamProjectsProjectIndexRouteImport } from './routes/t/$team/projects/$project/index'
 import { Route as TTeamServersServerIndexRouteImport } from './routes/t/$team/servers/$server/index'
@@ -104,6 +114,12 @@ const TTeamAdminIndexRoute = TTeamAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
+const TTeamApplicationsAppRouteRoute =
+  TTeamApplicationsAppRouteRouteImport.update({
+    id: '/applications/$app',
+    path: '/applications/$app',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
 const TTeamApprovalsIndexRoute = TTeamApprovalsIndexRouteImport.update({
   id: '/approvals/',
   path: '/approvals/',
@@ -161,9 +177,63 @@ const TTeamTeamIndexRoute = TTeamTeamIndexRouteImport.update({
 } as any)
 const TTeamApplicationsAppIndexRoute =
   TTeamApplicationsAppIndexRouteImport.update({
-    id: '/applications/$app/',
-    path: '/applications/$app/',
-    getParentRoute: () => TTeamRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppAdvancedRoute =
+  TTeamApplicationsAppAdvancedRouteImport.update({
+    id: '/advanced',
+    path: '/advanced',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppDeploymentsRoute =
+  TTeamApplicationsAppDeploymentsRouteImport.update({
+    id: '/deployments',
+    path: '/deployments',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppEnvsRoute =
+  TTeamApplicationsAppEnvsRouteImport.update({
+    id: '/envs',
+    path: '/envs',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppLogsRoute =
+  TTeamApplicationsAppLogsRouteImport.update({
+    id: '/logs',
+    path: '/logs',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppPreviewsRoute =
+  TTeamApplicationsAppPreviewsRouteImport.update({
+    id: '/previews',
+    path: '/previews',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppStoragesRoute =
+  TTeamApplicationsAppStoragesRouteImport.update({
+    id: '/storages',
+    path: '/storages',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppTasksRoute =
+  TTeamApplicationsAppTasksRouteImport.update({
+    id: '/tasks',
+    path: '/tasks',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppTerminalRoute =
+  TTeamApplicationsAppTerminalRouteImport.update({
+    id: '/terminal',
+    path: '/terminal',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppWebhooksRoute =
+  TTeamApplicationsAppWebhooksRouteImport.update({
+    id: '/webhooks',
+    path: '/webhooks',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
   } as any)
 const TTeamDatabasesDbIndexRoute = TTeamDatabasesDbIndexRouteImport.update({
   id: '/databases/$db/',
@@ -232,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/login/2fa': typeof Login2faRoute
   '/login/': typeof LoginIndexRoute
   '/t/$team/': typeof TTeamIndexRoute
+  '/t/$team/applications/$app': typeof TTeamApplicationsAppRouteRouteWithChildren
   '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
   '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/account/': typeof TTeamAccountIndexRoute
@@ -245,6 +316,15 @@ export interface FileRoutesByFullPath {
   '/t/$team/sources/': typeof TTeamSourcesIndexRoute
   '/t/$team/storages/': typeof TTeamStoragesIndexRoute
   '/t/$team/team/': typeof TTeamTeamIndexRoute
+  '/t/$team/applications/$app/advanced': typeof TTeamApplicationsAppAdvancedRoute
+  '/t/$team/applications/$app/deployments': typeof TTeamApplicationsAppDeploymentsRoute
+  '/t/$team/applications/$app/envs': typeof TTeamApplicationsAppEnvsRoute
+  '/t/$team/applications/$app/logs': typeof TTeamApplicationsAppLogsRoute
+  '/t/$team/applications/$app/previews': typeof TTeamApplicationsAppPreviewsRoute
+  '/t/$team/applications/$app/storages': typeof TTeamApplicationsAppStoragesRoute
+  '/t/$team/applications/$app/tasks': typeof TTeamApplicationsAppTasksRoute
+  '/t/$team/applications/$app/terminal': typeof TTeamApplicationsAppTerminalRoute
+  '/t/$team/applications/$app/webhooks': typeof TTeamApplicationsAppWebhooksRoute
   '/t/$team/servers/$server/proxy': typeof TTeamServersServerProxyRoute
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
@@ -279,6 +359,15 @@ export interface FileRoutesByTo {
   '/t/$team/sources': typeof TTeamSourcesIndexRoute
   '/t/$team/storages': typeof TTeamStoragesIndexRoute
   '/t/$team/team': typeof TTeamTeamIndexRoute
+  '/t/$team/applications/$app/advanced': typeof TTeamApplicationsAppAdvancedRoute
+  '/t/$team/applications/$app/deployments': typeof TTeamApplicationsAppDeploymentsRoute
+  '/t/$team/applications/$app/envs': typeof TTeamApplicationsAppEnvsRoute
+  '/t/$team/applications/$app/logs': typeof TTeamApplicationsAppLogsRoute
+  '/t/$team/applications/$app/previews': typeof TTeamApplicationsAppPreviewsRoute
+  '/t/$team/applications/$app/storages': typeof TTeamApplicationsAppStoragesRoute
+  '/t/$team/applications/$app/tasks': typeof TTeamApplicationsAppTasksRoute
+  '/t/$team/applications/$app/terminal': typeof TTeamApplicationsAppTerminalRoute
+  '/t/$team/applications/$app/webhooks': typeof TTeamApplicationsAppWebhooksRoute
   '/t/$team/servers/$server/proxy': typeof TTeamServersServerProxyRoute
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
@@ -303,6 +392,7 @@ export interface FileRoutesById {
   '/login/2fa': typeof Login2faRoute
   '/login/': typeof LoginIndexRoute
   '/t/$team/': typeof TTeamIndexRoute
+  '/t/$team/applications/$app': typeof TTeamApplicationsAppRouteRouteWithChildren
   '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
   '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/account/': typeof TTeamAccountIndexRoute
@@ -316,6 +406,15 @@ export interface FileRoutesById {
   '/t/$team/sources/': typeof TTeamSourcesIndexRoute
   '/t/$team/storages/': typeof TTeamStoragesIndexRoute
   '/t/$team/team/': typeof TTeamTeamIndexRoute
+  '/t/$team/applications/$app/advanced': typeof TTeamApplicationsAppAdvancedRoute
+  '/t/$team/applications/$app/deployments': typeof TTeamApplicationsAppDeploymentsRoute
+  '/t/$team/applications/$app/envs': typeof TTeamApplicationsAppEnvsRoute
+  '/t/$team/applications/$app/logs': typeof TTeamApplicationsAppLogsRoute
+  '/t/$team/applications/$app/previews': typeof TTeamApplicationsAppPreviewsRoute
+  '/t/$team/applications/$app/storages': typeof TTeamApplicationsAppStoragesRoute
+  '/t/$team/applications/$app/tasks': typeof TTeamApplicationsAppTasksRoute
+  '/t/$team/applications/$app/terminal': typeof TTeamApplicationsAppTerminalRoute
+  '/t/$team/applications/$app/webhooks': typeof TTeamApplicationsAppWebhooksRoute
   '/t/$team/servers/$server/proxy': typeof TTeamServersServerProxyRoute
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
@@ -341,6 +440,7 @@ export interface FileRouteTypes {
     | '/login/2fa'
     | '/login/'
     | '/t/$team/'
+    | '/t/$team/applications/$app'
     | '/t/$team/servers/$server'
     | '/t/$team/sources/$source'
     | '/t/$team/account/'
@@ -354,6 +454,15 @@ export interface FileRouteTypes {
     | '/t/$team/sources/'
     | '/t/$team/storages/'
     | '/t/$team/team/'
+    | '/t/$team/applications/$app/advanced'
+    | '/t/$team/applications/$app/deployments'
+    | '/t/$team/applications/$app/envs'
+    | '/t/$team/applications/$app/logs'
+    | '/t/$team/applications/$app/previews'
+    | '/t/$team/applications/$app/storages'
+    | '/t/$team/applications/$app/tasks'
+    | '/t/$team/applications/$app/terminal'
+    | '/t/$team/applications/$app/webhooks'
     | '/t/$team/servers/$server/proxy'
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
@@ -388,6 +497,15 @@ export interface FileRouteTypes {
     | '/t/$team/sources'
     | '/t/$team/storages'
     | '/t/$team/team'
+    | '/t/$team/applications/$app/advanced'
+    | '/t/$team/applications/$app/deployments'
+    | '/t/$team/applications/$app/envs'
+    | '/t/$team/applications/$app/logs'
+    | '/t/$team/applications/$app/previews'
+    | '/t/$team/applications/$app/storages'
+    | '/t/$team/applications/$app/tasks'
+    | '/t/$team/applications/$app/terminal'
+    | '/t/$team/applications/$app/webhooks'
     | '/t/$team/servers/$server/proxy'
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
@@ -411,6 +529,7 @@ export interface FileRouteTypes {
     | '/login/2fa'
     | '/login/'
     | '/t/$team/'
+    | '/t/$team/applications/$app'
     | '/t/$team/servers/$server'
     | '/t/$team/sources/$source'
     | '/t/$team/account/'
@@ -424,6 +543,15 @@ export interface FileRouteTypes {
     | '/t/$team/sources/'
     | '/t/$team/storages/'
     | '/t/$team/team/'
+    | '/t/$team/applications/$app/advanced'
+    | '/t/$team/applications/$app/deployments'
+    | '/t/$team/applications/$app/envs'
+    | '/t/$team/applications/$app/logs'
+    | '/t/$team/applications/$app/previews'
+    | '/t/$team/applications/$app/storages'
+    | '/t/$team/applications/$app/tasks'
+    | '/t/$team/applications/$app/terminal'
+    | '/t/$team/applications/$app/webhooks'
     | '/t/$team/servers/$server/proxy'
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
@@ -535,6 +663,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamAdminIndexRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
+    '/t/$team/applications/$app': {
+      id: '/t/$team/applications/$app'
+      path: '/applications/$app'
+      fullPath: '/t/$team/applications/$app'
+      preLoaderRoute: typeof TTeamApplicationsAppRouteRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
     '/t/$team/approvals/': {
       id: '/t/$team/approvals/'
       path: '/approvals'
@@ -614,10 +749,73 @@ declare module '@tanstack/react-router' {
     }
     '/t/$team/applications/$app/': {
       id: '/t/$team/applications/$app/'
-      path: '/applications/$app'
+      path: '/'
       fullPath: '/t/$team/applications/$app/'
       preLoaderRoute: typeof TTeamApplicationsAppIndexRouteImport
-      parentRoute: typeof TTeamRouteRoute
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/advanced': {
+      id: '/t/$team/applications/$app/advanced'
+      path: '/advanced'
+      fullPath: '/t/$team/applications/$app/advanced'
+      preLoaderRoute: typeof TTeamApplicationsAppAdvancedRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/deployments': {
+      id: '/t/$team/applications/$app/deployments'
+      path: '/deployments'
+      fullPath: '/t/$team/applications/$app/deployments'
+      preLoaderRoute: typeof TTeamApplicationsAppDeploymentsRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/envs': {
+      id: '/t/$team/applications/$app/envs'
+      path: '/envs'
+      fullPath: '/t/$team/applications/$app/envs'
+      preLoaderRoute: typeof TTeamApplicationsAppEnvsRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/logs': {
+      id: '/t/$team/applications/$app/logs'
+      path: '/logs'
+      fullPath: '/t/$team/applications/$app/logs'
+      preLoaderRoute: typeof TTeamApplicationsAppLogsRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/previews': {
+      id: '/t/$team/applications/$app/previews'
+      path: '/previews'
+      fullPath: '/t/$team/applications/$app/previews'
+      preLoaderRoute: typeof TTeamApplicationsAppPreviewsRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/storages': {
+      id: '/t/$team/applications/$app/storages'
+      path: '/storages'
+      fullPath: '/t/$team/applications/$app/storages'
+      preLoaderRoute: typeof TTeamApplicationsAppStoragesRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/tasks': {
+      id: '/t/$team/applications/$app/tasks'
+      path: '/tasks'
+      fullPath: '/t/$team/applications/$app/tasks'
+      preLoaderRoute: typeof TTeamApplicationsAppTasksRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/terminal': {
+      id: '/t/$team/applications/$app/terminal'
+      path: '/terminal'
+      fullPath: '/t/$team/applications/$app/terminal'
+      preLoaderRoute: typeof TTeamApplicationsAppTerminalRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/webhooks': {
+      id: '/t/$team/applications/$app/webhooks'
+      path: '/webhooks'
+      fullPath: '/t/$team/applications/$app/webhooks'
+      preLoaderRoute: typeof TTeamApplicationsAppWebhooksRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
     }
     '/t/$team/databases/$db/': {
       id: '/t/$team/databases/$db/'
@@ -692,6 +890,38 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface TTeamApplicationsAppRouteRouteChildren {
+  TTeamApplicationsAppAdvancedRoute: typeof TTeamApplicationsAppAdvancedRoute
+  TTeamApplicationsAppDeploymentsRoute: typeof TTeamApplicationsAppDeploymentsRoute
+  TTeamApplicationsAppEnvsRoute: typeof TTeamApplicationsAppEnvsRoute
+  TTeamApplicationsAppLogsRoute: typeof TTeamApplicationsAppLogsRoute
+  TTeamApplicationsAppPreviewsRoute: typeof TTeamApplicationsAppPreviewsRoute
+  TTeamApplicationsAppStoragesRoute: typeof TTeamApplicationsAppStoragesRoute
+  TTeamApplicationsAppTasksRoute: typeof TTeamApplicationsAppTasksRoute
+  TTeamApplicationsAppTerminalRoute: typeof TTeamApplicationsAppTerminalRoute
+  TTeamApplicationsAppWebhooksRoute: typeof TTeamApplicationsAppWebhooksRoute
+  TTeamApplicationsAppIndexRoute: typeof TTeamApplicationsAppIndexRoute
+}
+
+const TTeamApplicationsAppRouteRouteChildren: TTeamApplicationsAppRouteRouteChildren =
+  {
+    TTeamApplicationsAppAdvancedRoute: TTeamApplicationsAppAdvancedRoute,
+    TTeamApplicationsAppDeploymentsRoute: TTeamApplicationsAppDeploymentsRoute,
+    TTeamApplicationsAppEnvsRoute: TTeamApplicationsAppEnvsRoute,
+    TTeamApplicationsAppLogsRoute: TTeamApplicationsAppLogsRoute,
+    TTeamApplicationsAppPreviewsRoute: TTeamApplicationsAppPreviewsRoute,
+    TTeamApplicationsAppStoragesRoute: TTeamApplicationsAppStoragesRoute,
+    TTeamApplicationsAppTasksRoute: TTeamApplicationsAppTasksRoute,
+    TTeamApplicationsAppTerminalRoute: TTeamApplicationsAppTerminalRoute,
+    TTeamApplicationsAppWebhooksRoute: TTeamApplicationsAppWebhooksRoute,
+    TTeamApplicationsAppIndexRoute: TTeamApplicationsAppIndexRoute,
+  }
+
+const TTeamApplicationsAppRouteRouteWithChildren =
+  TTeamApplicationsAppRouteRoute._addFileChildren(
+    TTeamApplicationsAppRouteRouteChildren,
+  )
+
 interface TTeamServersServerRouteRouteChildren {
   TTeamServersServerProxyRoute: typeof TTeamServersServerProxyRoute
   TTeamServersServerSettingsRoute: typeof TTeamServersServerSettingsRoute
@@ -716,6 +946,7 @@ const TTeamServersServerRouteRouteWithChildren =
 
 interface TTeamRouteRouteChildren {
   TTeamIndexRoute: typeof TTeamIndexRoute
+  TTeamApplicationsAppRouteRoute: typeof TTeamApplicationsAppRouteRouteWithChildren
   TTeamServersServerRouteRoute: typeof TTeamServersServerRouteRouteWithChildren
   TTeamSourcesSourceRoute: typeof TTeamSourcesSourceRoute
   TTeamAccountIndexRoute: typeof TTeamAccountIndexRoute
@@ -729,7 +960,6 @@ interface TTeamRouteRouteChildren {
   TTeamSourcesIndexRoute: typeof TTeamSourcesIndexRoute
   TTeamStoragesIndexRoute: typeof TTeamStoragesIndexRoute
   TTeamTeamIndexRoute: typeof TTeamTeamIndexRoute
-  TTeamApplicationsAppIndexRoute: typeof TTeamApplicationsAppIndexRoute
   TTeamDatabasesDbIndexRoute: typeof TTeamDatabasesDbIndexRoute
   TTeamProjectsProjectIndexRoute: typeof TTeamProjectsProjectIndexRoute
   TTeamServicesSvcIndexRoute: typeof TTeamServicesSvcIndexRoute
@@ -739,6 +969,7 @@ interface TTeamRouteRouteChildren {
 
 const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamIndexRoute: TTeamIndexRoute,
+  TTeamApplicationsAppRouteRoute: TTeamApplicationsAppRouteRouteWithChildren,
   TTeamServersServerRouteRoute: TTeamServersServerRouteRouteWithChildren,
   TTeamSourcesSourceRoute: TTeamSourcesSourceRoute,
   TTeamAccountIndexRoute: TTeamAccountIndexRoute,
@@ -752,7 +983,6 @@ const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamSourcesIndexRoute: TTeamSourcesIndexRoute,
   TTeamStoragesIndexRoute: TTeamStoragesIndexRoute,
   TTeamTeamIndexRoute: TTeamTeamIndexRoute,
-  TTeamApplicationsAppIndexRoute: TTeamApplicationsAppIndexRoute,
   TTeamDatabasesDbIndexRoute: TTeamDatabasesDbIndexRoute,
   TTeamProjectsProjectIndexRoute: TTeamProjectsProjectIndexRoute,
   TTeamServicesSvcIndexRoute: TTeamServicesSvcIndexRoute,

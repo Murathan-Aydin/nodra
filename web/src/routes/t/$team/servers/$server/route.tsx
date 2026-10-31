@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ChevronDownIcon, DownloadIcon, PackageIcon, PowerIcon, ShieldCheckIcon, SparklesIcon, WrenchIcon } from "lucide-react"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
+import { TAB_ACTIVE, TAB_LINK, TabNav } from "@/components/tab-nav"
 import { StatusBadge } from "@/components/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,7 +14,6 @@ import { post, teamPath } from "@/lib/api"
 import { useApiMutation } from "@/lib/mutations"
 import { usePermission } from "@/lib/permissions"
 import type { ServerTask } from "@/lib/types"
-import { cn } from "@/lib/utils"
 import { serverQuery } from "@/features/servers/queries"
 
 export const Route = createFileRoute("/t/$team/servers/$server")({ component: ServerLayout })
@@ -94,20 +94,20 @@ function ServerLayout() {
           }
         />
       )}
-      <nav className="mb-6 flex gap-1 overflow-x-auto border-b">
+      <TabNav>
         {TABS.map((t) => (
           <Link
             key={t.to}
             to={t.to}
             params={{ team, server }}
             activeOptions={{ exact: "exact" in t }}
-            className={cn("-mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground hover:text-foreground")}
-            activeProps={{ className: "!border-primary !text-foreground" }}
+            className={TAB_LINK}
+            activeProps={TAB_ACTIVE}
           >
             {t.label}
           </Link>
         ))}
-      </nav>
+      </TabNav>
       <Outlet />
       <ConfirmDialog
         open={rebooting}
