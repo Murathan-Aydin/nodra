@@ -35,13 +35,16 @@ type Project struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
+	// EnvironmentCount : nombre d'environnements (tableau de bord).
+	EnvironmentCount int `json:"environment_count"`
 }
 
-const projectCols = `id::text, team_id::text, name, description, created_at`
+const projectCols = `id::text, team_id::text, name, description, created_at,
+	(SELECT count(*) FROM environments e WHERE e.project_id = projects.id)`
 
 func scanProject(row pgx.Row) (*Project, error) {
 	p := &Project{}
-	err := row.Scan(&p.ID, &p.TeamID, &p.Name, &p.Description, &p.CreatedAt)
+	err := row.Scan(&p.ID, &p.TeamID, &p.Name, &p.Description, &p.CreatedAt, &p.EnvironmentCount)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

@@ -13,6 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as TTeamRouteRouteImport } from './routes/t/$team/route'
+import { Route as TTeamIndexRouteImport } from './routes/t/$team/index'
+import { Route as TTeamSplatRouteImport } from './routes/t/$team/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +37,38 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TTeamRouteRoute = TTeamRouteRouteImport.update({
+  id: '/t/$team',
+  path: '/t/$team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TTeamIndexRoute = TTeamIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamSplatRoute = TTeamSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/setup': typeof SetupRoute
+  '/t/$team': typeof TTeamRouteRouteWithChildren
+  '/t/$team/$': typeof TTeamSplatRoute
+  '/t/$team/': typeof TTeamIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/setup': typeof SetupRoute
+  '/t/$team/$': typeof TTeamSplatRoute
+  '/t/$team': typeof TTeamIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +76,31 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/setup': typeof SetupRoute
+  '/t/$team': typeof TTeamRouteRouteWithChildren
+  '/t/$team/$': typeof TTeamSplatRoute
+  '/t/$team/': typeof TTeamIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/onboarding' | '/setup'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/onboarding'
+    | '/setup'
+    | '/t/$team'
+    | '/t/$team/$'
+    | '/t/$team/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/onboarding' | '/setup'
-  id: '__root__' | '/' | '/login' | '/onboarding' | '/setup'
+  to: '/' | '/login' | '/onboarding' | '/setup' | '/t/$team/$' | '/t/$team'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/onboarding'
+    | '/setup'
+    | '/t/$team'
+    | '/t/$team/$'
+    | '/t/$team/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +108,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   SetupRoute: typeof SetupRoute
+  TTeamRouteRoute: typeof TTeamRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -99,14 +141,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/t/$team': {
+      id: '/t/$team'
+      path: '/t/$team'
+      fullPath: '/t/$team'
+      preLoaderRoute: typeof TTeamRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$team/': {
+      id: '/t/$team/'
+      path: '/'
+      fullPath: '/t/$team/'
+      preLoaderRoute: typeof TTeamIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/$': {
+      id: '/t/$team/$'
+      path: '/$'
+      fullPath: '/t/$team/$'
+      preLoaderRoute: typeof TTeamSplatRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
   }
 }
+
+interface TTeamRouteRouteChildren {
+  TTeamSplatRoute: typeof TTeamSplatRoute
+  TTeamIndexRoute: typeof TTeamIndexRoute
+}
+
+const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
+  TTeamSplatRoute: TTeamSplatRoute,
+  TTeamIndexRoute: TTeamIndexRoute,
+}
+
+const TTeamRouteRouteWithChildren = TTeamRouteRoute._addFileChildren(
+  TTeamRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   SetupRoute: SetupRoute,
+  TTeamRouteRoute: TTeamRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

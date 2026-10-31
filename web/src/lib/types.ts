@@ -36,6 +36,7 @@ export interface PrivateKey {
 export interface Server {
   id: string
   name: string
+  description: string
   ip: string
   port: number
   user: string
@@ -62,4 +63,37 @@ export interface ServerTask {
 export interface Project {
   id: string
   name: string
+}
+
+export interface ProjectSummary extends Project {
+  description: string
+  environment_count: number
+}
+
+export interface ResourceSummary {
+  id: string
+  type: "application" | "database" | "service"
+  name: string
+  status: string
+  environment_id: string
+  environment_name: string
+  project_id: string
+  project_name: string
+  server_id: string
+}
+
+export interface Deployment {
+  id: string
+  application_id: string
+  server_id: string
+  status: "queued" | "in_progress" | "finished" | "failed" | "cancelled"
+  pr_number: number
+  created_at: string
+}
+
+export interface ServerMetric {
+  ts: string
+  cpu_percent: number
+  mem_used: number
+  mem_total: number
 }

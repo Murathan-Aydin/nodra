@@ -18,7 +18,7 @@ _(rien)_
 
 ## 🟩 Fait
 
-**Premier démarrage** (demandé par l'utilisateur) : création du compte administrateur (`/setup`), configuration guidée (`/onboarding` : serveur « Cette machine » ou SSH, validation suivie, premier projet, récapitulatif), connexion avec double authentification (`/login`). Accueil `/` provisoire.
+**Premier démarrage** (demandé par l'utilisateur) : création du compte administrateur (`/setup`), configuration guidée (`/onboarding` : serveur « Cette machine » ou SSH, validation suivie, premier projet, récapitulatif), connexion avec double authentification (`/login`). Cadre de l'application (barre du haut, barre latérale, recherche ⌘K, menu utilisateur) et tableau de bord façon Coolify.
 
 ---
 

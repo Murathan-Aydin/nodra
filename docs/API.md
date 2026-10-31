@@ -216,7 +216,7 @@ Un projet est créé avec un environnement `production`. Les permissions peuvent
 | Méthode | Route | Permission | Description |
 |---|---|---|---|
 | GET | `/projects` | `project.read` (équipe ou projet) | Projets visibles par l'appelant |
-| POST | `/projects` | `project.create` (équipe) | `{name, description?}` → `201 Project` |
+| POST | `/projects` | `project.create` (équipe) | `{name, description?}` → `201 Project` (`{id, team_id, name, description, created_at, environment_count}`) |
 | GET | `/projects/{p}` | `project.read` (projet ou un de ses environnements) | `{project, environments}` (environnements visibles) |
 | PATCH | `/projects/{p}` | `project.update` | `{name, description?}` |
 | DELETE | `/projects/{p}` | `project.delete` | Soumis aux approbations ; supprime environnements, variables et attributions liées ; `409` s'il reste des ressources |

@@ -40,8 +40,8 @@ func TestProjects(t *testing.T) {
 	// Bob : lecteur sur l'équipe, développeur sur le projet Web uniquement.
 	var projects []store.Project
 	expect(t, "projets bob", bob.do("GET", base+"/projects", nil, &projects), 200)
-	if len(projects) != 2 {
-		t.Fatal("un lecteur voit tous les projets")
+	if len(projects) != 2 || projects[0].EnvironmentCount != 1 {
+		t.Fatalf("un lecteur voit tous les projets (avec leur environnement production) : %+v", projects)
 	}
 	expect(t, "bob crée un environnement (lecteur)", bob.do("POST", base+"/projects/"+web.ID+"/environments", map[string]string{"name": "staging"}, nil), 403)
 	expect(t, "développeur sur Web", alice.do("POST", base+"/role-assignments", map[string]any{"user_id": bobID,

@@ -1,41 +1,13 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { LogOutIcon, RocketIcon } from "lucide-react"
-import { AuthPanel, AuthShell } from "@/components/auth-shell"
-import { Button } from "@/components/ui/button"
-import { post } from "@/lib/api"
-import { meQuery } from "@/lib/queries"
+import { createFileRoute, redirect } from "@tanstack/react-router"
+import { teamsQuery } from "@/lib/queries"
 import { requireSession } from "@/lib/session"
 
-// Accueil provisoire : le tableau de bord sera reconstruit ensuite.
+// Racine : tableau de bord de l'équipe personnelle (ou de la première équipe).
 export const Route = createFileRoute("/")({
-  beforeLoad: ({ context }) => requireSession(context.queryClient, "/"),
-  component: Home,
+  beforeLoad: async ({ context }) => {
+    await requireSession(context.queryClient, "/")
+    const teams = await context.queryClient.ensureQueryData(teamsQuery)
+    const team = teams.find((t) => t.personal) ?? teams[0]
+    if (team) throw redirect({ to: "/t/$team", params: { team: team.id } })
+  },
 })
-
-function Home() {
-  const me = useQuery(meQuery).data
-  const navigate = useNavigate()
-  const qc = useQueryClient()
-  const logout = useMutation({
-    mutationFn: () => post("/auth/logout"),
-    onSuccess: () => {
-      qc.clear()
-      void navigate({ to: "/login" })
-    },
-  })
-  return (
-    <AuthShell>
-      <AuthPanel title={`Bonjour ${me?.user.name || me?.user.email || ""}`} description="Vous êtes connecté. Le tableau de bord arrive à la prochaine étape.">
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => void navigate({ to: "/onboarding" })}>
-            <RocketIcon /> Configuration guidée
-          </Button>
-          <Button variant="ghost" loading={logout.isPending} onClick={() => logout.mutate()}>
-            <LogOutIcon /> Se déconnecter
-          </Button>
-        </div>
-      </AuthPanel>
-    </AuthShell>
-  )
-}
