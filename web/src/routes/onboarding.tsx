@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { ArrowRightIcon, CheckCircle2Icon, CloudIcon, FolderKanbanIcon, RotateCcwIcon, ServerIcon, ContainerIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -27,7 +27,12 @@ export const Route = createFileRoute("/onboarding")({
     server: typeof s.server === "string" ? s.server : undefined,
     project: typeof s.project === "string" ? s.project : undefined,
   }),
-  beforeLoad: ({ context }) => requireSession(context.queryClient, "/onboarding"),
+  // Accessible une seule fois : à l'administrateur, tant qu'elle n'a été ni terminée ni passée.
+  beforeLoad: async ({ context }) => {
+    const me = await requireSession(context.queryClient, "/onboarding")
+    const instance = await context.queryClient.fetchQuery(instanceQuery)
+    if (!instance.onboarding || !me.user.is_instance_admin) throw redirect({ to: "/" })
+  },
   component: Onboarding,
 })
 
@@ -38,6 +43,7 @@ function Onboarding() {
   const go = (s: Search) => void navigate({ search: (prev) => ({ ...prev, ...s }) })
   const teams = useQuery(teamsQuery)
   const team = teams.data?.find((t) => t.personal)?.id ?? teams.data?.[0]?.id
+  const finish = useFinish()
 
   return (
     <AuthShell wide>
@@ -66,10 +72,8 @@ function Onboarding() {
       </div>
       {step !== "done" && (
         <FooterActions>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/">
-              <ArrowRightIcon /> Passer la configuration
-            </Link>
+          <Button variant="ghost" size="sm" loading={finish.isPending} onClick={() => finish.mutate()}>
+            <ArrowRightIcon /> Passer la configuration
           </Button>
           {step !== "welcome" && (
             <Button variant="ghost" size="sm" onClick={() => void navigate({ search: {} })}>
@@ -80,6 +84,20 @@ function Onboarding() {
       )}
     </AuthShell>
   )
+}
+
+/** Termine (ou passe) la configuration guidée : elle ne sera plus jamais proposée. */
+function useFinish() {
+  const qc = useQueryClient()
+  const navigate = useNavigate()
+  return useMutation({
+    mutationFn: () => post("/admin/onboarding/complete"),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["instance"] })
+      void navigate({ to: "/" })
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Action impossible"),
+  })
 }
 
 function Panel({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
@@ -200,6 +218,7 @@ function Done({ team, server, project }: { team: string; server?: string; projec
     pj.data && { title: `Projet : ${pj.data.name}`, text: "Environnement de production prêt" },
     sv.data?.docker_version && { title: "Docker", text: `Version ${sv.data.docker_version}, installé et démarré` },
   ].filter(Boolean) as { title: string; text: string }[]
+  const finish = useFinish()
   return (
     <div className="flex flex-col items-center text-center">
       <span className="flex size-16 items-center justify-center rounded-2xl border border-success/30 bg-success/15">
@@ -223,8 +242,8 @@ function Done({ team, server, project }: { team: string; server?: string; projec
           ))}
         </ul>
       </section>
-      <Button size="lg" className="mt-8 min-w-48" asChild>
-        <Link to="/">Accéder à Nodra</Link>
+      <Button size="lg" className="mt-8 min-w-48" loading={finish.isPending} onClick={() => finish.mutate()}>
+        Accéder à Nodra
       </Button>
     </div>
   )

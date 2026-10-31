@@ -192,7 +192,7 @@ function Servers({ team }: { team: string }) {
           text="Aucun serveur connecté."
           action={
             <Button asChild>
-              <Link to="/onboarding">Connecter un serveur</Link>
+              <Link to={to(team, "/servers/new")}>Ajouter un serveur</Link>
             </Button>
           }
         />

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import { get } from "./api"
-import type { Deployment, Instance, ProjectSummary, ResourceSummary, Server, Team, User } from "./types"
+import type { Deployment, Environment, Instance, ProjectSummary, ResourceSummary, Server, Team, User } from "./types"
 
 export const instanceQuery = queryOptions({ queryKey: ["instance"], queryFn: () => get<Instance>("/instance") })
 
@@ -18,4 +18,23 @@ export const teamQueries = {
   resources: (team: string) => queryOptions({ queryKey: ["team", team, "resources"], queryFn: () => get<ResourceSummary[]>(`/teams/${team}/resources`) }),
   deployments: (team: string) =>
     queryOptions({ queryKey: ["team", team, "deployments"], queryFn: () => get<Deployment[]>(`/teams/${team}/deployments?limit=8`), refetchInterval: 15_000 }),
+}
+
+export const projectQueries = {
+  project: (team: string, project: string) =>
+    queryOptions({
+      queryKey: ["team", team, "project", project],
+      queryFn: () => get<{ project: ProjectSummary; environments: Environment[] }>(`/teams/${team}/projects/${project}`),
+    }),
+  environment: (team: string, project: string, env: string) =>
+    queryOptions({
+      queryKey: ["team", team, "project", project, "env", env],
+      queryFn: () => get<{ project: ProjectSummary; environment: Environment }>(`/teams/${team}/projects/${project}/environments/${env}`),
+    }),
+  resources: (team: string, env: string) =>
+    queryOptions({
+      queryKey: ["team", team, "resources", { env }],
+      queryFn: () => get<ResourceSummary[]>(`/teams/${team}/resources?environment_id=${env}`),
+      refetchInterval: 15_000,
+    }),
 }

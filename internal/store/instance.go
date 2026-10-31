@@ -88,3 +88,16 @@ func (s *Store) LocalhostServerID(ctx context.Context) (string, error) {
 	}
 	return *id, nil
 }
+
+// OnboardingPending : configuration guidée pas encore terminée ni passée.
+func (s *Store) OnboardingPending(ctx context.Context) (bool, error) {
+	var done bool
+	err := s.Pool.QueryRow(ctx, `SELECT onboarding_completed FROM instance_settings WHERE id = 1`).Scan(&done)
+	return !done, err
+}
+
+// CompleteOnboarding ferme définitivement la configuration guidée.
+func (s *Store) CompleteOnboarding(ctx context.Context) error {
+	_, err := s.Pool.Exec(ctx, `UPDATE instance_settings SET onboarding_completed = true WHERE id = 1`)
+	return err
+}

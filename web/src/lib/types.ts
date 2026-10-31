@@ -7,6 +7,8 @@ export interface Instance {
   oauth_providers: { provider: string; name: string }[]
   /** Aucun compte : le premier inscrit devient administrateur. */
   needs_setup: boolean
+  /** Configuration guidée encore proposée (une seule fois, après le premier compte). */
+  onboarding: boolean
   /** install.sh a préparé l'accès SSH à l'hôte (« Cette machine »). */
   localhost: boolean
 }
@@ -80,6 +82,7 @@ export interface ResourceSummary {
   project_id: string
   project_name: string
   server_id: string
+  domains: string[] | null
 }
 
 export interface Deployment {
@@ -96,4 +99,42 @@ export interface ServerMetric {
   cpu_percent: number
   mem_used: number
   mem_total: number
+}
+
+export interface Environment {
+  id: string
+  project_id: string
+  name: string
+  description: string
+  created_at: string
+}
+
+export interface Destination {
+  id: string
+  server_id: string
+  name: string
+  network: string
+  is_default: boolean
+}
+
+export interface GitSource {
+  id: string
+  type: "github" | "gitlab" | "gitea"
+  name: string
+  is_public: boolean
+}
+
+export interface Repo {
+  full_name: string
+  name: string
+  private: boolean
+  default_branch: string
+}
+
+export interface ServiceTemplate {
+  slug: string
+  name: string
+  slogan: string
+  category: string
+  tags: string[] | null
 }

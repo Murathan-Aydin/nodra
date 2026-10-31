@@ -24,8 +24,15 @@ func TestInstanceAdmin(t *testing.T) {
 	bob, bobID := register(t, e, "bob@example.com")
 
 	expect(t, "instance publique", anon.do("GET", "/instance", nil, &pub), 200)
-	if pub["name"] != "Nodra" || pub["registration_enabled"] != true || pub["version"] != "dev" || pub["needs_setup"] != false {
+	if pub["name"] != "Nodra" || pub["registration_enabled"] != true || pub["version"] != "dev" || pub["needs_setup"] != false || pub["onboarding"] != true {
 		t.Fatalf("instance : %v", pub)
+	}
+	// Configuration guidée : proposée une seule fois, close par l'administrateur.
+	expect(t, "onboarding non-admin", bob.do("POST", "/admin/onboarding/complete", nil, nil), 403)
+	expect(t, "onboarding terminé", alice.do("POST", "/admin/onboarding/complete", nil, nil), 204)
+	expect(t, "instance publique", anon.do("GET", "/instance", nil, &pub), 200)
+	if pub["onboarding"] != false {
+		t.Fatalf("onboarding toujours proposé : %v", pub)
 	}
 	expect(t, "non-admin", bob.do("GET", "/admin/settings", nil, nil), 403)
 

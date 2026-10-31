@@ -78,11 +78,27 @@ func (s *Server) publicInstance(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	pending, err := s.Store.OnboardingPending(r.Context())
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
 	// needs_setup : aucun compte, le premier inscrit deviendra administrateur de l'instance.
+	// onboarding : configuration guidée encore proposée (une seule fois, après le premier compte).
 	// localhost : install.sh a préparé l'accès SSH à l'hôte (serveur « Cette machine »).
 	writeJSON(w, http.StatusOK, map[string]any{"name": i.InstanceName, "registration_enabled": i.RegistrationEnabled || users == 0,
 		"version": version.Version, "oauth_providers": s.enabledOAuth(r.Context()), "needs_setup": users == 0,
-		"localhost": s.Localhost.KeyFile != ""})
+		"onboarding": pending && users > 0, "localhost": s.Localhost.KeyFile != ""})
+}
+
+// completeOnboarding : configuration guidée terminée ou passée ; elle n'est plus jamais proposée.
+func (s *Server) completeOnboarding(w http.ResponseWriter, r *http.Request) {
+	if err := s.Store.CompleteOnboarding(r.Context()); err != nil {
+		s.internal(w, err)
+		return
+	}
+	s.audit(r, nil, "instance.onboarding_completed", "instance", "", nil)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func settingsView(i *store.InstanceSettings) map[string]any {

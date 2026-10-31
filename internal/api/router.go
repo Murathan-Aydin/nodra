@@ -164,6 +164,7 @@ func (s *Server) Router() http.Handler {
 				r.HandleFunc("/mcp", s.mcp)
 				r.Route("/admin", func(r chi.Router) {
 					r.Use(requireInstanceAdmin)
+					r.Post("/onboarding/complete", s.completeOnboarding)
 					r.Get("/mail", s.getMailConfig)
 					r.Put("/mail", s.putMailConfig)
 					r.Delete("/mail", s.deleteMailConfig)
