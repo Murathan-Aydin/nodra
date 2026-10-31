@@ -134,9 +134,10 @@ func (s *Store) CreateBackupSchedule(ctx context.Context, b *BackupSchedule) (*B
 }
 
 func (s *Store) UpdateBackupSchedule(ctx context.Context, b *BackupSchedule) error {
-	_, err := s.Pool.Exec(ctx, `UPDATE backup_schedules SET volume_name = $5, databases = $6, dump_all = $7, frequency = $8,
-		enabled = $9, keep_local = $10, keep_local_days = $11, local_backup = $12, s3_storage_id = $13, keep_s3 = $14,
-		keep_s3_days = $15, updated_at = now() WHERE id = $1`, append([]any{b.ID}, scheduleArgs(b)...)...)
+	_, err := s.Pool.Exec(ctx, `UPDATE backup_schedules SET volume_name = $2, databases = $3, dump_all = $4, frequency = $5,
+		enabled = $6, keep_local = $7, keep_local_days = $8, local_backup = $9, s3_storage_id = $10, keep_s3 = $11,
+		keep_s3_days = $12, updated_at = now() WHERE id = $1`, b.ID, b.VolumeName, b.Databases, b.DumpAll, b.Frequency, b.Enabled,
+		b.KeepLocal, b.KeepLocalDays, b.LocalBackup, b.S3StorageID, b.KeepS3, b.KeepS3Days)
 	return err
 }
 

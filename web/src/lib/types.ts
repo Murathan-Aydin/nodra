@@ -470,3 +470,103 @@ export interface ScheduledTask {
   last_run_at: string | null
   created_at: string
 }
+
+export interface InitScript {
+  filename: string
+  content: string
+}
+
+export interface Database {
+  id: string
+  team_id: string
+  environment_id: string
+  destination_id: string
+  type: "postgresql" | "mysql" | "mariadb" | "mongodb" | "redis" | "keydb" | "dragonfly" | "clickhouse"
+  name: string
+  description: string
+  image: string
+  status: string
+  username: string
+  database_name: string
+  custom_config: string
+  init_scripts: InitScript[]
+  is_public: boolean
+  public_port: number | null
+  ports_mappings: string
+  custom_docker_run_options: string
+  limits: Limits
+  settings: {
+    health_check_enabled: boolean
+    stop_grace_period: number
+    postgres_initdb_args: string
+    postgres_host_auth_method: string
+    log_drain_enabled: boolean
+    enable_ssl: boolean
+    ssl_mode: string
+  }
+  started_at: string | null
+  created_at: string
+  updated_at: string
+  internal_host: string
+  internal_port: number
+  ca_certificate?: string
+  // Présents avec resource.env.read uniquement.
+  password?: string
+  root_password?: string
+  internal_url?: string
+  public_url?: string
+}
+
+export interface S3Storage {
+  id: string
+  team_id: string
+  name: string
+  description: string
+  endpoint: string
+  region: string
+  bucket: string
+  path_prefix: string
+  is_usable: boolean
+  last_error: string
+  checked_at: string | null
+  created_at: string
+}
+
+export interface BackupSchedule {
+  id: string
+  team_id: string
+  kind: "database" | "volume"
+  resource_id: string
+  volume_name: string
+  databases: string
+  dump_all: boolean
+  frequency: string
+  enabled: boolean
+  keep_local: number
+  keep_local_days: number
+  local_backup: boolean
+  s3_storage_id: string | null
+  keep_s3: number
+  keep_s3_days: number
+  last_run_at: string | null
+  created_at: string
+}
+
+export interface BackupExecution {
+  id: string
+  schedule_id: string | null
+  team_id: string
+  resource_id: string
+  server_id: string
+  database_name: string
+  status: string
+  filename: string
+  size: number
+  s3_storage_id: string | null
+  s3_key: string
+  local_deleted: boolean
+  s3_deleted: boolean
+  message: string
+  created_at: string
+  finished_at: string | null
+}

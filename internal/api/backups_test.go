@@ -78,6 +78,11 @@ func TestBackups(t *testing.T) {
 	expect(t, "nom de base invalide", alice.do("POST", base+"/backups", map[string]any{"kind": "database", "resource_id": dbID, "databases": "a;b"}, nil), 422)
 	var b store.BackupSchedule
 	expect(t, "planification", alice.do("POST", base+"/backups", sched, &b), 201)
+	var upd store.BackupSchedule
+	expect(t, "modification", alice.do("PATCH", base+"/backups/"+b.ID, map[string]any{"frequency": "0 4 * * *", "keep_local": 3}, &upd), 200)
+	if upd.Frequency != "0 4 * * *" || upd.KeepLocal != 3 || upd.S3StorageID == nil {
+		t.Fatalf("modification : %+v", upd)
+	}
 	run := func() store.ServerTask {
 		t.Helper()
 		var tk store.ServerTask

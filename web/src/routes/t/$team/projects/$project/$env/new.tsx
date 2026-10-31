@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { ComingSoon } from "@/components/coming-soon"
 import { PageHeader } from "@/components/page-header"
 import { CreateApplication } from "@/features/applications/create-app"
+import { CreateDatabase } from "@/features/databases/create-db"
 
 type ResourceType = "application" | "database" | "service"
 
@@ -22,5 +23,12 @@ function NewResource() {
         <CreateApplication team={team} environment={env} />
       </>
     )
-  return <ComingSoon title="Nouvelle ressource" card={type === "database" ? "F9-01" : "F10-02"} />
+  if (type === "database")
+    return (
+      <>
+        <PageHeader title="Nouvelle base de données" description="PostgreSQL, MySQL, MariaDB, MongoDB, Redis, KeyDB, Dragonfly ou ClickHouse." />
+        <CreateDatabase team={team} environment={env} />
+      </>
+    )
+  return <ComingSoon title="Nouvelle ressource" card="F10-02" />
 }
