@@ -82,7 +82,7 @@ Une équipe inaccessible renvoie `404` (on ne révèle pas son existence) ; une 
 | POST | `/teams` (racine) | `team.subteams.manage` sur le parent si `parent_id` | `{name, description?, parent_id?}` → `201 Team` ; le créateur devient propriétaire |
 | GET | `/` | `team.read` | `{team, ancestors, permissions, is_owner}` |
 | PATCH | `/` | `team.update` | `{name, description}` |
-| DELETE | `/` | `team.delete` | `409` pour une équipe personnelle |
+| DELETE | `/` | `team.delete` | `409` pour une équipe personnelle. Si l'équipe ou une sous-équipe a encore des ressources : `409 {error, resources}`, sauf avec `{"delete_resources": true}` qui les arrête et les efface des serveurs (volumes compris) avant de supprimer l'équipe (serveur injoignable : suppression quand même, ressources listées dans l'audit `team.deleted`) |
 | GET | `/permissions?scope_type=&scope_id=` | membre | Permissions effectives de l'appelant sur une portée |
 | POST | `/leave` | membre direct | `409` si dernier propriétaire ou équipe personnelle |
 | POST | `/transfer-ownership` | propriétaire direct | `{user_id}` ; l'ancien propriétaire devient admin |

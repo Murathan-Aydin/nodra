@@ -1,6 +1,8 @@
 package api
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -123,5 +125,34 @@ func TestCloneEnvironmentWithResources(t *testing.T) {
 	expect(t, "ressources copiées", alice.do("GET", base+"/resources?environment_id="+env.ID, nil, &res), 200)
 	if len(res) != 2 || res[0].Status != "stopped" {
 		t.Fatalf("ressources de staging : %+v", res)
+	}
+}
+
+func TestDeleteTeamWithResources(t *testing.T) {
+	f := newAppFixture(t)
+	h := newFakeHost(t, f)
+	alice, base := f.alice, f.base
+	f.e.api.Executors["resource.deploy"] = f.e.api.execResourceDeploy
+	var app map[string]any
+	expect(t, "application", alice.do("POST", base+"/applications", f.app(nil), &app), 201)
+	appID := app["id"].(string)
+	var d store.Deployment
+	expect(t, "déploiement", alice.do("POST", base+"/applications/"+appID+"/deploy", nil, &d), 202)
+	if d = waitDeployment(t, alice, base, appID, d.ID); d.Status != "finished" {
+		t.Fatalf("déploiement : %s", d.Error)
+	}
+	expect(t, "base", alice.do("POST", base+"/databases", map[string]any{"environment_id": f.envID, "destination_id": f.destID,
+		"type": "redis", "name": "Cache"}, nil), 201)
+	var blocked map[string]any
+	expect(t, "ressources restantes", alice.do("DELETE", base, nil, &blocked), 409)
+	if blocked["resources"] != float64(2) {
+		t.Fatalf("refus : %v", blocked)
+	}
+	expect(t, "suppression avec nettoyage", alice.do("DELETE", base, map[string]bool{"delete_resources": true}, nil), 204)
+	if left, _ := os.ReadDir(filepath.Join(h.state, "containers")); len(left) != 0 {
+		t.Fatalf("conteneurs restants sur le serveur : %v\n%s", left, h.calls())
+	}
+	if status := alice.do("GET", base, nil, nil); status != 404 && status != 403 {
+		t.Fatalf("équipe encore accessible : %d", status)
 	}
 }

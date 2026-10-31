@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/mail"
@@ -157,13 +158,75 @@ func (s *Server) deleteTeam(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "une équipe personnelle ne peut pas être supprimée")
 		return
 	}
-	// L'arrêt et le nettoyage des ressources sur les serveurs sont ajoutés avec les modules concernés.
-	if err := s.Store.DeleteTeam(r.Context(), t.ID); err != nil {
+	var in struct {
+		DeleteResources bool `json:"delete_resources"`
+	}
+	if r.ContentLength > 0 && !decode(w, r, &in) {
+		return
+	}
+	ctx := r.Context()
+	subtree, err := s.Store.TeamSubtree(ctx, t.ID)
+	if err != nil {
 		s.internal(w, err)
 		return
 	}
-	s.auditTeam(r, "team.deleted", "team", t.ID, map[string]any{"name": t.Name})
+	var resources []*store.ResourceSummary
+	for _, id := range subtree {
+		list, err := s.Store.TeamResources(ctx, id, store.ResourceFilter{})
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		resources = append(resources, list...)
+	}
+	if len(resources) > 0 && !in.DeleteResources {
+		writeJSON(w, http.StatusConflict, map[string]any{"error": "l'équipe (ou une sous-équipe) a encore des ressources : supprimez-les, ou confirmez avec delete_resources pour les arrêter et les effacer des serveurs (volumes compris)",
+			"resources": len(resources)})
+		return
+	}
+	if len(resources) > 0 && !s.deployer(w) {
+		return
+	}
+	failed := s.teardownResources(ctx, resources)
+	if err := s.Store.DeleteTeam(ctx, t.ID); err != nil {
+		s.internal(w, err)
+		return
+	}
+	s.auditTeam(r, "team.deleted", "team", t.ID, map[string]any{"name": t.Name, "resources": len(resources), "cleanup_failed": failed})
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// teardownResources arrête et efface des serveurs (volumes compris) puis de la base chaque ressource ;
+// un serveur injoignable n'empêche pas la suppression (renvoie les ressources non nettoyées).
+func (s *Server) teardownResources(ctx context.Context, list []*store.ResourceSummary) []string {
+	failed := []string{}
+	for _, res := range list {
+		tctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+		var err error
+		switch res.Type {
+		case "application":
+			var a *store.Application
+			if a, err = s.Store.ApplicationByIDAny(tctx, res.ID); err == nil {
+				err = errors.Join(s.Deployer.Teardown(tctx, a, true), s.Store.DeleteApplication(ctx, a.TeamID, a.ID))
+			}
+		case "database":
+			var d *store.Database
+			if d, err = s.Store.DatabaseByIDAny(tctx, res.ID); err == nil {
+				err = errors.Join(s.Deployer.TeardownDatabase(tctx, d, true), s.Store.DeleteDatabase(ctx, d.TeamID, d.ID))
+			}
+		case "service":
+			var svc *store.Service
+			if svc, err = s.Store.ServiceByIDAny(tctx, res.ID); err == nil {
+				err = errors.Join(s.Deployer.TeardownService(tctx, svc, true), s.Store.DeleteService(ctx, svc.TeamID, svc.ID))
+			}
+		}
+		cancel()
+		if err != nil {
+			s.Log.Warn("suppression d'équipe : nettoyage incomplet", "resource", res.ID, "err", err)
+			failed = append(failed, res.ID)
+		}
+	}
+	return failed
 }
 
 // --- Membres ---
