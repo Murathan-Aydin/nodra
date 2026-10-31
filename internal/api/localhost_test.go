@@ -30,7 +30,7 @@ func TestLocalhostAndInstanceUpdate(t *testing.T) {
 	base := "/teams/" + teams[0].ID
 	var list []store.Server
 	expect(t, "serveurs", alice.do("GET", base+"/servers", nil, &list), 200)
-	if len(list) != 1 || list[0].Name != "localhost" || list[0].IP != "127.0.0.1" || list[0].User != "root" {
+	if len(list) != 1 || list[0].Name != "localhost" || list[0].IP != "127.0.0.1" || list[0].User != "root" || !list[0].IsLocalhost {
 		t.Fatalf("serveur localhost : %+v", list)
 	}
 	localhost := list[0]

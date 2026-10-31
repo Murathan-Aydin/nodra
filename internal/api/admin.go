@@ -73,8 +73,16 @@ func (s *Server) publicInstance(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"name": i.InstanceName, "registration_enabled": i.RegistrationEnabled,
-		"version": version.Version, "oauth_providers": s.enabledOAuth(r.Context())})
+	users, err := s.Store.CountUsers(r.Context())
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	// needs_setup : aucun compte, le premier inscrit deviendra administrateur de l'instance.
+	// localhost : install.sh a préparé l'accès SSH à l'hôte (serveur « Cette machine »).
+	writeJSON(w, http.StatusOK, map[string]any{"name": i.InstanceName, "registration_enabled": i.RegistrationEnabled || users == 0,
+		"version": version.Version, "oauth_providers": s.enabledOAuth(r.Context()), "needs_setup": users == 0,
+		"localhost": s.Localhost.KeyFile != ""})
 }
 
 func settingsView(i *store.InstanceSettings) map[string]any {

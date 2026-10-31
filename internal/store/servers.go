@@ -131,6 +131,7 @@ type Server struct {
 	Settings        ServerSettings `json:"settings"`
 	Proxy           ProxyInfo      `json:"proxy"`
 	CreatedAt       time.Time      `json:"created_at"`
+	IsLocalhost     bool           `json:"is_localhost"` // hôte de l'instance (créé par install.sh)
 }
 
 // ProxyInfo : proxy inverse du serveur (Traefik, Caddy ou aucun).
@@ -143,7 +144,8 @@ type ProxyInfo struct {
 
 const serverCols = `id::text, team_id::text, name, description, ip, port, ssh_user, private_key_id::text, host_key,
 	is_reachable, is_usable, os_id, os_version, docker_version, compose_version, validation_error, validated_at,
-	last_seen_at, last_cleanup_at, settings, proxy_type, proxy_status, proxy_compose, proxy_acme_email, created_at`
+	last_seen_at, last_cleanup_at, settings, proxy_type, proxy_status, proxy_compose, proxy_acme_email, created_at,
+	coalesce((SELECT i.localhost_server_id = servers.id FROM instance_settings i WHERE i.id = 1), false)`
 
 func scanServer(row pgx.Row) (*Server, error) {
 	s := &Server{}
@@ -151,7 +153,7 @@ func scanServer(row pgx.Row) (*Server, error) {
 	err := row.Scan(&s.ID, &s.TeamID, &s.Name, &s.Description, &s.IP, &s.Port, &s.User, &s.PrivateKeyID, &s.HostKey,
 		&s.IsReachable, &s.IsUsable, &s.OSID, &s.OSVersion, &s.DockerVersion, &s.ComposeVersion, &s.ValidationError,
 		&s.ValidatedAt, &s.LastSeenAt, &s.LastCleanupAt, &raw, &s.Proxy.Type, &s.Proxy.Status, &s.Proxy.Compose,
-		&s.Proxy.AcmeEmail, &s.CreatedAt)
+		&s.Proxy.AcmeEmail, &s.CreatedAt, &s.IsLocalhost)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

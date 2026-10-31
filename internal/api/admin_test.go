@@ -14,13 +14,17 @@ import (
 
 func TestInstanceAdmin(t *testing.T) {
 	e := newTestEnv(t)
+	anon := newClient(t, e.srv)
+	var pub map[string]any
+	expect(t, "instance vierge", anon.do("GET", "/instance", nil, &pub), 200)
+	if pub["needs_setup"] != true || pub["localhost"] != false {
+		t.Fatalf("instance vierge : %v", pub)
+	}
 	alice, aliceID := register(t, e, "alice@example.com")
 	bob, bobID := register(t, e, "bob@example.com")
-	anon := newClient(t, e.srv)
 
-	var pub map[string]any
 	expect(t, "instance publique", anon.do("GET", "/instance", nil, &pub), 200)
-	if pub["name"] != "Nodra" || pub["registration_enabled"] != true || pub["version"] != "dev" {
+	if pub["name"] != "Nodra" || pub["registration_enabled"] != true || pub["version"] != "dev" || pub["needs_setup"] != false {
 		t.Fatalf("instance : %v", pub)
 	}
 	expect(t, "non-admin", bob.do("GET", "/admin/settings", nil, nil), 403)

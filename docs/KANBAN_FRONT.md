@@ -18,7 +18,7 @@ _(rien)_
 
 ## 🟩 Fait
 
-_(rien depuis la remise à zéro)_
+**Premier démarrage** (demandé par l'utilisateur) : création du compte administrateur (`/setup`), configuration guidée (`/onboarding` : serveur « Cette machine » ou SSH, validation suivie, premier projet, récapitulatif), connexion avec double authentification (`/login`). Accueil `/` provisoire.
 
 ---
 

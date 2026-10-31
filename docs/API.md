@@ -18,7 +18,7 @@ Derrière un reverse proxy, définir `NODRA_TRUST_PROXY=true` pour utiliser l'IP
 | Méthode | Route | Réponse |
 |---|---|---|
 | GET | `/health` | `200 {"status":"ok"}` ou `503 {"status":"degraded","database":"down"}` |
-| GET | `/instance` | `200 {name, registration_enabled, version, oauth_providers: [{provider, name}]}` (public, pour la page de connexion) |
+| GET | `/instance` | `200 {name, registration_enabled, version, oauth_providers: [{provider, name}], needs_setup, localhost}` (public, pour la page de connexion). `needs_setup` : aucun compte, le premier inscrit devient administrateur (inscription toujours ouverte dans ce cas) ; `localhost` : accès SSH à l'hôte préparé par `install.sh` (serveur « Cette machine » créé à la première inscription) |
 
 ## Auth (`/auth`)
 
@@ -167,7 +167,7 @@ Les opérations distantes sont des **tâches** asynchrones (`202 ServerTask`) do
 | GET / POST | `/servers/{id}/destinations` | `server.read` / `server.update` | POST `{name?, network}` crée un réseau Docker (tâche) |
 | DELETE | `/servers/{id}/destinations/{dest}` | `server.update` | `409` pour la destination par défaut |
 
-**Server** : `{id, team_id, name, description, ip, port, user, private_key_id, host_key, is_reachable, is_usable, os_id, os_version, docker_version, compose_version, validation_error, validated_at, last_seen_at, last_cleanup_at, settings, created_at}`
+**Server** : `{id, team_id, name, description, ip, port, user, private_key_id, host_key, is_reachable, is_usable, os_id, os_version, docker_version, compose_version, validation_error, validated_at, last_seen_at, last_cleanup_at, settings, created_at, is_localhost}` (`is_localhost` : hôte de l'instance)
 
 **settings** (valeurs par défaut) : `concurrent_builds` 2, `deployment_timeout` 3600 s, `is_build_server` false, `docker_cleanup_frequency` `"0 0 * * *"` (cron ou `@daily`…), `docker_cleanup_threshold` 80 (% disque déclenchant un nettoyage), `delete_unused_volumes` false, `delete_unused_networks` false, `metrics_enabled` true, `metrics_retention_days` 7, `timezone` `"UTC"`, `wildcard_domain` `""`, `connection_timeout` 10 s, `cloudflare_tunnel` (lecture seule).
 
