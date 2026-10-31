@@ -21,6 +21,7 @@ type DatabaseSettings struct {
 	StopGracePeriod        int    `json:"stop_grace_period"`
 	PostgresInitdbArgs     string `json:"postgres_initdb_args"`      // POSTGRES_INITDB_ARGS
 	PostgresHostAuthMethod string `json:"postgres_host_auth_method"` // POSTGRES_HOST_AUTH_METHOD
+	LogDrainEnabled        bool   `json:"log_drain_enabled"`         // logs envoyés au log drain du serveur
 	// TLS : certificats signés par l'autorité du serveur, régénérés à chaque démarrage.
 	EnableSSL bool   `json:"enable_ssl"`
 	SSLMode   string `json:"ssl_mode"`

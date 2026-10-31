@@ -754,6 +754,9 @@ func (p *pipe) startContainer(ctx context.Context) error {
 	compose, err := AppCompose(AppSpec{App: a, DeploymentID: p.d.ID, ContainerName: p.containerName, Image: p.image, Network: p.loc.Network,
 		ProxyType: p.sv.Proxy.Type, Domains: p.domains, Env: p.env.Runtime, Literal: p.env.Literal, Storages: storages, PR: p.d.PRNumber,
 		CaddyCerts: p.certs}, p.appDir+"/files")
+	if err == nil {
+		compose, err = p.logDrain(ctx, compose)
+	}
 	if err != nil {
 		return err
 	}
@@ -915,6 +918,9 @@ func (p *pipe) deployCompose(ctx context.Context) error {
 		route = &cp
 	}
 	transformed, err := TransformCompose(raw, route, p.d.ID, p.loc.Network, p.sv.Proxy.Type, prDir+"/data", p.certs, p.d.PRNumber)
+	if err == nil {
+		transformed, err = p.logDrain(ctx, transformed)
+	}
 	if err != nil {
 		return err
 	}
@@ -1148,4 +1154,13 @@ func (p *pipe) registries(ctx context.Context) error {
 	}
 	p.dockerEnv = env
 	return nil
+}
+
+// logDrain envoie les logs au log drain du serveur si l'application l'active et que le serveur en a un.
+func (p *pipe) logDrain(ctx context.Context, compose string) (string, error) {
+	if !p.a.Settings.LogDrainEnabled || !p.r.Store.HasLogDrain(ctx, p.sv.ID) {
+		return compose, nil
+	}
+	p.debug("Logs envoyés au log drain du serveur.")
+	return WithLogDrain(compose)
 }

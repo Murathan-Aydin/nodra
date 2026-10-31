@@ -490,6 +490,9 @@ func (d *dbRun) start(ctx context.Context) error {
 		return err
 	}
 	compose, err := DatabaseCompose(DatabaseSpec{DB: db, Env: env, Network: loc.Network, Storages: storages, Dir: d.dir})
+	if err == nil && db.Settings.LogDrainEnabled && st.HasLogDrain(ctx, loc.ServerID) {
+		compose, err = WithLogDrain(compose)
+	}
 	if err != nil {
 		return err
 	}

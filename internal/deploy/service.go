@@ -422,6 +422,9 @@ func (d *svcRun) start(ctx context.Context) error {
 	}
 	compose, files, err := ServiceCompose(ServiceSpec{Service: svc, Apps: apps, Network: loc.Network, ProxyType: sv.Proxy.Type,
 		DataDir: d.dir + "/data", Certs: certs})
+	if err == nil && svc.LogDrainEnabled && r.Store.HasLogDrain(ctx, sv.ID) {
+		compose, err = WithLogDrain(compose)
+	}
 	if err != nil {
 		return err
 	}

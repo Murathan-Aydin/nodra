@@ -253,3 +253,13 @@ func TestTransformComposePreview(t *testing.T) {
 		t.Errorf("production :\n%s", prod)
 	}
 }
+
+func TestWithLogDrain(t *testing.T) {
+	out, err := WithLogDrain("services:\n  web:\n    image: nginx\n  db:\n    image: postgres\n    logging:\n      driver: json-file\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(out, "driver: fluentd") != 1 || !strings.Contains(out, "driver: json-file") || !strings.Contains(out, "fluentd-async") {
+		t.Fatalf("logging :\n%s", out)
+	}
+}

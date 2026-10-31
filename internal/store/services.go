@@ -20,15 +20,16 @@ type Service struct {
 	Status           string    `json:"status"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
+	LogDrainEnabled  bool      `json:"log_drain_enabled"`
 }
 
 const serviceCols = `id::text, team_id::text, environment_id::text, destination_id::text, name, description, template,
-	docker_compose_raw, status, created_at, updated_at`
+	docker_compose_raw, status, log_drain_enabled, created_at, updated_at`
 
 func scanService(row pgx.Row) (*Service, error) {
 	s := &Service{}
 	err := row.Scan(&s.ID, &s.TeamID, &s.EnvironmentID, &s.DestinationID, &s.Name, &s.Description, &s.Template,
-		&s.DockerComposeRaw, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+		&s.DockerComposeRaw, &s.Status, &s.LogDrainEnabled, &s.CreatedAt, &s.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

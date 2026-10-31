@@ -87,3 +87,57 @@ func TestDockerRegistries(t *testing.T) {
 		t.Fatalf("configuration non retirée : %v", err)
 	}
 }
+
+func TestLogDrain(t *testing.T) {
+	f := newAppFixture(t)
+	newFakeHost(t, f)
+	alice, base := f.alice, f.base
+	bob, _ := register(t, f.e, "bob@example.com")
+	invite(t, f.e, alice, bob, f.team, "bob@example.com", rbac.RoleViewer)
+	f.e.api.Executors["resource.deploy"] = f.e.api.execResourceDeploy
+	srv := base + "/servers/" + f.serverID + "/log-drain"
+	var cur map[string]any
+	expect(t, "sans log drain", bob.do("GET", srv, nil, &cur), 200)
+	if cur["enabled"] != false {
+		t.Fatalf("état : %v", cur)
+	}
+	drain := map[string]any{"type": "newrelic", "license_key": "NRAK-secret", "base_uri": "https://log-api.eu.newrelic.com/log/v1"}
+	expect(t, "lecteur", bob.do("PUT", srv, drain, nil), 403)
+	expect(t, "type inconnu", alice.do("PUT", srv, map[string]any{"type": "loki"}, nil), 422)
+	var resp struct {
+		Task store.ServerTask `json:"task"`
+	}
+	expect(t, "new relic", alice.do("PUT", srv, drain, &resp), 202)
+	if resp.Task.Kind != "log_drain_start" {
+		t.Fatalf("tâche : %+v", resp.Task)
+	}
+	if task := waitTask(t, alice, f.team, f.serverID, resp.Task.ID); task.Status != "success" {
+		t.Fatalf("démarrage : %s %s", task.Status, task.Error)
+	}
+	expect(t, "lecture", bob.do("GET", srv, nil, &cur), 200)
+	if cfg := cur["config"].(map[string]any); cur["type"] != "newrelic" || cfg["license_key"] != "********" || strings.Contains(toJSON(cur), "NRAK-secret") {
+		t.Fatalf("lecture : %v", cur)
+	}
+	expect(t, "secret conservé", alice.do("PUT", srv, map[string]any{"type": "newrelic", "license_key": "********",
+		"base_uri": "https://log-api.newrelic.com/log/v1"}, nil), 202)
+
+	// Application qui active le log drain : pilote fluentd dans son compose.
+	var app map[string]any
+	expect(t, "application", alice.do("POST", base+"/applications", f.app(map[string]any{"settings": map[string]any{"log_drain_enabled": true}}), &app), 201)
+	appID := app["id"].(string)
+	var d store.Deployment
+	expect(t, "déploiement", alice.do("POST", base+"/applications/"+appID+"/deploy", nil, &d), 202)
+	if d = waitDeployment(t, alice, base, appID, d.ID); d.Status != "finished" {
+		t.Fatalf("déploiement : %s", d.Error)
+	}
+	if logs := depLogs(t, alice, base, appID, d.ID, true); !strings.Contains(logs, "driver: fluentd") || !strings.Contains(logs, "Logs envoyés au log drain") {
+		t.Fatalf("compose sans pilote fluentd :\n%s", logs)
+	}
+
+	var stop store.ServerTask
+	expect(t, "suppression", alice.do("DELETE", srv, nil, &stop), 202)
+	if stop.Kind != "log_drain_stop" {
+		t.Fatalf("arrêt : %+v", stop)
+	}
+	expect(t, "déjà supprimé", alice.do("DELETE", srv, nil, nil), 404)
+}

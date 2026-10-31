@@ -175,6 +175,16 @@ Les opérations distantes sont des **tâches** asynchrones (`202 ServerTask`) do
 
 Tâches de fond automatiques : métriques et joignabilité chaque minute, nettoyage Docker selon `docker_cleanup_frequency` ou au-delà de `docker_cleanup_threshold` (vérifié toutes les 5 min), maintenance horaire (sessions expirées, rétention des métriques, demandes d'approbation expirées, tâches bloquées).
 
+## Log drains (`/teams/{team}/servers/{id}/log-drain`)
+
+Envoi des logs des conteneurs vers New Relic, Axiom ou une sortie Fluent Bit personnalisée : conteneur `nodra-log-drain` (Fluent Bit) sur le serveur, à l'écoute sur `127.0.0.1:24224`. Les ressources qui l'activent (`settings.log_drain_enabled` pour les applications et les bases, `log_drain_enabled` pour les services ; appliqué au prochain déploiement ou démarrage) utilisent le pilote `fluentd` (asynchrone : un log drain arrêté ne bloque pas le conteneur). Chaque enregistrement porte `nodra.server_name`, `nodra.resource_id` et `nodra.container_name`.
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/log-drain` | `server.read` | `{enabled, type?, config? (secrets masqués), updated_at?}` |
+| PUT | `/log-drain` | `server.update` | `{type: newrelic, license_key, base_uri}` · `{type: axiom, axiom_dataset, axiom_api_key, axiom_domain? (api.axiom.co)}` · `{type: custom, custom_config (fluent-bit.conf complet), custom_parsers?}` → `202 {task, config}` (tâche `log_drain_start`). `********` conserve un secret. `@INCLUDE`, `@SET` et les extensions `exec`/`lua` sont refusés. |
+| DELETE | `/log-drain` | `server.update` | `202 ServerTask` (`log_drain_stop` : conteneur et fichiers supprimés) |
+
 ## Proxy (`/teams/{team}/servers/{id}/proxy`)
 
 Chaque serveur a un proxy inverse : **Traefik** (par défaut, `traefik:v3.7`) ou **Caddy** (`lucaslorentz/caddy-docker-proxy:2.13-alpine`), ou aucun. Il tourne dans le conteneur `nodra-proxy` sur le réseau `nodra`, ports 80/443 (+ 443/udp pour HTTP/3), certificats Let's Encrypt (HTTP-01). Les fichiers sont dans `/data/nodra/proxy` sur le serveur. Le proxy est démarré automatiquement après une validation réussie (sans faire échouer la validation si les ports 80/443 sont pris par un autre conteneur ou service).

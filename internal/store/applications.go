@@ -62,6 +62,7 @@ func DefaultLimits() Limits {
 
 // AppSettings : options d'une application (équivalent de ApplicationSetting dans Coolify).
 type AppSettings struct {
+	LogDrainEnabled           bool   `json:"log_drain_enabled"` // logs envoyés au log drain du serveur
 	AutoDeploy                bool   `json:"auto_deploy"`
 	ForceHTTPS                bool   `json:"force_https"`
 	PreviewDeployments        bool   `json:"preview_deployments"`

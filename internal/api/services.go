@@ -149,6 +149,7 @@ type serviceInput struct {
 	Description      *string `json:"description"`
 	DockerComposeRaw *string `json:"docker_compose_raw"`
 	InstantDeploy    bool    `json:"instant_deploy"`
+	LogDrainEnabled  *bool   `json:"log_drain_enabled"` // logs envoyés au log drain du serveur (prochain démarrage)
 }
 
 func (s *Server) createService(w http.ResponseWriter, r *http.Request) {
@@ -329,6 +330,13 @@ func (s *Server) updateService(w http.ResponseWriter, r *http.Request) {
 	if err := s.Store.UpdateService(ctx, svc, apps, vars); err != nil {
 		s.fail(w, err)
 		return
+	}
+	if in.LogDrainEnabled != nil && *in.LogDrainEnabled != svc.LogDrainEnabled {
+		if err := s.Store.SetServiceLogDrain(ctx, svc.ID, *in.LogDrainEnabled); err != nil {
+			s.internal(w, err)
+			return
+		}
+		svc.LogDrainEnabled = *in.LogDrainEnabled
 	}
 	s.auditTeam(r, "service.updated", "service", svc.ID, map[string]any{"name": map[string]string{"before": before.Name, "after": svc.Name},
 		"compose_changed": before.DockerComposeRaw != svc.DockerComposeRaw})
