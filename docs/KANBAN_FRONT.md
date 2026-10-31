@@ -6,12 +6,11 @@ Le backend (phase 1) est terminé : toutes les routes sont décrites dans [API.m
 
 ---
 
+> **2026-10-31 — front remis à zéro.** Le front v1 (lots 0 à 10, codé par Claude) a été supprimé à la demande de l'utilisateur, qui a refait le visuel. Seul le système visuel est conservé dans `web/src` (`index.css`, `wallpapers.css`, `lib/theme.tsx` et l'Apparence, composants `components/ui/`). L'ancien front et la refonte sont archivés dans la branche locale `archive/front-v1`. **L'ordre de reconstruction est fixé par l'utilisateur** ; les cartes ci-dessous restent la référence des routes API à utiliser.
+
 ## 🟦 À faire
 
-**Lot 4 — Tableau de bord** : F4-02
-**Lot 11 — Intégrations d'équipe** : F11-01 · F11-02 · F11-03
-**Lot 12 — Administration de l'instance** : F12-01 · F12-02 · F12-03 · F12-04 · F12-05
-**Lot 13 — Transverse et qualité** : F13-01 · F13-02 · F13-03 · F13-04 · F13-05
+Toutes les cartes (lots 0 à 13), dans l'ordre que donnera l'utilisateur.
 
 ## 🟨 En cours
 
@@ -19,17 +18,7 @@ _(rien)_
 
 ## 🟩 Fait
 
-**Lot 0 — Socle** : F0-01 · F0-02 (composants de base, sans page catalogue) · F0-03 · F0-04 · F0-05 · F0-06 · F0-07
-**Lot 1 — Authentification** : F1-01 · F1-02 · F1-03 · F1-04 · F1-05 · F1-06
-**Lot 2 — Compte** : F2-01 · F2-02 · F2-03 · F2-04 · F2-05
-**Lot 3 — Équipes et accès** : F3-01 · F3-02 · F3-03 · F3-04 · F3-05 · F3-06 · F3-07 · F3-08
-**Lot 4** : F4-01 (tableau de bord)
-**Lot 5 — Serveurs** : F5-01 · F5-02 · F5-03 · F5-04 · F5-05 · F5-06 · F5-07 · F5-08 · F5-09 · F5-10
-**Lot 6 — Projets et environnements** : F6-01 · F6-02 · F6-03 · F6-04
-**Lot 7 — Sources Git** : F7-01 · F7-02 · F7-03
-**Lot 8 — Applications** : F8-01 · F8-02 · F8-03 · F8-04 · F8-05 · F8-06 · F8-07 · F8-08 · F8-09 · F8-10 · F8-11 · F8-12
-**Lot 9 — Bases de données** : F9-01 · F9-02 · F9-03 · F9-04 · F9-05 · F9-06
-**Lot 10 — Services one-click** : F10-01 · F10-02 · F10-03 · F10-04
+_(rien depuis la remise à zéro)_
 
 ---
 

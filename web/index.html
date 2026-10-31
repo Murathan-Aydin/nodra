@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-wallpaper="forest">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -7,11 +7,19 @@
     <meta name="color-scheme" content="light dark" />
     <title>Nodra</title>
     <script>
-      // Thème appliqué avant le rendu (pas de flash) : choix mémorisé, sinon préférence système.
+      // Thème et fond d'écran Apple appliqués avant le rendu (sans flash)
       try {
         var t = localStorage.getItem("nodra-theme")
         var dark = t === "dark" || ((!t || t === "system") && matchMedia("(prefers-color-scheme: dark)").matches)
         document.documentElement.classList.toggle("dark", dark)
+
+        var wp = localStorage.getItem("nodra-wallpaper") || "forest"
+        document.documentElement.setAttribute("data-wallpaper", wp)
+
+        var img = localStorage.getItem("nodra-wallpaper-image")
+        if (img && (wp === "custom" || wp === "image")) {
+          document.documentElement.style.setProperty("--wallpaper-image", 'url("' + img.replace(/["\\\n]/g, encodeURIComponent) + '")')
+        }
       } catch (e) {}
     </script>
   </head>
