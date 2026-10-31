@@ -635,3 +635,94 @@ export interface UserSession {
   expires_at: string
   current: boolean
 }
+
+export interface Role {
+  id: string
+  team_id: string | null
+  key: string
+  name: string
+  description: string
+  permissions: string[]
+  system: boolean
+  created_at: string
+}
+
+export interface MemberRole {
+  assignment_id: string
+  role_id: string
+  role_name: string
+  effect: "allow" | "deny"
+  team_id: string
+}
+
+export interface Member {
+  user_id: string
+  email: string
+  name: string
+  team_id: string
+  inherited: boolean
+  joined_at: string
+  roles: MemberRole[]
+}
+
+export interface Invitation {
+  id: string
+  team_id: string
+  team_name: string
+  email: string
+  role_id: string
+  role_name: string
+  group_ids: string[] | null
+  invited_by: string | null
+  expires_at: string
+  created_at: string
+}
+
+export interface RoleAssignment {
+  id: string
+  team_id: string
+  user_id: string | null
+  group_id: string | null
+  subject_name: string
+  role_id: string
+  role_name: string
+  scope: Scope
+  effect: "allow" | "deny"
+  created_by: string | null
+  created_at: string
+}
+
+export interface Group {
+  id: string
+  team_id: string
+  name: string
+  description: string
+  members: { user_id: string; email: string; name: string }[]
+  created_at: string
+}
+
+export interface ApprovalRule {
+  id: string
+  team_id: string
+  name: string
+  scope: Scope
+  actions: string[]
+  required_approvals: number
+  enabled: boolean
+  created_at: string
+}
+
+export interface AuditEvent {
+  id: number
+  team_id: string | null
+  actor_user_id: string | null
+  actor_email: string
+  actor_token_id: string | null
+  action: string
+  target_type: string
+  target_id: string
+  ip: string
+  user_agent: string
+  metadata: unknown
+  created_at: string
+}

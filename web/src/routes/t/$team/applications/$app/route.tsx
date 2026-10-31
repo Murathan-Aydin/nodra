@@ -25,6 +25,7 @@ const TABS = [
   { to: "/t/$team/applications/$app/previews", label: "Previews" },
   { to: "/t/$team/applications/$app/webhooks", label: "Webhooks" },
   { to: "/t/$team/applications/$app/tasks", label: "Tâches planifiées" },
+  { to: "/t/$team/applications/$app/access", label: "Accès" },
   { to: "/t/$team/applications/$app/advanced", label: "Avancé" },
 ] as const
 

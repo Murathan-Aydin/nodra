@@ -27,6 +27,7 @@ const TABS = [
   { to: "/t/$team/databases/$db/envs", label: "Variables" },
   { to: "/t/$team/databases/$db/storages", label: "Stockages" },
   { to: "/t/$team/databases/$db/tasks", label: "Tâches planifiées" },
+  { to: "/t/$team/databases/$db/access", label: "Accès" },
   { to: "/t/$team/databases/$db/advanced", label: "Avancé" },
 ] as const
 

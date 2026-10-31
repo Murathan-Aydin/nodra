@@ -26,6 +26,7 @@ const TABS = [
   { to: "/t/$team/services/$svc/history", label: "Historique" },
   { to: "/t/$team/services/$svc/backups", label: "Sauvegardes" },
   { to: "/t/$team/services/$svc/tasks", label: "Tâches planifiées" },
+  { to: "/t/$team/services/$svc/access", label: "Accès" },
   { to: "/t/$team/services/$svc/advanced", label: "Avancé" },
 ] as const
 

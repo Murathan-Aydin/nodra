@@ -1,14 +1,16 @@
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query"
+import { useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 import { ApiError } from "./api"
 import type { ApprovalRequest } from "./types"
 
-/** Signale une demande d'approbation créée à la place de l'action (réponse 202). */
-export function notifyPending(res: unknown): boolean {
+/** Signale une demande d'approbation créée à la place de l'action (réponse 202), avec un lien vers la demande. */
+export function notifyPending(res: unknown, open?: (req: ApprovalRequest) => void): boolean {
   const req = (res as { approval_request?: ApprovalRequest } | undefined)?.approval_request
   if (!req) return false
   toast.info("Demande d'approbation envoyée", {
     description: `${req.summary} — ${req.required_approvals} approbation(s) requise(s).`,
+    action: open ? { label: "Voir", onClick: () => open(req) } : undefined,
   })
   return true
 }
@@ -22,10 +24,12 @@ export function useApiMutation<TVars, TRes>(
   opts: { success?: string | ((res: TRes, vars: TVars) => string | undefined); invalidate?: QueryKey[]; onSuccess?: (res: TRes, vars: TVars) => void } = {},
 ) {
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const openRequest = (req: ApprovalRequest) => void navigate({ to: "/t/$team/approvals", params: { team: req.team_id }, search: { id: req.id } })
   return useMutation({
     mutationFn: fn,
     onSuccess: (res, vars) => {
-      if (!notifyPending(res)) {
+      if (!notifyPending(res, openRequest)) {
         const msg = typeof opts.success === "function" ? opts.success(res, vars) : opts.success
         if (msg) toast.success(msg)
       }

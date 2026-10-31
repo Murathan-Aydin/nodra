@@ -19,6 +19,7 @@ import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as Login2faRouteImport } from './routes/login/2fa'
 import { Route as TTeamRouteRouteImport } from './routes/t/$team/route'
 import { Route as TTeamIndexRouteImport } from './routes/t/$team/index'
+import { Route as TTeamTeamRouteRouteImport } from './routes/t/$team/team/route'
 import { Route as TTeamAccountIndexRouteImport } from './routes/t/$team/account/index'
 import { Route as TTeamAdminIndexRouteImport } from './routes/t/$team/admin/index'
 import { Route as TTeamApplicationsAppRouteRouteImport } from './routes/t/$team/applications/$app/route'
@@ -35,7 +36,12 @@ import { Route as TTeamSourcesIndexRouteImport } from './routes/t/$team/sources/
 import { Route as TTeamSourcesSourceRouteImport } from './routes/t/$team/sources/$source'
 import { Route as TTeamStoragesIndexRouteImport } from './routes/t/$team/storages/index'
 import { Route as TTeamTeamIndexRouteImport } from './routes/t/$team/team/index'
+import { Route as TTeamTeamAccessRouteImport } from './routes/t/$team/team/access'
+import { Route as TTeamTeamGroupsRouteImport } from './routes/t/$team/team/groups'
+import { Route as TTeamTeamRolesRouteImport } from './routes/t/$team/team/roles'
+import { Route as TTeamTeamSettingsRouteImport } from './routes/t/$team/team/settings'
 import { Route as TTeamApplicationsAppIndexRouteImport } from './routes/t/$team/applications/$app/index'
+import { Route as TTeamApplicationsAppAccessRouteImport } from './routes/t/$team/applications/$app/access'
 import { Route as TTeamApplicationsAppAdvancedRouteImport } from './routes/t/$team/applications/$app/advanced'
 import { Route as TTeamApplicationsAppDeploymentsRouteImport } from './routes/t/$team/applications/$app/deployments'
 import { Route as TTeamApplicationsAppEnvsRouteImport } from './routes/t/$team/applications/$app/envs'
@@ -46,6 +52,7 @@ import { Route as TTeamApplicationsAppTasksRouteImport } from './routes/t/$team/
 import { Route as TTeamApplicationsAppTerminalRouteImport } from './routes/t/$team/applications/$app/terminal'
 import { Route as TTeamApplicationsAppWebhooksRouteImport } from './routes/t/$team/applications/$app/webhooks'
 import { Route as TTeamDatabasesDbIndexRouteImport } from './routes/t/$team/databases/$db/index'
+import { Route as TTeamDatabasesDbAccessRouteImport } from './routes/t/$team/databases/$db/access'
 import { Route as TTeamDatabasesDbAdvancedRouteImport } from './routes/t/$team/databases/$db/advanced'
 import { Route as TTeamDatabasesDbBackupsRouteImport } from './routes/t/$team/databases/$db/backups'
 import { Route as TTeamDatabasesDbEnvsRouteImport } from './routes/t/$team/databases/$db/envs'
@@ -61,6 +68,7 @@ import { Route as TTeamServersServerSettingsRouteImport } from './routes/t/$team
 import { Route as TTeamServersServerTasksRouteImport } from './routes/t/$team/servers/$server/tasks'
 import { Route as TTeamServersServerTerminalRouteImport } from './routes/t/$team/servers/$server/terminal'
 import { Route as TTeamServicesSvcIndexRouteImport } from './routes/t/$team/services/$svc/index'
+import { Route as TTeamServicesSvcAccessRouteImport } from './routes/t/$team/services/$svc/access'
 import { Route as TTeamServicesSvcAdvancedRouteImport } from './routes/t/$team/services/$svc/advanced'
 import { Route as TTeamServicesSvcBackupsRouteImport } from './routes/t/$team/services/$svc/backups'
 import { Route as TTeamServicesSvcEnvsRouteImport } from './routes/t/$team/services/$svc/envs'
@@ -119,6 +127,11 @@ const TTeamRouteRoute = TTeamRouteRouteImport.update({
 const TTeamIndexRoute = TTeamIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTeamRouteRoute = TTeamTeamRouteRouteImport.update({
+  id: '/team',
+  path: '/team',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
 const TTeamAccountIndexRoute = TTeamAccountIndexRouteImport.update({
@@ -198,14 +211,40 @@ const TTeamStoragesIndexRoute = TTeamStoragesIndexRouteImport.update({
   getParentRoute: () => TTeamRouteRoute,
 } as any)
 const TTeamTeamIndexRoute = TTeamTeamIndexRouteImport.update({
-  id: '/team/',
-  path: '/team/',
-  getParentRoute: () => TTeamRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => TTeamTeamRouteRoute,
+} as any)
+const TTeamTeamAccessRoute = TTeamTeamAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
+  getParentRoute: () => TTeamTeamRouteRoute,
+} as any)
+const TTeamTeamGroupsRoute = TTeamTeamGroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
+  getParentRoute: () => TTeamTeamRouteRoute,
+} as any)
+const TTeamTeamRolesRoute = TTeamTeamRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => TTeamTeamRouteRoute,
+} as any)
+const TTeamTeamSettingsRoute = TTeamTeamSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => TTeamTeamRouteRoute,
 } as any)
 const TTeamApplicationsAppIndexRoute =
   TTeamApplicationsAppIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => TTeamApplicationsAppRouteRoute,
+  } as any)
+const TTeamApplicationsAppAccessRoute =
+  TTeamApplicationsAppAccessRouteImport.update({
+    id: '/access',
+    path: '/access',
     getParentRoute: () => TTeamApplicationsAppRouteRoute,
   } as any)
 const TTeamApplicationsAppAdvancedRoute =
@@ -265,6 +304,11 @@ const TTeamApplicationsAppWebhooksRoute =
 const TTeamDatabasesDbIndexRoute = TTeamDatabasesDbIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => TTeamDatabasesDbRouteRoute,
+} as any)
+const TTeamDatabasesDbAccessRoute = TTeamDatabasesDbAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
   getParentRoute: () => TTeamDatabasesDbRouteRoute,
 } as any)
 const TTeamDatabasesDbAdvancedRoute =
@@ -348,6 +392,11 @@ const TTeamServicesSvcIndexRoute = TTeamServicesSvcIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TTeamServicesSvcRouteRoute,
 } as any)
+const TTeamServicesSvcAccessRoute = TTeamServicesSvcAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
+  getParentRoute: () => TTeamServicesSvcRouteRoute,
+} as any)
 const TTeamServicesSvcAdvancedRoute =
   TTeamServicesSvcAdvancedRouteImport.update({
     id: '/advanced',
@@ -408,12 +457,17 @@ export interface FileRoutesByFullPath {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/login/2fa': typeof Login2faRoute
   '/login/': typeof LoginIndexRoute
+  '/t/$team/team': typeof TTeamTeamRouteRouteWithChildren
   '/t/$team/': typeof TTeamIndexRoute
   '/t/$team/applications/$app': typeof TTeamApplicationsAppRouteRouteWithChildren
   '/t/$team/databases/$db': typeof TTeamDatabasesDbRouteRouteWithChildren
   '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
   '/t/$team/services/$svc': typeof TTeamServicesSvcRouteRouteWithChildren
   '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
+  '/t/$team/team/access': typeof TTeamTeamAccessRoute
+  '/t/$team/team/groups': typeof TTeamTeamGroupsRoute
+  '/t/$team/team/roles': typeof TTeamTeamRolesRoute
+  '/t/$team/team/settings': typeof TTeamTeamSettingsRoute
   '/t/$team/account/': typeof TTeamAccountIndexRoute
   '/t/$team/admin/': typeof TTeamAdminIndexRoute
   '/t/$team/approvals/': typeof TTeamApprovalsIndexRoute
@@ -425,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/sources/': typeof TTeamSourcesIndexRoute
   '/t/$team/storages/': typeof TTeamStoragesIndexRoute
   '/t/$team/team/': typeof TTeamTeamIndexRoute
+  '/t/$team/applications/$app/access': typeof TTeamApplicationsAppAccessRoute
   '/t/$team/applications/$app/advanced': typeof TTeamApplicationsAppAdvancedRoute
   '/t/$team/applications/$app/deployments': typeof TTeamApplicationsAppDeploymentsRoute
   '/t/$team/applications/$app/envs': typeof TTeamApplicationsAppEnvsRoute
@@ -434,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/applications/$app/tasks': typeof TTeamApplicationsAppTasksRoute
   '/t/$team/applications/$app/terminal': typeof TTeamApplicationsAppTerminalRoute
   '/t/$team/applications/$app/webhooks': typeof TTeamApplicationsAppWebhooksRoute
+  '/t/$team/databases/$db/access': typeof TTeamDatabasesDbAccessRoute
   '/t/$team/databases/$db/advanced': typeof TTeamDatabasesDbAdvancedRoute
   '/t/$team/databases/$db/backups': typeof TTeamDatabasesDbBackupsRoute
   '/t/$team/databases/$db/envs': typeof TTeamDatabasesDbEnvsRoute
@@ -446,6 +502,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
   '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/services/$svc/access': typeof TTeamServicesSvcAccessRoute
   '/t/$team/services/$svc/advanced': typeof TTeamServicesSvcAdvancedRoute
   '/t/$team/services/$svc/backups': typeof TTeamServicesSvcBackupsRoute
   '/t/$team/services/$svc/envs': typeof TTeamServicesSvcEnvsRoute
@@ -472,6 +529,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginIndexRoute
   '/t/$team': typeof TTeamIndexRoute
   '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
+  '/t/$team/team/access': typeof TTeamTeamAccessRoute
+  '/t/$team/team/groups': typeof TTeamTeamGroupsRoute
+  '/t/$team/team/roles': typeof TTeamTeamRolesRoute
+  '/t/$team/team/settings': typeof TTeamTeamSettingsRoute
   '/t/$team/account': typeof TTeamAccountIndexRoute
   '/t/$team/admin': typeof TTeamAdminIndexRoute
   '/t/$team/approvals': typeof TTeamApprovalsIndexRoute
@@ -483,6 +544,7 @@ export interface FileRoutesByTo {
   '/t/$team/sources': typeof TTeamSourcesIndexRoute
   '/t/$team/storages': typeof TTeamStoragesIndexRoute
   '/t/$team/team': typeof TTeamTeamIndexRoute
+  '/t/$team/applications/$app/access': typeof TTeamApplicationsAppAccessRoute
   '/t/$team/applications/$app/advanced': typeof TTeamApplicationsAppAdvancedRoute
   '/t/$team/applications/$app/deployments': typeof TTeamApplicationsAppDeploymentsRoute
   '/t/$team/applications/$app/envs': typeof TTeamApplicationsAppEnvsRoute
@@ -492,6 +554,7 @@ export interface FileRoutesByTo {
   '/t/$team/applications/$app/tasks': typeof TTeamApplicationsAppTasksRoute
   '/t/$team/applications/$app/terminal': typeof TTeamApplicationsAppTerminalRoute
   '/t/$team/applications/$app/webhooks': typeof TTeamApplicationsAppWebhooksRoute
+  '/t/$team/databases/$db/access': typeof TTeamDatabasesDbAccessRoute
   '/t/$team/databases/$db/advanced': typeof TTeamDatabasesDbAdvancedRoute
   '/t/$team/databases/$db/backups': typeof TTeamDatabasesDbBackupsRoute
   '/t/$team/databases/$db/envs': typeof TTeamDatabasesDbEnvsRoute
@@ -504,6 +567,7 @@ export interface FileRoutesByTo {
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
   '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/services/$svc/access': typeof TTeamServicesSvcAccessRoute
   '/t/$team/services/$svc/advanced': typeof TTeamServicesSvcAdvancedRoute
   '/t/$team/services/$svc/backups': typeof TTeamServicesSvcBackupsRoute
   '/t/$team/services/$svc/envs': typeof TTeamServicesSvcEnvsRoute
@@ -530,12 +594,17 @@ export interface FileRoutesById {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/login/2fa': typeof Login2faRoute
   '/login/': typeof LoginIndexRoute
+  '/t/$team/team': typeof TTeamTeamRouteRouteWithChildren
   '/t/$team/': typeof TTeamIndexRoute
   '/t/$team/applications/$app': typeof TTeamApplicationsAppRouteRouteWithChildren
   '/t/$team/databases/$db': typeof TTeamDatabasesDbRouteRouteWithChildren
   '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
   '/t/$team/services/$svc': typeof TTeamServicesSvcRouteRouteWithChildren
   '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
+  '/t/$team/team/access': typeof TTeamTeamAccessRoute
+  '/t/$team/team/groups': typeof TTeamTeamGroupsRoute
+  '/t/$team/team/roles': typeof TTeamTeamRolesRoute
+  '/t/$team/team/settings': typeof TTeamTeamSettingsRoute
   '/t/$team/account/': typeof TTeamAccountIndexRoute
   '/t/$team/admin/': typeof TTeamAdminIndexRoute
   '/t/$team/approvals/': typeof TTeamApprovalsIndexRoute
@@ -547,6 +616,7 @@ export interface FileRoutesById {
   '/t/$team/sources/': typeof TTeamSourcesIndexRoute
   '/t/$team/storages/': typeof TTeamStoragesIndexRoute
   '/t/$team/team/': typeof TTeamTeamIndexRoute
+  '/t/$team/applications/$app/access': typeof TTeamApplicationsAppAccessRoute
   '/t/$team/applications/$app/advanced': typeof TTeamApplicationsAppAdvancedRoute
   '/t/$team/applications/$app/deployments': typeof TTeamApplicationsAppDeploymentsRoute
   '/t/$team/applications/$app/envs': typeof TTeamApplicationsAppEnvsRoute
@@ -556,6 +626,7 @@ export interface FileRoutesById {
   '/t/$team/applications/$app/tasks': typeof TTeamApplicationsAppTasksRoute
   '/t/$team/applications/$app/terminal': typeof TTeamApplicationsAppTerminalRoute
   '/t/$team/applications/$app/webhooks': typeof TTeamApplicationsAppWebhooksRoute
+  '/t/$team/databases/$db/access': typeof TTeamDatabasesDbAccessRoute
   '/t/$team/databases/$db/advanced': typeof TTeamDatabasesDbAdvancedRoute
   '/t/$team/databases/$db/backups': typeof TTeamDatabasesDbBackupsRoute
   '/t/$team/databases/$db/envs': typeof TTeamDatabasesDbEnvsRoute
@@ -568,6 +639,7 @@ export interface FileRoutesById {
   '/t/$team/servers/$server/settings': typeof TTeamServersServerSettingsRoute
   '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
   '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/services/$svc/access': typeof TTeamServicesSvcAccessRoute
   '/t/$team/services/$svc/advanced': typeof TTeamServicesSvcAdvancedRoute
   '/t/$team/services/$svc/backups': typeof TTeamServicesSvcBackupsRoute
   '/t/$team/services/$svc/envs': typeof TTeamServicesSvcEnvsRoute
@@ -595,12 +667,17 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/login/2fa'
     | '/login/'
+    | '/t/$team/team'
     | '/t/$team/'
     | '/t/$team/applications/$app'
     | '/t/$team/databases/$db'
     | '/t/$team/servers/$server'
     | '/t/$team/services/$svc'
     | '/t/$team/sources/$source'
+    | '/t/$team/team/access'
+    | '/t/$team/team/groups'
+    | '/t/$team/team/roles'
+    | '/t/$team/team/settings'
     | '/t/$team/account/'
     | '/t/$team/admin/'
     | '/t/$team/approvals/'
@@ -612,6 +689,7 @@ export interface FileRouteTypes {
     | '/t/$team/sources/'
     | '/t/$team/storages/'
     | '/t/$team/team/'
+    | '/t/$team/applications/$app/access'
     | '/t/$team/applications/$app/advanced'
     | '/t/$team/applications/$app/deployments'
     | '/t/$team/applications/$app/envs'
@@ -621,6 +699,7 @@ export interface FileRouteTypes {
     | '/t/$team/applications/$app/tasks'
     | '/t/$team/applications/$app/terminal'
     | '/t/$team/applications/$app/webhooks'
+    | '/t/$team/databases/$db/access'
     | '/t/$team/databases/$db/advanced'
     | '/t/$team/databases/$db/backups'
     | '/t/$team/databases/$db/envs'
@@ -633,6 +712,7 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
     | '/t/$team/servers/$server/terminal'
+    | '/t/$team/services/$svc/access'
     | '/t/$team/services/$svc/advanced'
     | '/t/$team/services/$svc/backups'
     | '/t/$team/services/$svc/envs'
@@ -659,6 +739,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/t/$team'
     | '/t/$team/sources/$source'
+    | '/t/$team/team/access'
+    | '/t/$team/team/groups'
+    | '/t/$team/team/roles'
+    | '/t/$team/team/settings'
     | '/t/$team/account'
     | '/t/$team/admin'
     | '/t/$team/approvals'
@@ -670,6 +754,7 @@ export interface FileRouteTypes {
     | '/t/$team/sources'
     | '/t/$team/storages'
     | '/t/$team/team'
+    | '/t/$team/applications/$app/access'
     | '/t/$team/applications/$app/advanced'
     | '/t/$team/applications/$app/deployments'
     | '/t/$team/applications/$app/envs'
@@ -679,6 +764,7 @@ export interface FileRouteTypes {
     | '/t/$team/applications/$app/tasks'
     | '/t/$team/applications/$app/terminal'
     | '/t/$team/applications/$app/webhooks'
+    | '/t/$team/databases/$db/access'
     | '/t/$team/databases/$db/advanced'
     | '/t/$team/databases/$db/backups'
     | '/t/$team/databases/$db/envs'
@@ -691,6 +777,7 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
     | '/t/$team/servers/$server/terminal'
+    | '/t/$team/services/$svc/access'
     | '/t/$team/services/$svc/advanced'
     | '/t/$team/services/$svc/backups'
     | '/t/$team/services/$svc/envs'
@@ -716,12 +803,17 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/login/2fa'
     | '/login/'
+    | '/t/$team/team'
     | '/t/$team/'
     | '/t/$team/applications/$app'
     | '/t/$team/databases/$db'
     | '/t/$team/servers/$server'
     | '/t/$team/services/$svc'
     | '/t/$team/sources/$source'
+    | '/t/$team/team/access'
+    | '/t/$team/team/groups'
+    | '/t/$team/team/roles'
+    | '/t/$team/team/settings'
     | '/t/$team/account/'
     | '/t/$team/admin/'
     | '/t/$team/approvals/'
@@ -733,6 +825,7 @@ export interface FileRouteTypes {
     | '/t/$team/sources/'
     | '/t/$team/storages/'
     | '/t/$team/team/'
+    | '/t/$team/applications/$app/access'
     | '/t/$team/applications/$app/advanced'
     | '/t/$team/applications/$app/deployments'
     | '/t/$team/applications/$app/envs'
@@ -742,6 +835,7 @@ export interface FileRouteTypes {
     | '/t/$team/applications/$app/tasks'
     | '/t/$team/applications/$app/terminal'
     | '/t/$team/applications/$app/webhooks'
+    | '/t/$team/databases/$db/access'
     | '/t/$team/databases/$db/advanced'
     | '/t/$team/databases/$db/backups'
     | '/t/$team/databases/$db/envs'
@@ -754,6 +848,7 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/settings'
     | '/t/$team/servers/$server/tasks'
     | '/t/$team/servers/$server/terminal'
+    | '/t/$team/services/$svc/access'
     | '/t/$team/services/$svc/advanced'
     | '/t/$team/services/$svc/backups'
     | '/t/$team/services/$svc/envs'
@@ -852,6 +947,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/t/$team/'
       preLoaderRoute: typeof TTeamIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/team': {
+      id: '/t/$team/team'
+      path: '/team'
+      fullPath: '/t/$team/team'
+      preLoaderRoute: typeof TTeamTeamRouteRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
     '/t/$team/account/': {
@@ -961,16 +1063,51 @@ declare module '@tanstack/react-router' {
     }
     '/t/$team/team/': {
       id: '/t/$team/team/'
-      path: '/team'
+      path: '/'
       fullPath: '/t/$team/team/'
       preLoaderRoute: typeof TTeamTeamIndexRouteImport
-      parentRoute: typeof TTeamRouteRoute
+      parentRoute: typeof TTeamTeamRouteRoute
+    }
+    '/t/$team/team/access': {
+      id: '/t/$team/team/access'
+      path: '/access'
+      fullPath: '/t/$team/team/access'
+      preLoaderRoute: typeof TTeamTeamAccessRouteImport
+      parentRoute: typeof TTeamTeamRouteRoute
+    }
+    '/t/$team/team/groups': {
+      id: '/t/$team/team/groups'
+      path: '/groups'
+      fullPath: '/t/$team/team/groups'
+      preLoaderRoute: typeof TTeamTeamGroupsRouteImport
+      parentRoute: typeof TTeamTeamRouteRoute
+    }
+    '/t/$team/team/roles': {
+      id: '/t/$team/team/roles'
+      path: '/roles'
+      fullPath: '/t/$team/team/roles'
+      preLoaderRoute: typeof TTeamTeamRolesRouteImport
+      parentRoute: typeof TTeamTeamRouteRoute
+    }
+    '/t/$team/team/settings': {
+      id: '/t/$team/team/settings'
+      path: '/settings'
+      fullPath: '/t/$team/team/settings'
+      preLoaderRoute: typeof TTeamTeamSettingsRouteImport
+      parentRoute: typeof TTeamTeamRouteRoute
     }
     '/t/$team/applications/$app/': {
       id: '/t/$team/applications/$app/'
       path: '/'
       fullPath: '/t/$team/applications/$app/'
       preLoaderRoute: typeof TTeamApplicationsAppIndexRouteImport
+      parentRoute: typeof TTeamApplicationsAppRouteRoute
+    }
+    '/t/$team/applications/$app/access': {
+      id: '/t/$team/applications/$app/access'
+      path: '/access'
+      fullPath: '/t/$team/applications/$app/access'
+      preLoaderRoute: typeof TTeamApplicationsAppAccessRouteImport
       parentRoute: typeof TTeamApplicationsAppRouteRoute
     }
     '/t/$team/applications/$app/advanced': {
@@ -1041,6 +1178,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/t/$team/databases/$db/'
       preLoaderRoute: typeof TTeamDatabasesDbIndexRouteImport
+      parentRoute: typeof TTeamDatabasesDbRouteRoute
+    }
+    '/t/$team/databases/$db/access': {
+      id: '/t/$team/databases/$db/access'
+      path: '/access'
+      fullPath: '/t/$team/databases/$db/access'
+      preLoaderRoute: typeof TTeamDatabasesDbAccessRouteImport
       parentRoute: typeof TTeamDatabasesDbRouteRoute
     }
     '/t/$team/databases/$db/advanced': {
@@ -1148,6 +1292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamServicesSvcIndexRouteImport
       parentRoute: typeof TTeamServicesSvcRouteRoute
     }
+    '/t/$team/services/$svc/access': {
+      id: '/t/$team/services/$svc/access'
+      path: '/access'
+      fullPath: '/t/$team/services/$svc/access'
+      preLoaderRoute: typeof TTeamServicesSvcAccessRouteImport
+      parentRoute: typeof TTeamServicesSvcRouteRoute
+    }
     '/t/$team/services/$svc/advanced': {
       id: '/t/$team/services/$svc/advanced'
       path: '/advanced'
@@ -1214,7 +1365,28 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface TTeamTeamRouteRouteChildren {
+  TTeamTeamAccessRoute: typeof TTeamTeamAccessRoute
+  TTeamTeamGroupsRoute: typeof TTeamTeamGroupsRoute
+  TTeamTeamRolesRoute: typeof TTeamTeamRolesRoute
+  TTeamTeamSettingsRoute: typeof TTeamTeamSettingsRoute
+  TTeamTeamIndexRoute: typeof TTeamTeamIndexRoute
+}
+
+const TTeamTeamRouteRouteChildren: TTeamTeamRouteRouteChildren = {
+  TTeamTeamAccessRoute: TTeamTeamAccessRoute,
+  TTeamTeamGroupsRoute: TTeamTeamGroupsRoute,
+  TTeamTeamRolesRoute: TTeamTeamRolesRoute,
+  TTeamTeamSettingsRoute: TTeamTeamSettingsRoute,
+  TTeamTeamIndexRoute: TTeamTeamIndexRoute,
+}
+
+const TTeamTeamRouteRouteWithChildren = TTeamTeamRouteRoute._addFileChildren(
+  TTeamTeamRouteRouteChildren,
+)
+
 interface TTeamApplicationsAppRouteRouteChildren {
+  TTeamApplicationsAppAccessRoute: typeof TTeamApplicationsAppAccessRoute
   TTeamApplicationsAppAdvancedRoute: typeof TTeamApplicationsAppAdvancedRoute
   TTeamApplicationsAppDeploymentsRoute: typeof TTeamApplicationsAppDeploymentsRoute
   TTeamApplicationsAppEnvsRoute: typeof TTeamApplicationsAppEnvsRoute
@@ -1229,6 +1401,7 @@ interface TTeamApplicationsAppRouteRouteChildren {
 
 const TTeamApplicationsAppRouteRouteChildren: TTeamApplicationsAppRouteRouteChildren =
   {
+    TTeamApplicationsAppAccessRoute: TTeamApplicationsAppAccessRoute,
     TTeamApplicationsAppAdvancedRoute: TTeamApplicationsAppAdvancedRoute,
     TTeamApplicationsAppDeploymentsRoute: TTeamApplicationsAppDeploymentsRoute,
     TTeamApplicationsAppEnvsRoute: TTeamApplicationsAppEnvsRoute,
@@ -1247,6 +1420,7 @@ const TTeamApplicationsAppRouteRouteWithChildren =
   )
 
 interface TTeamDatabasesDbRouteRouteChildren {
+  TTeamDatabasesDbAccessRoute: typeof TTeamDatabasesDbAccessRoute
   TTeamDatabasesDbAdvancedRoute: typeof TTeamDatabasesDbAdvancedRoute
   TTeamDatabasesDbBackupsRoute: typeof TTeamDatabasesDbBackupsRoute
   TTeamDatabasesDbEnvsRoute: typeof TTeamDatabasesDbEnvsRoute
@@ -1259,6 +1433,7 @@ interface TTeamDatabasesDbRouteRouteChildren {
 }
 
 const TTeamDatabasesDbRouteRouteChildren: TTeamDatabasesDbRouteRouteChildren = {
+  TTeamDatabasesDbAccessRoute: TTeamDatabasesDbAccessRoute,
   TTeamDatabasesDbAdvancedRoute: TTeamDatabasesDbAdvancedRoute,
   TTeamDatabasesDbBackupsRoute: TTeamDatabasesDbBackupsRoute,
   TTeamDatabasesDbEnvsRoute: TTeamDatabasesDbEnvsRoute,
@@ -1298,6 +1473,7 @@ const TTeamServersServerRouteRouteWithChildren =
   )
 
 interface TTeamServicesSvcRouteRouteChildren {
+  TTeamServicesSvcAccessRoute: typeof TTeamServicesSvcAccessRoute
   TTeamServicesSvcAdvancedRoute: typeof TTeamServicesSvcAdvancedRoute
   TTeamServicesSvcBackupsRoute: typeof TTeamServicesSvcBackupsRoute
   TTeamServicesSvcEnvsRoute: typeof TTeamServicesSvcEnvsRoute
@@ -1309,6 +1485,7 @@ interface TTeamServicesSvcRouteRouteChildren {
 }
 
 const TTeamServicesSvcRouteRouteChildren: TTeamServicesSvcRouteRouteChildren = {
+  TTeamServicesSvcAccessRoute: TTeamServicesSvcAccessRoute,
   TTeamServicesSvcAdvancedRoute: TTeamServicesSvcAdvancedRoute,
   TTeamServicesSvcBackupsRoute: TTeamServicesSvcBackupsRoute,
   TTeamServicesSvcEnvsRoute: TTeamServicesSvcEnvsRoute,
@@ -1325,6 +1502,7 @@ const TTeamServicesSvcRouteRouteWithChildren =
   )
 
 interface TTeamRouteRouteChildren {
+  TTeamTeamRouteRoute: typeof TTeamTeamRouteRouteWithChildren
   TTeamIndexRoute: typeof TTeamIndexRoute
   TTeamApplicationsAppRouteRoute: typeof TTeamApplicationsAppRouteRouteWithChildren
   TTeamDatabasesDbRouteRoute: typeof TTeamDatabasesDbRouteRouteWithChildren
@@ -1341,13 +1519,13 @@ interface TTeamRouteRouteChildren {
   TTeamServersIndexRoute: typeof TTeamServersIndexRoute
   TTeamSourcesIndexRoute: typeof TTeamSourcesIndexRoute
   TTeamStoragesIndexRoute: typeof TTeamStoragesIndexRoute
-  TTeamTeamIndexRoute: typeof TTeamTeamIndexRoute
   TTeamProjectsProjectIndexRoute: typeof TTeamProjectsProjectIndexRoute
   TTeamProjectsProjectEnvNewRoute: typeof TTeamProjectsProjectEnvNewRoute
   TTeamProjectsProjectEnvIndexRoute: typeof TTeamProjectsProjectEnvIndexRoute
 }
 
 const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
+  TTeamTeamRouteRoute: TTeamTeamRouteRouteWithChildren,
   TTeamIndexRoute: TTeamIndexRoute,
   TTeamApplicationsAppRouteRoute: TTeamApplicationsAppRouteRouteWithChildren,
   TTeamDatabasesDbRouteRoute: TTeamDatabasesDbRouteRouteWithChildren,
@@ -1364,7 +1542,6 @@ const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamServersIndexRoute: TTeamServersIndexRoute,
   TTeamSourcesIndexRoute: TTeamSourcesIndexRoute,
   TTeamStoragesIndexRoute: TTeamStoragesIndexRoute,
-  TTeamTeamIndexRoute: TTeamTeamIndexRoute,
   TTeamProjectsProjectIndexRoute: TTeamProjectsProjectIndexRoute,
   TTeamProjectsProjectEnvNewRoute: TTeamProjectsProjectEnvNewRoute,
   TTeamProjectsProjectEnvIndexRoute: TTeamProjectsProjectEnvIndexRoute,
