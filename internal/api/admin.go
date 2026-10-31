@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -14,6 +15,8 @@ import (
 	"time"
 
 	"github.com/Murathan-Aydin/nodra/internal/backup"
+	"github.com/Murathan-Aydin/nodra/internal/jobs"
+	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/store"
 	"github.com/Murathan-Aydin/nodra/internal/version"
 )
@@ -266,6 +269,9 @@ func (s *Server) updateSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	s.forgetInstance()
 	s.audit(r, nil, "instance.settings.updated", "instance", "settings", map[string]any{"fields": changed})
+	if slices.Contains(changed, "fqdn") {
+		s.routeInstance(r.Context(), i.FQDN)
+	}
 	writeJSON(w, http.StatusOK, settingsView(i))
 }
 
@@ -390,4 +396,70 @@ func (s *Server) adminAudit(w http.ResponseWriter, r *http.Request) {
 		next = &events[len(events)-1].ID
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"events": events, "next_before": next})
+}
+
+// routeInstance écrit (ou retire) sur le proxy du serveur localhost la configuration qui sert
+// l'interface de Nodra sur son domaine, puis synchronise le proxy.
+func (s *Server) routeInstance(ctx context.Context, fqdn *string) {
+	id, err := s.Store.LocalhostServerID(ctx)
+	if err != nil || id == "" {
+		return
+	}
+	sv, err := s.Store.ServerByIDAny(ctx, id)
+	if err != nil {
+		return
+	}
+	for _, typ := range []string{servers.ProxyTraefik, servers.ProxyCaddy} { // anciens fichiers retirés
+		if name, _ := servers.InstanceProxyConfig(typ, "https://x"); name != "" {
+			_ = s.Store.DeleteProxyConfig(ctx, sv.ID, name)
+		}
+	}
+	if fqdn != nil {
+		if name, content := servers.InstanceProxyConfig(sv.Proxy.Type, *fqdn); name != "" {
+			if err := s.Store.UpsertProxyConfig(ctx, sv.ID, name, content); err != nil {
+				s.Log.Error("domaine de l'instance", "err", err)
+				return
+			}
+		}
+	}
+	s.syncProxy(ctx, sv)
+}
+
+var releaseTagRe = regexp.MustCompile(`^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$`)
+
+// startUpdate lance la mise à jour de l'instance (update.sh sur le serveur localhost).
+func (s *Server) startUpdate(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Version string `json:"version"`
+	}
+	if r.ContentLength > 0 && !decode(w, r, &in) {
+		return
+	}
+	ctx := r.Context()
+	if in.Version == "" {
+		i, err := s.Store.InstanceSettings(ctx)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		in.Version = i.LatestVersion
+	}
+	if !releaseTagRe.MatchString(in.Version) {
+		writeError(w, http.StatusUnprocessableEntity, "version invalide (ex. v1.2.0) : lancez d'abord /admin/update-check")
+		return
+	}
+	if s.InstallDir == "" {
+		writeError(w, http.StatusConflict, jobs.ErrNoLocalhost.Error())
+		return
+	}
+	task, err := jobs.StartInstanceUpdate(ctx, s.Store, s.Jobs.EnqueueServerTask, s.InstallDir, in.Version, &userFrom(ctx).ID)
+	if errors.Is(err, jobs.ErrNoLocalhost) {
+		writeError(w, http.StatusConflict, err.Error())
+		return
+	} else if err != nil {
+		s.internal(w, err)
+		return
+	}
+	s.audit(r, nil, "instance.update.started", "instance", "update", map[string]string{"version": in.Version, "from": version.Version})
+	writeJSON(w, http.StatusAccepted, task)
 }

@@ -34,7 +34,7 @@ type Server struct {
 	Log   *slog.Logger
 	Web   fs.FS // build du front (web/dist)
 	Box   *crypto.Box
-	// SecureCookies active l'attribut Secure (désactivé en développement HTTP).
+	// SecureCookies active l'attribut Secure sur les requêtes HTTPS (désactivé en développement).
 	SecureCookies bool
 	Mailer        Mailer
 	// TrustProxy : utiliser l'IP transmise par le proxy (sinon contournement de la limite de tentatives).
@@ -64,6 +64,10 @@ type Server struct {
 
 	// ReleasesAPI : remplace l'API des releases GitHub (tests).
 	ReleasesAPI string
+	// Localhost : serveur hôte de l'instance, créé automatiquement (installation Docker).
+	Localhost LocalhostConfig
+	// InstallDir : dossier de l'installation sur l'hôte (update.sh) ; vide hors install.sh.
+	InstallDir string
 
 	streams streams
 	inst    instanceCache
@@ -160,6 +164,7 @@ func (s *Server) Router() http.Handler {
 					r.Get("/settings", s.getSettings)
 					r.Patch("/settings", s.updateSettings)
 					r.Post("/update-check", s.checkUpdates)
+					r.Post("/update", s.startUpdate)
 					r.Get("/users", s.listAdminUsers)
 					r.Patch("/users/{user}", s.updateAdminUser)
 					r.Post("/users/{user}/logout", s.logoutAdminUser)

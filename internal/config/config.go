@@ -17,6 +17,10 @@ type Config struct {
 	// ServerDataDir : dossier de travail de Nodra sur les serveurs gérés (applications, bases, services,
 	// sauvegardes). /data/nodra par défaut ; le proxy reste dans /data/nodra/proxy.
 	ServerDataDir string
+	// Localhost* : serveur hôte de l'instance (clé SSH créée par install.sh).
+	LocalhostKeyFile string
+	LocalhostHost    string
+	LocalhostUser    string
 	// AllowedOrigins : origines supplémentaires autorisées pour les WebSocket (ex. front Vite en développement).
 	AllowedOrigins []string
 	// PublicURL : URL publique de l'instance (liens des e-mails et notifications) si le domaine n'est pas réglé.
@@ -34,6 +38,9 @@ func Load() (*Config, error) {
 		PublicURL:     strings.TrimSuffix(os.Getenv("NODRA_PUBLIC_URL"), "/"),
 		ServerDataDir: strings.TrimSuffix(getenv("NODRA_SERVER_DATA_DIR", "/data/nodra"), "/"),
 	}
+	c.LocalhostKeyFile = os.Getenv("NODRA_LOCALHOST_KEY_FILE")
+	c.LocalhostHost = getenv("NODRA_LOCALHOST_HOST", "host.docker.internal")
+	c.LocalhostUser = getenv("NODRA_LOCALHOST_USER", "root")
 	for _, o := range strings.Split(os.Getenv("NODRA_ALLOWED_ORIGINS"), ",") {
 		if o = strings.TrimSpace(o); o != "" {
 			c.AllowedOrigins = append(c.AllowedOrigins, o)

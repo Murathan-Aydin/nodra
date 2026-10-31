@@ -73,6 +73,11 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	if err := s.sendVerification(r.Context(), u); err != nil {
 		s.Log.Warn("e-mail de vérification", "user", u.ID, "err", err)
 	}
+	if u.IsInstanceAdmin {
+		if err := s.BootstrapLocalhost(r.Context()); err != nil {
+			s.Log.Error("serveur localhost", "err", err)
+		}
+	}
 	writeJSON(w, http.StatusCreated, u)
 }
 
@@ -167,7 +172,7 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	s.clearCookie(w)
+	s.clearCookie(w, r)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -483,13 +488,20 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, userID str
 		return err
 	}
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: tok, Path: "/", HttpOnly: true,
-		Secure: s.SecureCookies, SameSite: http.SameSiteLaxMode, Expires: sess.ExpiresAt})
+		Secure: s.secureCookie(r), SameSite: http.SameSiteLaxMode, Expires: sess.ExpiresAt})
 	return nil
 }
 
-func (s *Server) clearCookie(w http.ResponseWriter) {
+func (s *Server) clearCookie(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", HttpOnly: true,
-		Secure: s.SecureCookies, SameSite: http.SameSiteLaxMode, MaxAge: -1})
+		Secure: s.secureCookie(r), SameSite: http.SameSiteLaxMode, MaxAge: -1})
+}
+
+// secureCookie : attribut Secure si la requête arrive en HTTPS (directement ou via un proxy). En HTTP
+// (première connexion sur http://IP:8000), un cookie Secure serait ignoré par le navigateur. Un en-tête
+// X-Forwarded-Proto falsifié ne peut que rendre le cookie plus strict.
+func (s *Server) secureCookie(r *http.Request) bool {
+	return s.SecureCookies && (r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https"))
 }
 
 // withUser place l'utilisateur dans le contexte (pour l'audit avant l'ouverture de session).

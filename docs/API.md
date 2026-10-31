@@ -513,6 +513,7 @@ Les jetons API sont refusés sur ces routes (`403`).
 |---|---|---|
 | GET | `/admin/settings` | `{settings: InstanceSettings, version, update_available}` |
 | PATCH | `/admin/settings` | Champs partiels (voir ci-dessous) → même réponse ; journalisé `instance.settings.updated` |
+| POST | `/admin/update` | `{version?}` (dernière version connue par défaut, `vX.Y.Z`) → `202 ServerTask` : lance `update.sh` en arrière-plan sur le serveur localhost ; `409` hors installation `install.sh` ou sans serveur localhost |
 | POST | `/admin/update-check` | Vérifie tout de suite la dernière release GitHub → `{version, latest_version, update_available}` ; `502` si GitHub est injoignable |
 | GET | `/admin/users?search=&limit=200` | `[User + {two_factor_enabled, teams, last_seen_at, disabled_at}]`, plus récents d'abord |
 | PATCH | `/admin/users/{id}` | `{is_instance_admin?, disabled?}` → `User` ; `409` sur son propre compte. Désactiver révoque les sessions, refuse la connexion (`403`) et les jetons (`401`). |
@@ -523,12 +524,12 @@ Les jetons API sont refusés sur ces routes (`403`).
 
 | Champ | Description |
 |---|---|
-| `fqdn` | URL de l'instance (`https://` ajouté si absent, sans chemin) : liens des e-mails et notifications, GitHub App |
+| `fqdn` | URL de l'instance (`https://` ajouté si absent, sans chemin) : liens des e-mails et notifications, GitHub App ; écrit `nodra-instance.yaml` / `.caddy` sur le proxy du serveur localhost (interface servie sur ce domaine, certificat Let's Encrypt en HTTPS) |
 | `instance_name` | Nom affiché (1 à 100 caractères) |
 | `public_ipv4`, `public_ipv6` | Adresses publiques de l'instance |
 | `timezone` | Fuseau IANA (ex. `Europe/Paris`) |
 | `registration_enabled` | Inscriptions ouvertes |
-| `auto_update_enabled`, `auto_update_frequency` | Mise à jour automatique (cron, appliquée par le script de mise à jour) |
+| `auto_update_enabled`, `auto_update_frequency` | Mise à jour automatique : quand une version plus récente est connue, `update.sh` est lancé à l'échéance cron (fuseau de l'instance), au plus une fois par version et par jour |
 | `update_check_frequency` | Vérification des nouvelles versions (cron, `0 * * * *` par défaut) |
 | `dns_validation_enabled` | Si `false`, `/teams/{team}/dns-check` répond `{ok: true, skipped: true}` |
 | `dns_servers` | Serveurs DNS utilisés par `/teams/{team}/dns-check` (IP ou IP:port, 5 max. ; vide : résolveur système) |

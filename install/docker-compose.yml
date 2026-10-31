@@ -1,0 +1,45 @@
+# Installation de production de Nodra, copiée dans /data/nodra/source par install.sh.
+# Les valeurs viennent de /data/nodra/source/.env (générées à l'installation).
+name: nodra
+services:
+  nodra:
+    image: ${NODRA_IMAGE:-ghcr.io/murathan-aydin/nodra}:${NODRA_VERSION:-latest}
+    container_name: nodra
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODRA_DATABASE_URL: postgres://nodra:${POSTGRES_PASSWORD}@nodra-db:5432/nodra?sslmode=disable
+      # Serveur « localhost » : l'hôte, joint en SSH avec la clé créée par install.sh.
+      NODRA_LOCALHOST_KEY_FILE: /data/ssh/id_ed25519
+      NODRA_LOCALHOST_HOST: host.docker.internal
+    volumes:
+      - ./ssh:/data/ssh:ro
+    ports:
+      - "${NODRA_PORT:-8000}:8000"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks: [default, nodra]
+    depends_on:
+      nodra-db:
+        condition: service_healthy
+  nodra-db:
+    image: postgres:16-alpine
+    container_name: nodra-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nodra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: nodra
+    volumes:
+      - nodra-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nodra"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+networks:
+  # Réseau partagé avec le proxy (Traefik/Caddy) du serveur localhost : sert l'interface sur le domaine de l'instance.
+  nodra:
+    external: true
+volumes:
+  nodra-db:

@@ -598,3 +598,12 @@ func (s *Service) taskFinished(ctx context.Context, task *store.ServerTask, sv *
 		}
 	}
 }
+
+// InstanceUpdateCommand : lance update.sh de l'installation (install.sh) en arrière-plan sur l'hôte,
+// pour qu'il survive au remplacement du conteneur Nodra qui l'a déclenché.
+func InstanceUpdateCommand(srcDir, tag string) string {
+	q := ssh.Quote(srcDir)
+	return "test -x " + q + "/update.sh || { echo 'update.sh introuvable dans '" + q + "; exit 1; }\n" +
+		"nohup " + q + "/update.sh " + ssh.Quote(tag) + " >> " + q + "/update.log 2>&1 &\n" +
+		"echo 'mise à jour vers '" + ssh.Quote(tag) + "' lancée (journal : '" + q + "'/update.log)'"
+}

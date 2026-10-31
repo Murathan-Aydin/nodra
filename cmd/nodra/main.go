@@ -24,6 +24,7 @@ import (
 	"github.com/Murathan-Aydin/nodra/internal/servers"
 	"github.com/Murathan-Aydin/nodra/internal/ssh"
 	"github.com/Murathan-Aydin/nodra/internal/store"
+	"github.com/Murathan-Aydin/nodra/internal/version"
 	"github.com/Murathan-Aydin/nodra/web"
 )
 
@@ -40,6 +41,13 @@ func main() {
 }
 
 func run(cmd string, log *slog.Logger) error {
+	switch cmd { // commandes sans base de données
+	case "version":
+		fmt.Println(version.Version)
+		return nil
+	case "healthcheck":
+		return healthcheck()
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -54,7 +62,7 @@ func run(cmd string, log *slog.Logger) error {
 	defer st.Close()
 
 	if cmd != "migrate" && cmd != "serve" {
-		return fmt.Errorf("commande inconnue %q (serve, migrate)", cmd)
+		return fmt.Errorf("commande inconnue %q (serve, migrate, version, healthcheck)", cmd)
 	}
 	if err := st.Migrate(ctx); err != nil {
 		return fmt.Errorf("migrations: %w", err)
@@ -92,11 +100,17 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	apiSrv := &api.Server{Store: st, Log: log, Web: web.FS(), Box: box, Deployer: runner, Backups: backups, Targets: svc,
 		Notifier: dispatcher, Mailer: &notify.Mailer{D: dispatcher, BaseURL: baseURL},
 		Hub: realtime.New(st.Pool, log), AllowedOrigins: cfg.AllowedOrigins,
+		Localhost:     api.LocalhostConfig{KeyFile: cfg.LocalhostKeyFile, Host: cfg.LocalhostHost, User: cfg.LocalhostUser},
 		SecureCookies: !cfg.IsDev(), TrustProxy: cfg.TrustProxy}
 	// avant le démarrage des workers
 	runner.OnFinish = apiSrv.DeploymentFinished
 	backups.OnResult = apiSrv.BackupFinished
-	jq, err := jobs.New(st, svc, runner, log, jobs.Options{Periodic: true, Notifier: dispatcher})
+	installDir := ""
+	if cfg.LocalhostKeyFile != "" { // installation par install.sh : update.sh dans <dossier>/source
+		installDir = cfg.ServerDataDir + "/source"
+	}
+	apiSrv.InstallDir = installDir
+	jq, err := jobs.New(st, svc, runner, log, jobs.Options{Periodic: true, Notifier: dispatcher, InstallDir: installDir})
 	if err != nil {
 		return err
 	}
@@ -111,6 +125,9 @@ func serve(ctx context.Context, cfg *config.Config, st *store.Store, log *slog.L
 	}()
 	apiSrv.Jobs = jq
 	go apiSrv.Hub.Run(ctx)
+	if err := apiSrv.BootstrapLocalhost(ctx); err != nil {
+		log.Error("serveur localhost", "err", err)
+	}
 	srv := &http.Server{
 		Addr:              cfg.Addr,
 		Handler:           apiSrv.Router(),
@@ -146,4 +163,25 @@ func instanceURL(ctx context.Context, st *store.Store, cfg *config.Config) strin
 		return u
 	}
 	return strings.TrimRight(cfg.PublicURL, "/")
+}
+
+// healthcheck interroge /api/v1/health du processus local (HEALTHCHECK de l'image, sans curl).
+func healthcheck() error {
+	addr := os.Getenv("NODRA_ADDR")
+	if addr == "" {
+		addr = ":8000"
+	}
+	if strings.HasPrefix(addr, ":") {
+		addr = "127.0.0.1" + addr
+	}
+	c := &http.Client{Timeout: 5 * time.Second}
+	resp, err := c.Get("http://" + addr + "/api/v1/health")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("santé : HTTP %d", resp.StatusCode)
+	}
+	return nil
 }

@@ -203,6 +203,8 @@ type Options struct {
 	Notifier *notify.Dispatcher // diffusion des notifications (nil : ignorées)
 	// ReleasesAPI : API des releases interrogée pour les mises à jour (GitHub par défaut).
 	ReleasesAPI string
+	// InstallDir : dossier de l'installation sur l'hôte (update.sh) pour la mise à jour automatique.
+	InstallDir string
 }
 
 type Jobs struct {
@@ -221,7 +223,7 @@ func New(st *store.Store, svc *servers.Service, runner *deploy.Runner, log *slog
 	river.AddWorker(workers, &backupSchedulerWorker{j: j})
 	river.AddWorker(workers, &notifyWorker{d: opts.Notifier})
 	river.AddWorker(workers, &maintenanceWorker{st: st, j: j})
-	river.AddWorker(workers, &updateCheckWorker{st: st, api: opts.ReleasesAPI})
+	river.AddWorker(workers, &updateCheckWorker{st: st, j: j, api: opts.ReleasesAPI, srcDir: opts.InstallDir})
 
 	cfg := &river.Config{
 		Queues: map[string]river.QueueConfig{

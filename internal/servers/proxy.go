@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -313,4 +314,40 @@ func proxySync(ctx context.Context, r *taskRun) error {
 		return nil
 	}
 	return r.syncProxyFiles(ctx)
+}
+
+// InstanceContainer : conteneur de l'interface Nodra, joignable par le proxy sur le réseau nodra.
+const InstanceContainer = "nodra:8000"
+
+// InstanceProxyConfig : configuration dynamique qui sert l'interface de Nodra sur son domaine
+// (serveur localhost). Renvoie le nom du fichier et son contenu ; nom vide sans proxy géré.
+func InstanceProxyConfig(proxyType, fqdn string) (string, string) {
+	u, err := url.Parse(fqdn)
+	if err != nil || u.Hostname() == "" {
+		return "", ""
+	}
+	host, https := u.Hostname(), u.Scheme == "https"
+	switch proxyType {
+	case ProxyTraefik:
+		var b strings.Builder
+		b.WriteString("http:\n")
+		if https {
+			b.WriteString("  middlewares:\n    nodra-instance-redirect:\n      redirectScheme:\n        scheme: https\n")
+		}
+		fmt.Fprintf(&b, "  routers:\n    nodra-instance-http:\n      rule: Host(`%s`)\n      entryPoints: [http]\n      service: nodra-instance\n", host)
+		if https {
+			b.WriteString("      middlewares: [nodra-instance-redirect]\n")
+			fmt.Fprintf(&b, "    nodra-instance:\n      rule: Host(`%s`)\n      entryPoints: [https]\n      service: nodra-instance\n"+
+				"      tls:\n        certResolver: letsencrypt\n", host)
+		}
+		fmt.Fprintf(&b, "  services:\n    nodra-instance:\n      loadBalancer:\n        servers:\n          - url: http://%s\n", InstanceContainer)
+		return "nodra-instance.yaml", b.String()
+	case ProxyCaddy:
+		site := host
+		if !https {
+			site = "http://" + host
+		}
+		return "nodra-instance.caddy", fmt.Sprintf("%s {\n\treverse_proxy %s\n}\n", site, InstanceContainer)
+	}
+	return "", ""
 }

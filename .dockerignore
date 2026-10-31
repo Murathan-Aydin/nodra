@@ -1,0 +1,11 @@
+.git
+.github
+.claude
+.env
+.dev
+bin
+docs
+graphify-out
+web/node_modules
+**/*_test.go
+internal/api/testdata

@@ -86,3 +86,23 @@ func TestWriteFilesScript(t *testing.T) {
 		t.Fatalf("permissions de la clé : %v", st.Mode().Perm())
 	}
 }
+
+func TestInstanceProxyConfig(t *testing.T) {
+	name, cfg := InstanceProxyConfig(ProxyTraefik, "https://nodra.example.com")
+	var parsed map[string]any
+	if name != "nodra-instance.yaml" || yaml.Unmarshal([]byte(cfg), &parsed) != nil || parsed["http"] == nil ||
+		!strings.Contains(cfg, "Host(`nodra.example.com`)") || !strings.Contains(cfg, "certResolver: letsencrypt") ||
+		!strings.Contains(cfg, "redirectScheme") || !strings.Contains(cfg, "http://nodra:8000") {
+		t.Fatalf("traefik :\n%s", cfg)
+	}
+	if _, cfg := InstanceProxyConfig(ProxyTraefik, "http://nodra.example.com"); strings.Contains(cfg, "tls") || strings.Contains(cfg, "redirect") {
+		t.Fatalf("traefik http :\n%s", cfg)
+	}
+	name, cfg = InstanceProxyConfig(ProxyCaddy, "https://nodra.example.com")
+	if name != "nodra-instance.caddy" || !strings.HasPrefix(cfg, "nodra.example.com {") {
+		t.Fatalf("caddy :\n%s", cfg)
+	}
+	if name, _ := InstanceProxyConfig(ProxyNone, "https://nodra.example.com"); name != "" {
+		t.Fatal("sans proxy : aucune configuration")
+	}
+}

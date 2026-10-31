@@ -2,7 +2,10 @@ package store
 
 import (
 	"context"
+	"errors"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // InstanceSettings : réglages globaux de l'instance (ligne unique).
@@ -49,4 +52,37 @@ func (s *Store) UpdateInstanceSettings(ctx context.Context, i *InstanceSettings)
 func (s *Store) SetLatestVersion(ctx context.Context, v string) error {
 	_, err := s.Pool.Exec(ctx, `UPDATE instance_settings SET latest_version = $1, update_checked_at = now() WHERE id = 1`, v)
 	return err
+}
+
+// LocalhostTarget : équipe personnelle du premier administrateur, où créer le serveur localhost.
+// ok est faux si le serveur a déjà été créé une fois ou s'il n'y a pas encore d'administrateur.
+func (s *Store) LocalhostTarget(ctx context.Context) (teamID, userID string, ok bool, err error) {
+	var done bool
+	if err = s.Pool.QueryRow(ctx, `SELECT localhost_bootstrapped FROM instance_settings WHERE id = 1`).Scan(&done); err != nil || done {
+		return "", "", false, err
+	}
+	err = s.Pool.QueryRow(ctx, `SELECT t.id::text, u.id::text FROM users u
+		JOIN team_members m ON m.user_id = u.id JOIN teams t ON t.id = m.team_id AND t.personal
+		WHERE u.is_instance_admin ORDER BY u.created_at LIMIT 1`).Scan(&teamID, &userID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", "", false, nil
+	}
+	return teamID, userID, err == nil, err
+}
+
+// MarkLocalhost enregistre le serveur localhost ; false si un autre processus l'a déjà fait.
+func (s *Store) MarkLocalhost(ctx context.Context, serverID string) (bool, error) {
+	tag, err := s.Pool.Exec(ctx, `UPDATE instance_settings SET localhost_server_id = $1, localhost_bootstrapped = true
+		WHERE id = 1 AND NOT localhost_bootstrapped`, serverID)
+	return tag.RowsAffected() == 1, err
+}
+
+// LocalhostServerID : serveur localhost s'il existe encore ("" sinon).
+func (s *Store) LocalhostServerID(ctx context.Context) (string, error) {
+	var id *string
+	err := s.Pool.QueryRow(ctx, `SELECT localhost_server_id::text FROM instance_settings WHERE id = 1`).Scan(&id)
+	if err != nil || id == nil {
+		return "", err
+	}
+	return *id, nil
 }
