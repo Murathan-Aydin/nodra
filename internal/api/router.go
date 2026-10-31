@@ -67,6 +67,7 @@ type Server struct {
 
 	streams streams
 	inst    instanceCache
+	mux     http.Handler // routeur construit par Router (sous-requêtes des actions groupées)
 }
 
 func (s *Server) Router() http.Handler {
@@ -149,6 +150,7 @@ func (s *Server) Router() http.Handler {
 
 				r.Get("/permissions", s.listPermissions)
 				r.Get("/notifications/catalog", s.notificationCatalog)
+				r.Get("/version", s.getVersion)
 				r.Route("/admin", func(r chi.Router) {
 					r.Use(requireInstanceAdmin)
 					r.Get("/mail", s.getMailConfig)
@@ -205,6 +207,9 @@ func (s *Server) Router() http.Handler {
 					r.Delete("/groups/{id}/members/{user}", s.removeGroupMember)
 
 					r.Get("/events", s.teamEvents)
+					r.Get("/resources", s.listResources)
+					r.Get("/deployments", s.listTeamDeployments)
+					r.Post("/deploy", s.bulkDeploy)
 
 					r.Get("/audit", s.listAudit)
 					r.Get("/audit/export", s.exportAudit)
@@ -244,6 +249,8 @@ func (s *Server) Router() http.Handler {
 						r.Get("/tasks", s.listServerTasks)
 						r.Get("/tasks/{task}", s.getServerTask)
 						r.Get("/tasks/{task}/stream", s.streamServerTask)
+						r.Get("/resources", s.serverResources)
+						r.Get("/domains", s.serverDomains)
 						r.Get("/terminal", s.serverTerminal)
 						r.Get("/proxy/logs/stream", s.streamProxyLogs)
 						r.Post("/tasks/{task}/cancel", s.cancelServerTask)
@@ -311,6 +318,7 @@ func (s *Server) Router() http.Handler {
 						r.Get("/logs", s.applicationLogs)
 						r.Get("/logs/stream", s.streamApplicationLogs)
 						r.Get("/containers", s.applicationContainers)
+						r.Post("/move", s.moveApplication)
 						r.Get("/terminal", s.applicationTerminal)
 						r.Get("/deployments", s.listDeployments)
 						r.Get("/deployments/{dep}", s.getDeployment)
@@ -382,6 +390,7 @@ func (s *Server) Router() http.Handler {
 						r.Get("/logs", s.serviceLogs)
 						r.Get("/logs/stream", s.streamServiceLogs)
 						r.Get("/containers", s.serviceContainers)
+						r.Post("/move", s.moveService)
 						r.Get("/terminal", s.serviceTerminal)
 						r.Get("/envs", s.listEnvs(s.svcLoader))
 						r.Post("/envs", s.createEnv(s.svcLoader))
@@ -404,6 +413,7 @@ func (s *Server) Router() http.Handler {
 						r.Get("/logs", s.databaseLogs)
 						r.Get("/logs/stream", s.streamDatabaseLogs)
 						r.Get("/containers", s.databaseContainers)
+						r.Post("/move", s.moveDatabase)
 						r.Get("/terminal", s.databaseTerminal)
 						r.Post("/import", s.importDatabase)
 						r.Get("/envs", s.listEnvs(s.dbLoader))
@@ -426,6 +436,7 @@ func (s *Server) Router() http.Handler {
 		})
 	})
 	r.Handle("/*", spa(s.Web))
+	s.mux = r
 	return r
 }
 

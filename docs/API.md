@@ -39,6 +39,7 @@ Derrière un reverse proxy, définir `NODRA_TRUST_PROXY=true` pour utiliser l'IP
 | GET | `/me` | — | `200 {"user": User, "two_factor_enabled": bool}` (session ou jeton) |
 | PATCH | `/me` | `{name}` | `204` |
 | POST | `/me/password` | `{current_password, new_password}` | `204`, révoque les autres sessions. `401` si mot de passe actuel faux. |
+| GET | `/version` | — | `200 {"version"}` |
 | POST | `/me/verify-email` | — | `204`, renvoie le lien de vérification. `409` si déjà vérifiée. |
 | POST | `/me/2fa/setup` | — | `200 {secret, otpauth_url}` (à afficher en QR code) |
 | POST | `/me/2fa/enable` | `{code}` | `200 {"recovery_codes": [8 codes]}` (affichés une seule fois). `422` si code faux. |
@@ -529,8 +530,19 @@ Les jetons API sont refusés sur ces routes (`403`).
 | `registration_enabled` | Inscriptions ouvertes |
 | `auto_update_enabled`, `auto_update_frequency` | Mise à jour automatique (cron, appliquée par le script de mise à jour) |
 | `update_check_frequency` | Vérification des nouvelles versions (cron, `0 * * * *` par défaut) |
-| `dns_validation_enabled` | Si `false`, `/dns/check` répond `{ok: true, skipped: true}` |
-| `dns_servers` | Serveurs DNS utilisés par `/dns/check` (IP ou IP:port, 5 max. ; vide : résolveur système) |
+| `dns_validation_enabled` | Si `false`, `/teams/{team}/dns-check` répond `{ok: true, skipped: true}` |
+| `dns_servers` | Serveurs DNS utilisés par `/teams/{team}/dns-check` (IP ou IP:port, 5 max. ; vide : résolveur système) |
 | `api_enabled` | Si `false`, toute requête par jeton API est refusée (`403`) |
 | `api_allowed_ips` | IP ou plages CIDR autorisées pour les jetons API (vide : toutes) |
 | `latest_version`, `update_checked_at` | Dernière release connue (lecture seule) |
+
+## Vue d'ensemble et actions groupées (`/teams/{team}`)
+
+| Méthode | Route | Permission | Description |
+|---|---|---|---|
+| GET | `/resources?type=&environment_id=&server_id=&tag=` | `resource.read` (filtré par ressource) | Liste unifiée `[{id, type: application\|database\|service, name, status, environment_id, environment_name, project_id, project_name, server_id, domains, tags, created_at}]`, triée par projet, environnement, nom |
+| GET | `/deployments?status=&limit=50` | `resource.read` (filtré) | Déploiements récents de l'équipe (`queued`, `in_progress`, `finished`, `failed`, `cancelled`) |
+| POST | `/deploy` | `resource.deploy` sur chaque ressource | `{resources?: [id], tags?: [nom], force_rebuild?}` ou `?uuid=a,b&tag=prod&force=true` (CI). Applications déployées, bases et services démarrés, 100 ressources max. → `200 {results: [{resource_id, type, status, response}]}` : chaque ressource passe par sa route unitaire (`status` 202 lancé ou en attente d'approbation, 403, 404, 409…) |
+| GET | `/servers/{id}/resources` | `server.read` + `resource.read` | Ressources hébergées par le serveur |
+| GET | `/servers/{id}/domains` | `server.read` + `resource.read` | `[{domain, resource_id, type, name}]` (applications et sous-services) |
+| POST | `/applications/{id}/move`, `/databases/{id}/move`, `/services/{id}/move` | `resource.update` + `resource.create` sur l'environnement cible | `{environment_id}` (même équipe) → `204` ; serveur et conteneurs inchangés, les variables partagées du nouvel environnement s'appliquent au prochain déploiement |
