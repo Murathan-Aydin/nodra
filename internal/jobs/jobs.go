@@ -201,6 +201,8 @@ func (w *maintenanceWorker) Work(ctx context.Context, _ *river.Job[MaintenanceAr
 type Options struct {
 	Periodic bool               // planifier les jobs périodiques (désactivé dans les tests)
 	Notifier *notify.Dispatcher // diffusion des notifications (nil : ignorées)
+	// ReleasesAPI : API des releases interrogée pour les mises à jour (GitHub par défaut).
+	ReleasesAPI string
 }
 
 type Jobs struct {
@@ -219,6 +221,7 @@ func New(st *store.Store, svc *servers.Service, runner *deploy.Runner, log *slog
 	river.AddWorker(workers, &backupSchedulerWorker{j: j})
 	river.AddWorker(workers, &notifyWorker{d: opts.Notifier})
 	river.AddWorker(workers, &maintenanceWorker{st: st, j: j})
+	river.AddWorker(workers, &updateCheckWorker{st: st, api: opts.ReleasesAPI})
 
 	cfg := &river.Config{
 		Queues: map[string]river.QueueConfig{
@@ -240,6 +243,8 @@ func New(st *store.Store, svc *servers.Service, runner *deploy.Runner, log *slog
 				func() (river.JobArgs, *river.InsertOpts) { return BackupSchedulerArgs{}, nil }, &river.PeriodicJobOpts{ID: "scheduler"}),
 			river.NewPeriodicJob(river.PeriodicInterval(time.Hour),
 				func() (river.JobArgs, *river.InsertOpts) { return MaintenanceArgs{}, nil }, &river.PeriodicJobOpts{ID: "maintenance", RunOnStart: true}),
+			river.NewPeriodicJob(river.PeriodicInterval(10*time.Minute),
+				func() (river.JobArgs, *river.InsertOpts) { return UpdateCheckArgs{}, nil }, &river.PeriodicJobOpts{ID: "update_check", RunOnStart: true}),
 		}
 	}
 	client, err := river.NewClient(riverpgxv5.New(st.Pool), cfg)

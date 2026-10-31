@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	_ "time/tzdata" // fuseaux horaires disponibles même dans une image minimale
 
 	"github.com/Murathan-Aydin/nodra/internal/api"
 	"github.com/Murathan-Aydin/nodra/internal/backup"

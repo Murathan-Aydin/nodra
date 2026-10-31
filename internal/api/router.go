@@ -62,7 +62,11 @@ type Server struct {
 	// AllowedOrigins : origines supplémentaires acceptées pour les WebSocket (motifs d'hôte, ex. localhost:5173).
 	AllowedOrigins []string
 
+	// ReleasesAPI : remplace l'API des releases GitHub (tests).
+	ReleasesAPI string
+
 	streams streams
+	inst    instanceCache
 }
 
 func (s *Server) Router() http.Handler {
@@ -106,6 +110,7 @@ func (s *Server) Router() http.Handler {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", s.health)
+		r.Get("/instance", s.publicInstance)
 
 		r.Group(func(r chi.Router) {
 			r.Use(csrfGuard, s.authenticate)
@@ -150,6 +155,13 @@ func (s *Server) Router() http.Handler {
 					r.Put("/mail", s.putMailConfig)
 					r.Delete("/mail", s.deleteMailConfig)
 					r.Post("/mail/test", s.testMail)
+					r.Get("/settings", s.getSettings)
+					r.Patch("/settings", s.updateSettings)
+					r.Post("/update-check", s.checkUpdates)
+					r.Get("/users", s.listAdminUsers)
+					r.Patch("/users/{user}", s.updateAdminUser)
+					r.Post("/users/{user}/logout", s.logoutAdminUser)
+					r.Get("/audit", s.adminAudit)
 				})
 				r.Get("/service-templates", s.listServiceTemplates)
 				r.Get("/service-templates/{slug}", s.getServiceTemplate)

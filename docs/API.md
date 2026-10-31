@@ -18,6 +18,7 @@ Derrière un reverse proxy, définir `NODRA_TRUST_PROXY=true` pour utiliser l'IP
 | Méthode | Route | Réponse |
 |---|---|---|
 | GET | `/health` | `200 {"status":"ok"}` ou `503 {"status":"degraded","database":"down"}` |
+| GET | `/instance` | `200 {name, registration_enabled, version}` (public, pour la page de connexion) |
 
 ## Auth (`/auth`)
 
@@ -502,3 +503,34 @@ Les événements sont diffusés par PostgreSQL (`LISTEN/NOTIFY` sur `nodra_event
 Terminal : le client envoie la saisie en messages binaires (ou `{type: "input", data}`) et `{type: "resize", rows, cols}` ; le serveur répond `{type: "ready", container}`, la sortie en messages binaires, puis `{type: "exit", code}`. L'ouverture est journalisée (`server.terminal.opened`, `application.terminal.opened`…). Fermer la connexion coupe la session (SIGHUP).
 
 Conteneurs : `GET /applications/{app}/containers?pr=`, `/databases/{db}/containers`, `/services/{svc}/containers` (`resource.read`) → `[{name, service, state, status, image}]`.
+
+## Administration de l'instance (`/admin`, administrateur de l'instance, session uniquement)
+
+Les jetons API sont refusés sur ces routes (`403`).
+
+| Méthode | Route | Description |
+|---|---|---|
+| GET | `/admin/settings` | `{settings: InstanceSettings, version, update_available}` |
+| PATCH | `/admin/settings` | Champs partiels (voir ci-dessous) → même réponse ; journalisé `instance.settings.updated` |
+| POST | `/admin/update-check` | Vérifie tout de suite la dernière release GitHub → `{version, latest_version, update_available}` ; `502` si GitHub est injoignable |
+| GET | `/admin/users?search=&limit=200` | `[User + {two_factor_enabled, teams, last_seen_at, disabled_at}]`, plus récents d'abord |
+| PATCH | `/admin/users/{id}` | `{is_instance_admin?, disabled?}` → `User` ; `409` sur son propre compte. Désactiver révoque les sessions, refuse la connexion (`403`) et les jetons (`401`). |
+| POST | `/admin/users/{id}/logout` | Révoque toutes les sessions → `204` |
+| GET | `/admin/audit?scope=instance\|all&action=&actor=&target_type=&target_id=&since=&until=&before=&limit=` | Journal sans équipe (`auth.*`, `instance.*`) par défaut, toute l'instance avec `scope=all` ; `{events, next_before}` |
+
+`InstanceSettings` :
+
+| Champ | Description |
+|---|---|
+| `fqdn` | URL de l'instance (`https://` ajouté si absent, sans chemin) : liens des e-mails et notifications, GitHub App |
+| `instance_name` | Nom affiché (1 à 100 caractères) |
+| `public_ipv4`, `public_ipv6` | Adresses publiques de l'instance |
+| `timezone` | Fuseau IANA (ex. `Europe/Paris`) |
+| `registration_enabled` | Inscriptions ouvertes |
+| `auto_update_enabled`, `auto_update_frequency` | Mise à jour automatique (cron, appliquée par le script de mise à jour) |
+| `update_check_frequency` | Vérification des nouvelles versions (cron, `0 * * * *` par défaut) |
+| `dns_validation_enabled` | Si `false`, `/dns/check` répond `{ok: true, skipped: true}` |
+| `dns_servers` | Serveurs DNS utilisés par `/dns/check` (IP ou IP:port, 5 max. ; vide : résolveur système) |
+| `api_enabled` | Si `false`, toute requête par jeton API est refusée (`403`) |
+| `api_allowed_ips` | IP ou plages CIDR autorisées pour les jetons API (vide : toutes) |
+| `latest_version`, `update_checked_at` | Dernière release connue (lecture seule) |

@@ -312,9 +312,19 @@ func (s *Server) dnsCheck(w http.ResponseWriter, r *http.Request) {
 	if !s.authorize(w, r, "server.read", rbac.Scope{Type: rbac.ScopeServer, ID: sv.ID}) {
 		return
 	}
+	inst, err := s.instance(ctx)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	if !inst.DNSValidationEnabled {
+		writeJSON(w, http.StatusOK, map[string]any{"domain": domain, "resolved": []string{}, "expected": []string{sv.IP}, "ok": true,
+			"skipped": true, "message": "vérification DNS désactivée sur l'instance"})
+		return
+	}
 	resolver := s.Resolver
 	if resolver == nil {
-		resolver = net.DefaultResolver
+		resolver = dnsResolver(inst.DNSServers)
 	}
 	lookup := domain
 	if strings.HasPrefix(domain, "*.") { // domaine joker : on teste un sous-domaine au hasard
@@ -344,4 +354,26 @@ func (s *Server) dnsCheck(w http.ResponseWriter, r *http.Request) {
 		resolved = []string{}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"domain": domain, "resolved": resolved, "expected": expected, "ok": match, "message": msg})
+}
+
+// dnsResolver : résolveur système, ou interrogeant les serveurs DNS réglés sur l'instance (port 53 par défaut).
+func dnsResolver(servers []string) Resolver {
+	if len(servers) == 0 {
+		return net.DefaultResolver
+	}
+	return &net.Resolver{PreferGo: true, Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
+		var d net.Dialer
+		var err error
+		for _, srv := range servers {
+			if _, _, e := net.SplitHostPort(srv); e != nil {
+				srv = net.JoinHostPort(srv, "53")
+			}
+			c, e := d.DialContext(ctx, network, srv)
+			if e == nil {
+				return c, nil
+			}
+			err = e
+		}
+		return nil, err
+	}}
 }

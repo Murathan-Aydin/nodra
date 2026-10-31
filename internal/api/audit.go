@@ -12,14 +12,19 @@ import (
 
 // auditFilter lit les filtres communs (équipe + sous-équipes) depuis la query string.
 func (s *Server) auditFilter(w http.ResponseWriter, r *http.Request, maxLimit int) (store.AuditFilter, bool) {
-	q := r.URL.Query()
 	subtree, err := s.Store.TeamSubtree(r.Context(), teamFrom(r.Context()).Team.ID)
 	if err != nil {
 		s.internal(w, err)
 		return store.AuditFilter{}, false
 	}
-	f := store.AuditFilter{TeamIDs: subtree, ActorUserID: q.Get("actor"), Action: q.Get("action"),
-		TargetType: q.Get("target_type"), TargetID: q.Get("target_id"), Limit: maxLimit}
+	return parseAuditQuery(w, r, store.AuditFilter{TeamIDs: subtree}, maxLimit)
+}
+
+// parseAuditQuery complète f avec les filtres de la query string (acteur, action, cible, dates, curseur).
+func parseAuditQuery(w http.ResponseWriter, r *http.Request, f store.AuditFilter, maxLimit int) (store.AuditFilter, bool) {
+	q := r.URL.Query()
+	f.ActorUserID, f.Action, f.TargetType, f.TargetID, f.Limit = q.Get("actor"), q.Get("action"), q.Get("target_type"),
+		q.Get("target_id"), maxLimit
 	if f.ActorUserID != "" && !isUUID(f.ActorUserID) {
 		writeError(w, http.StatusBadRequest, "actor invalide")
 		return f, false

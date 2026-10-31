@@ -50,16 +50,26 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 				return
 			}
 			u, err := s.Store.UserByID(ctx, tok.UserID)
-			if err != nil {
+			if err != nil || u.DisabledAt != nil {
 				writeError(w, http.StatusUnauthorized, "jeton API invalide")
 				return
+			}
+			if inst, err := s.instance(ctx); err == nil {
+				if !inst.APIEnabled {
+					writeError(w, http.StatusForbidden, "API désactivée par l'administrateur de l'instance")
+					return
+				}
+				if len(inst.APIAllowedIPs) > 0 && !ipAllowed(clientIP(r), inst.APIAllowedIPs) {
+					writeError(w, http.StatusForbidden, "adresse IP non autorisée pour l'API")
+					return
+				}
 			}
 			ctx = context.WithValue(context.WithValue(ctx, ctxUser, u), ctxToken, tok)
 		} else if c, err := r.Cookie(sessionCookie); err == nil {
 			if sess, err := s.Store.SessionByHash(ctx, auth.HashToken(c.Value)); err == nil {
 				ctx = context.WithValue(ctx, ctxSession, sess)
 				if !sess.MFAPending {
-					if u, err := s.Store.UserByID(ctx, sess.UserID); err == nil {
+					if u, err := s.Store.UserByID(ctx, sess.UserID); err == nil && u.DisabledAt == nil {
 						ctx = context.WithValue(ctx, ctxUser, u)
 					}
 				}

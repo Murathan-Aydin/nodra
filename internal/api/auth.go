@@ -95,6 +95,11 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "identifiants invalides")
 		return
 	}
+	if u.DisabledAt != nil {
+		s.audit(withUser(r, u), nil, "auth.login.disabled", "user", u.ID, nil)
+		writeError(w, http.StatusForbidden, "compte désactivé par l'administrateur de l'instance")
+		return
+	}
 	mfa := u.TwoFactorEnabled()
 	if !mfa {
 		s.audit(withUser(r, u), nil, "auth.login", "user", u.ID, nil)

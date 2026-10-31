@@ -56,6 +56,8 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 
 - **Étape 14 — Temps réel** (2026-10-30) : `github.com/coder/websocket`. `internal/store/events.go` : événements émis par `pg_notify` (`nodra_events`) au fil des écritures — déploiements (création, démarrage, logs, fin, annulation), tâches serveur (création, démarrage, sortie, fin), statuts des ressources, joignabilité des serveurs et statut du proxy (seulement s'ils changent). `internal/realtime` : `Hub` (connexion dédiée `LISTEN`, reconnexion, abonnés filtrés, abonné lent = événements perdus sans blocage). `internal/ssh/shell.go` : `Pool.Shell` (pseudo-terminal, redimensionnement, code de sortie) et `Pool.Follow` (terminal brut pour `docker logs -f` : la fermeture envoie SIGHUP, rien ne reste sur le serveur). `internal/deploy/realtime.go` : `Containers`, `FollowLogs` (plusieurs conteneurs préfixés), `FollowProxyLogs`, `ServerShell`, `ContainerShell` (conteneur vérifié parmi ceux de la ressource). API `realtime.go` : flux d'événements d'équipe filtrés par droits, logs de déploiement et sortie de tâches en direct, logs suivis des applications/bases/services/proxy, terminal web serveur et conteneur (journalisé), liste des conteneurs ; contrôle d'origine (`NODRA_ALLOWED_ORIGINS`), ping 30 s, fermeture des flux à l'arrêt. `sshtest` gère maintenant pty-req/window-change/shell et exécute les commandes en parallèle des requêtes. Tests : `internal/ssh` (`TestShell`), `internal/realtime`, `internal/api/realtime_test.go` (origine étrangère, anonyme, droits refusés par ressource, déploiement lent suivi, logs suivis, terminal conteneur et serveur avec redimensionnement, audit, tâche, proxy).
 
+- **Étape 15 — Réglages d'instance** (2026-10-31) : migration `00016_instance_settings.sql` (nom, IP publiques, fuseau, fréquences de mise à jour/vérification, validation DNS + serveurs DNS, API activée + IP autorisées, dernière version ; `users.disabled_at`). `internal/version` (`Version` fixée par ldflags, `Newer`, `Latest` via les releases GitHub). API `admin.go` : `GET/PATCH /admin/settings` (validation stricte, cache des réglages 5 s invalidé à l'écriture), `POST /admin/update-check`, utilisateurs (liste/recherche, administrateur, désactivation, déconnexion forcée, jamais sur soi-même), audit d'instance (`scope=instance|all`, `parseAuditQuery` partagé avec l'audit d'équipe) ; `GET /instance` public. Comptes désactivés refusés à la connexion (`auth.login.disabled`), par session et par jeton ; jetons refusés si l'API est désactivée ou l'IP non autorisée ; `/dns/check` respecte `dns_validation_enabled` et `dns_servers`. Job River `update_check` (toutes les 10 min, selon la fréquence cron et le fuseau). `time/tzdata` embarqué. Tests : `internal/version`, `internal/api/admin_test.go`.
+
 ## Comment brancher un nouveau module sur le RBAC (à suivre aux étapes suivantes)
 1. Routes sous `/teams/{team}/...` (middleware `withTeam` déjà en place).
 2. Enregistrer la portée parente dans `scopeParents` (ex. `scopeParents["project"] = func(...) { return Scope{team, project.team_id} }`) pour que `ScopeChain` fonctionne.
@@ -65,7 +67,7 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 
 ## Reste à faire (backend)
 - [x] 2. Auth & utilisateurs — **reste** : connexion OAuth (GitHub/GitLab/Google)
-- [x] 3. Équipes avancées — **reste** : nettoyage des ressources sur les serveurs à la suppression d'une équipe (étapes 8-10), consultation de l'audit `auth.*` par l'admin d'instance (étape 15)
+- [x] 3. Équipes avancées — **reste** : nettoyage des ressources sur les serveurs à la suppression d'une équipe (étapes 8-10), suppression d'un compte utilisateur (désactivation disponible)
 - [x] 4. Clés SSH & serveurs — **reste** : serveur « localhost » de l'instance (avec install.sh), annulation d'une tâche déjà en cours
 - [x] 5. Proxy Traefik/Caddy — **reste** : certificats wildcard DNS-01 (OVH/Cloudflare, prévu en v1.1)
 - [x] 6. Projets & environnements — **reste** : clonage des ressources avec l'environnement (étapes 8-10), étiquetage des ressources (étape 8)
@@ -77,7 +79,7 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [x] 12. Tâches planifiées
 - [x] 13. Notifications
 - [x] 14. Temps réel (WebSocket)
-- [ ] 15. Réglages d'instance
+- [x] 15. Réglages d'instance — **reste** : mise à jour automatique effective (avec install.sh)
 - [ ] 16. API publique complète (+ MCP optionnel)
 - [ ] Dockerfile + install.sh + CI GitHub Actions
 
@@ -85,16 +87,7 @@ La CI GitHub Actions (`.github/workflows/ci.yml`) lance gofmt, vet et les tests 
 - [ ] Socle, dashboard, serveurs, projets/ressources, logs/terminal, catalogue services, équipes, paramètres
 
 ## Prochaine action
-Étape 15 — réglages d'instance, **en cours** :
-- Fait (commité, tests verts) : migration `00016_instance_settings.sql` (nom, IPv4/IPv6 publiques, fuseau horaire, fréquences de mise à jour et de vérification, validation DNS + serveurs DNS personnalisés, API activée + IP autorisées, dernière version connue ; `users.disabled_at`) ; `store.InstanceSettings` complet + `UpdateInstanceSettings`, `SetLatestVersion` ; `store.ListUsers` (`AdminUser` : 2FA, nombre d'équipes, dernière activité), `SetUserAdmin`, `SetUserDisabled` (révoque les sessions), `DeleteUserSessions` ; `AuditFilter.Instance` (événements sans équipe) et `AllTeams`.
-- Reste :
-  1. API `/admin` (déjà protégée par `requireInstanceAdmin`) : `GET/PATCH /admin/settings` (validation : fqdn http(s) sans chemin, fuseau `time.LoadLocation` + import `time/tzdata` dans main, IP, CIDR, cron via `backup.ParseCron`), `GET /admin/users?search=`, `PATCH /admin/users/{id}` `{is_instance_admin?, disabled?}` (interdit sur soi-même), `POST /admin/users/{id}/logout`, `GET /admin/audit?scope=instance|all` ; public `GET /instance` `{name, registration_enabled, version}`.
-  2. Compte désactivé : refuser la connexion (`login`, après vérification du mot de passe → 403) et ignorer l'utilisateur dans `authenticate` (session et jeton).
-  3. Jetons API : refuser si `api_enabled = false` ou si l'IP (`clientIP`) n'est pas dans `api_allowed_ips` (cache des réglages ~5 s dans `api.Server`, invalidé au PATCH).
-  4. `dnsCheck` : utiliser `dns_servers` (net.Resolver PreferGo + Dial vers un serveur:53) ; si `dns_validation_enabled = false`, répondre `skipped: true`.
-  5. Paquet `internal/version` (`Version = "dev"`, ldflags) + job périodique de vérification des versions (GitHub releases `Murathan-Aydin/nodra`, selon `update_check_frequency`) → `SetLatestVersion` ; la mise à jour automatique elle-même viendra avec install.sh.
-  6. Tests `internal/api/admin_test.go`, section `docs/API.md`, mise à jour de ce fichier, commit/push/CI.
-Puis : étape 16 (API publique complète + MCP optionnel), Dockerfile + install.sh + mise à jour + serveur localhost, restes listés plus haut, puis phase 2 (front React).
+Étape 16 : API publique complète. Comparer avec `~/dev/coolify/routes/api.php` (parité self-hosted) les routes manquantes, puis les ajouter. Candidats : `GET /teams/{team}/resources` (liste unifiée applications/bases/services), `GET /teams/{team}/deployments` (déploiements récents de l'équipe, filtres), déploiement par tag ou par UUID multiples (`/deploy?tag=&uuid=`), `GET /version`, création d'application par type en un appel. Vérifier les scopes des jetons (read/write/deploy/root) sur chaque route ajoutée, documenter dans `docs/API.md`. MCP optionnel ensuite. Puis : Dockerfile + install.sh + mise à jour (`-ldflags -X …/version.Version`) + serveur localhost.
 
 ## Notes pour la reprise
 - Le serveur de test Oracle (84.235.231.3) fait tourner l'**ancienne** version de Nodra, qui suit le même dépôt GitHub : ne pas lancer `deploy/update.sh` dessus avant que la nouvelle version ait son install/update (étape « Dockerfile + install.sh »). La clé SSH `.dev/vm_ed25519` n'existe plus en local.
