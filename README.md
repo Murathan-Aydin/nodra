@@ -35,6 +35,8 @@ set -a; . ./.env; set +a
 go run ./cmd/nodra serve                        # http://localhost:8000
 ```
 
+Front (`web/`, React + Vite + TanStack Router/Query + Tailwind) : dans un second terminal, `npm --prefix web install` puis `npm --prefix web run dev` → http://localhost:5173 (proxy `/api` vers `:8000`, WebSocket compris). `npm --prefix web run build` produit `web/dist`, embarqué dans le binaire Go (le dossier doit exister pour compiler : `mkdir -p web/dist` suffit sans front).
+
 Commandes : `nodra serve` (applique les migrations puis démarre), `nodra migrate`, `nodra version`, `nodra healthcheck`.
 
 ## Documentation

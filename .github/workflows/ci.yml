@@ -24,7 +24,27 @@ jobs:
           go-version-file: go.mod
       - name: gofmt
         run: test -z "$(gofmt -l .)"
+      # Le binaire embarque web/dist (construit par le job front ou le Dockerfile) : dossier minimal pour compiler.
+      - name: web/dist
+        run: mkdir -p web/dist && touch web/dist/.keep
       - run: go vet ./...
       - run: go test -race -count=1 ./...
         env:
           NODRA_TEST_DATABASE_URL: postgres://nodra:nodra@localhost:5432/nodra?sslmode=disable
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
