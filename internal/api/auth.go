@@ -95,6 +95,9 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	if u.PasswordHash == "" { // compte créé par un fournisseur OAuth : même durée qu'une vérification
+		auth.BurnTime(in.Password)
+	}
 	if ok, _ := auth.VerifyPassword(in.Password, u.PasswordHash); !ok {
 		s.audit(withUser(r, u), nil, "auth.login.failed", "user", u.ID, nil)
 		writeError(w, http.StatusUnauthorized, "identifiants invalides")

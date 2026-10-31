@@ -74,7 +74,7 @@ func (s *Server) publicInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"name": i.InstanceName, "registration_enabled": i.RegistrationEnabled,
-		"version": version.Version})
+		"version": version.Version, "oauth_providers": s.enabledOAuth(r.Context())})
 }
 
 func settingsView(i *store.InstanceSettings) map[string]any {

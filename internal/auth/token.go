@@ -29,4 +29,5 @@ const (
 	PrefixReset    = "ndr_"
 	PrefixInvite   = "ndi_"
 	PrefixVerify   = "ndv_"
+	PrefixOAuth    = "ndo_"
 )

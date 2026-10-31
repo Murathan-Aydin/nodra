@@ -68,6 +68,8 @@ type Server struct {
 	Localhost LocalhostConfig
 	// InstallDir : dossier de l'installation sur l'hôte (update.sh) ; vide hors install.sh.
 	InstallDir string
+	// OAuthHTTP : client HTTP vers les fournisseurs de connexion (tests).
+	OAuthHTTP *http.Client
 
 	streams streams
 	inst    instanceCache
@@ -127,6 +129,8 @@ func (s *Server) Router() http.Handler {
 				r.With(authLimit.middleware).Post("/password/forgot", s.forgotPassword)
 				r.With(authLimit.middleware).Post("/password/reset", s.resetPassword)
 				r.With(authLimit.middleware).Post("/verify-email", s.verifyEmail)
+				r.Get("/oauth/{provider}/start", s.oauthStart)
+				r.With(authLimit.middleware).Get("/oauth/{provider}/callback", s.oauthCallback)
 				r.Post("/logout", s.logout)
 			})
 
@@ -140,6 +144,8 @@ func (s *Server) Router() http.Handler {
 					r.Patch("/me", s.updateProfile)
 					r.Post("/me/password", s.changePassword)
 					r.Post("/me/verify-email", s.resendVerification)
+					r.Get("/me/identities", s.listIdentities)
+					r.Delete("/me/identities/{provider}", s.unlinkIdentity)
 					r.Post("/me/2fa/setup", s.setupTwoFactor)
 					r.Post("/me/2fa/enable", s.enableTwoFactor)
 					r.Post("/me/2fa/disable", s.disableTwoFactor)
@@ -169,6 +175,8 @@ func (s *Server) Router() http.Handler {
 					r.Patch("/users/{user}", s.updateAdminUser)
 					r.Post("/users/{user}/logout", s.logoutAdminUser)
 					r.Get("/audit", s.adminAudit)
+					r.Get("/oauth", s.listOAuthSettings)
+					r.Put("/oauth/{provider}", s.updateOAuthSettings)
 				})
 				r.Get("/service-templates", s.listServiceTemplates)
 				r.Get("/service-templates/{slug}", s.getServiceTemplate)

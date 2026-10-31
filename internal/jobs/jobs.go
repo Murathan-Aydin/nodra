@@ -187,7 +187,7 @@ type maintenanceWorker struct {
 func (w *maintenanceWorker) Work(ctx context.Context, _ *river.Job[MaintenanceArgs]) error {
 	for _, f := range []func(context.Context) error{
 		w.st.DeleteExpiredSessions, w.st.PurgeServerMetrics, w.st.ExpireApprovalRequests, w.st.FailStaleServerTasks,
-		w.st.FailStaleDeployments, w.st.FailStaleBackups, w.st.PurgeDeliveries, w.j.notifyExpirations,
+		w.st.FailStaleDeployments, w.st.FailStaleBackups, w.st.PurgeDeliveries, w.st.PurgeOAuthStates, w.j.notifyExpirations,
 	} {
 		if err := f(ctx); err != nil {
 			return err

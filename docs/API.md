@@ -18,7 +18,7 @@ Derrière un reverse proxy, définir `NODRA_TRUST_PROXY=true` pour utiliser l'IP
 | Méthode | Route | Réponse |
 |---|---|---|
 | GET | `/health` | `200 {"status":"ok"}` ou `503 {"status":"degraded","database":"down"}` |
-| GET | `/instance` | `200 {name, registration_enabled, version}` (public, pour la page de connexion) |
+| GET | `/instance` | `200 {name, registration_enabled, version, oauth_providers: [{provider, name}]}` (public, pour la page de connexion) |
 
 ## Auth (`/auth`)
 
@@ -30,6 +30,8 @@ Derrière un reverse proxy, définir `NODRA_TRUST_PROXY=true` pour utiliser l'IP
 | POST | `/auth/logout` | — | `204` |
 | POST | `/auth/password/forgot` | `{email}` | `204` toujours (ne révèle pas l'existence du compte). Jeton valable 1 h, envoyé par e-mail (journalisé tant que l'e-mail n'est pas configuré). |
 | POST | `/auth/password/reset` | `{token, password}` | `204`, révoque toutes les sessions. `400` si jeton invalide/expiré/déjà utilisé. |
+| GET | `/auth/oauth/{provider}/start?redirect=/chemin&link=1` | — | Navigation du navigateur : `302` vers le fournisseur (état à usage unique de 10 min, PKCE S256). `link=1` (session ouverte) lie le compte externe à l'utilisateur courant. |
+| GET | `/auth/oauth/{provider}/callback` | — | Retour du fournisseur : `302` vers `redirect` avec le cookie de session (ou `/login/2fa?redirect=…` si 2FA), `{redirect}?oauth_linked=provider` après une liaison, `/login?oauth_error=message` en cas d'échec. Compte externe inconnu : rattaché à l'utilisateur de même adresse **seulement si le fournisseur l'a vérifiée**, sinon nouveau compte (si les inscriptions sont ouvertes, sans mot de passe). |
 | POST | `/auth/verify-email` | `{token}` | `204`, marque l'adresse comme vérifiée. `400` si jeton invalide/expiré/déjà utilisé. Le lien (`/verify-email?token=ndv_…`, 24 h) est envoyé à l'inscription si l'envoi d'e-mails est configuré. |
 
 ## Compte (`/me`, authentifié)
@@ -41,6 +43,8 @@ Derrière un reverse proxy, définir `NODRA_TRUST_PROXY=true` pour utiliser l'IP
 | POST | `/me/password` | `{current_password, new_password}` | `204`, révoque les autres sessions. `401` si mot de passe actuel faux. |
 | GET | `/version` | — | `200 {"version"}` |
 | POST | `/me/verify-email` | — | `204`, renvoie le lien de vérification. `409` si déjà vérifiée. |
+| GET | `/me/identities` | — | `[{provider, subject, email, created_at}]` comptes externes liés |
+| DELETE | `/me/identities/{provider}` | — | `204` ; `409` si c'est le dernier moyen de connexion d'un compte sans mot de passe |
 | POST | `/me/2fa/setup` | — | `200 {secret, otpauth_url}` (à afficher en QR code) |
 | POST | `/me/2fa/enable` | `{code}` | `200 {"recovery_codes": [8 codes]}` (affichés une seule fois). `422` si code faux. |
 | POST | `/me/2fa/disable` | `{password}` | `204` |
@@ -518,6 +522,8 @@ Les jetons API sont refusés sur ces routes (`403`).
 | GET | `/admin/users?search=&limit=200` | `[User + {two_factor_enabled, teams, last_seen_at, disabled_at}]`, plus récents d'abord |
 | PATCH | `/admin/users/{id}` | `{is_instance_admin?, disabled?}` → `User` ; `409` sur son propre compte. Désactiver révoque les sessions, refuse la connexion (`403`) et les jetons (`401`). |
 | POST | `/admin/users/{id}/logout` | Révoque toutes les sessions → `204` |
+| GET | `/admin/oauth` | Fournisseurs `github`, `gitlab`, `google`, `microsoft`, `discord`, `oidc` : `[{provider, name, enabled, client_id, client_secret: "********"\|"", base_url, tenant, redirect_uri}]` (`redirect_uri` à déclarer chez le fournisseur) |
+| PUT | `/admin/oauth/{provider}` | `{enabled, client_id, client_secret ("********" conserve), base_url (GitHub Enterprise, GitLab auto-hébergé, émetteur OIDC : obligatoire pour oidc), tenant (Microsoft, common par défaut)}` → `204` |
 | GET | `/admin/audit?scope=instance\|all&action=&actor=&target_type=&target_id=&since=&until=&before=&limit=` | Journal sans équipe (`auth.*`, `instance.*`) par défaut, toute l'instance avec `scope=all` ; `{events, next_before}` |
 
 `InstanceSettings` :
