@@ -95,6 +95,16 @@ func ConnectionURL(db *store.Database, password, host string, port int) string {
 	case "clickhouse":
 		u.Scheme, u.Path = "clickhouse", "/"+db.DatabaseName
 	}
+	if sslEnabled(db) {
+		switch db.Type {
+		case "postgresql":
+			u.RawQuery = "sslmode=" + SSLMode(db)
+		case "mysql", "mariadb":
+			u.RawQuery = "ssl-mode=REQUIRED"
+		case "mongodb":
+			u.RawQuery += "&tls=true"
+		}
+	}
 	return u.String()
 }
 
@@ -163,15 +173,41 @@ func dbCommand(db *store.Database, env map[string]string) (command []string, hea
 			command = []string{"postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"}
 		}
 		health = []string{"CMD-SHELL", `psql -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" -c 'SELECT 1' > /dev/null`}
+		if sslEnabled(db) {
+			if len(command) == 0 {
+				command = []string{"postgres"}
+			}
+			d := SSLTypes["postgresql"].Dir
+			command = append(command, "-c", "ssl=on", "-c", "ssl_cert_file="+d+"/server.crt", "-c", "ssl_key_file="+d+"/server.key",
+				"-c", "ssl_ca_file="+d+"/ca.crt")
+		}
 	case "mysql":
 		health = []string{"CMD-SHELL", `mysqladmin ping -h 127.0.0.1 -u root -p"$${MYSQL_ROOT_PASSWORD}"`}
 	case "mariadb":
 		health = []string{"CMD", "healthcheck.sh", "--connect", "--innodb_initialized"}
+	}
+	if sslEnabled(db) && (db.Type == "mysql" || db.Type == "mariadb") {
+		d := SSLTypes[db.Type].Dir
+		command = append(command, "--ssl-cert="+d+"/server.crt", "--ssl-key="+d+"/server.key", "--ssl-ca="+d+"/ca.crt",
+			"--require-secure-transport=1")
+	}
+	switch db.Type {
 	case "mongodb":
 		if conf {
 			command = []string{"mongod", "--config", "/etc/mongo/mongod.conf"}
 		}
 		ping := `--quiet --eval "db.adminCommand('ping')" > /dev/null`
+		if sslEnabled(db) {
+			d := SSLTypes["mongodb"].Dir
+			if len(command) == 0 {
+				command = []string{"mongod"}
+			}
+			command = append(command, "--tlsMode="+SSLMode(db), "--tlsCertificateKeyFile="+d+"/server.pem", "--tlsCAFile="+d+"/ca.pem",
+				"--tlsAllowConnectionsWithoutCertificates")
+			if SSLMode(db) == "requireTLS" {
+				ping = "--tls --tlsCAFile " + d + "/ca.pem " + ping
+			}
+		}
 		health = []string{"CMD-SHELL", "if command -v mongosh > /dev/null 2>&1; then mongosh " + ping + "; else mongo " + ping + "; fi"}
 	case "redis":
 		command = []string{"redis-server"}
@@ -179,6 +215,7 @@ func dbCommand(db *store.Database, env map[string]string) (command []string, hea
 			command = append(command, "/usr/local/etc/redis/redis.conf")
 		}
 		command = append(command, "--requirepass", pass, "--appendonly", "yes")
+		command = append(command, redisTLS(db)...)
 		health = []string{"CMD-SHELL", `redis-cli -a "$${REDIS_PASSWORD}" --no-auth-warning ping | grep -q PONG`}
 	case "keydb":
 		command = []string{"keydb-server"}
@@ -186,6 +223,7 @@ func dbCommand(db *store.Database, env map[string]string) (command []string, hea
 			command = append(command, "/etc/keydb/keydb.conf")
 		}
 		command = append(command, "--requirepass", pass, "--appendonly", "yes")
+		command = append(command, redisTLS(db)...)
 		health = []string{"CMD-SHELL", `keydb-cli --pass "$${REDIS_PASSWORD}" ping | grep -q PONG`}
 	case "dragonfly":
 		command = []string{"dragonfly", "--requirepass", pass}
@@ -196,6 +234,16 @@ func dbCommand(db *store.Database, env map[string]string) (command []string, hea
 		extra = map[string]any{"ulimits": map[string]any{"nofile": map[string]any{"soft": 262144, "hard": 262144}}}
 	}
 	return command, health, extra
+}
+
+// redisTLS : port TLS 6380 en plus du port 6379 (Redis, KeyDB).
+func redisTLS(db *store.Database) []string {
+	if !sslEnabled(db) {
+		return nil
+	}
+	d := SSLTypes[db.Type].Dir
+	return []string{"--tls-port", "6380", "--tls-cert-file", d + "/server.crt", "--tls-key-file", d + "/server.key",
+		"--tls-ca-cert-file", d + "/ca.crt", "--tls-auth-clients", "optional"}
 }
 
 // DatabaseCompose génère le docker-compose d'une base (conteneur nommé d'après son identifiant).
@@ -237,6 +285,9 @@ func DatabaseCompose(s DatabaseSpec) (string, error) {
 	}
 	if db.CustomConfig != "" && t.ConfigPath != "" {
 		binds = append(binds, map[string]any{"type": "bind", "source": s.Dir + "/custom.conf", "target": t.ConfigPath, "read_only": true})
+	}
+	if sslEnabled(db) { // monté en écriture : les fichiers sont attribués au compte du moteur avant le démarrage
+		binds = append(binds, map[string]any{"type": "bind", "source": s.Dir + "/ssl", "target": SSLTypes[db.Type].Dir})
 	}
 	if t.InitDir != "" {
 		for _, sc := range db.InitScripts {
@@ -460,6 +511,15 @@ func (d *dbRun) start(ctx context.Context) error {
 			files.WriteString(writeFile(d.dir+"/initdb/"+sc.Filename, sc.Content, "644"))
 		}
 	}
+	sv, err := st.ServerByIDAny(ctx, loc.ServerID)
+	if err != nil {
+		return err
+	}
+	certs, err := d.r.sslFiles(ctx, db, sv, d.dir)
+	if err != nil {
+		return err
+	}
+	files.WriteString(certs)
 	file := d.dir + "/docker-compose.yml"
 	files.WriteString(writeFile(file, compose, "600"))
 	if err := d.sh(ctx, "", files.String()); err != nil {
@@ -468,6 +528,12 @@ func (d *dbRun) start(ctx context.Context) error {
 	base := "docker compose -p " + ssh.Quote(db.ID) + " -f " + ssh.Quote(file)
 	if err := d.sh(ctx, "docker pull "+db.Image, base+" pull\n"); err != nil {
 		return err
+	}
+	if sslEnabled(db) {
+		fmt.Fprintln(d.out, "Certificats TLS signés par l'autorité du serveur.")
+		if err := d.sh(ctx, "", sslOwnership(db, base, d.dir)); err != nil {
+			return fmt.Errorf("droits des certificats : %w", err)
+		}
 	}
 	if err := d.sh(ctx, "docker compose up -d", fmt.Sprintf("docker stop -t %d %s >/dev/null 2>&1 || true\ndocker rm -f %s >/dev/null 2>&1 || true\n%s up -d --remove-orphans\n",
 		db.Settings.StopGracePeriod, ssh.Quote(db.ID), ssh.Quote(db.ID), base)); err != nil {

@@ -198,3 +198,87 @@ func TestDatabases(t *testing.T) {
 	}
 	expect(t, "base supprimée", alice.do("GET", base+"/databases/"+id, nil, nil), 404)
 }
+
+func TestDatabaseInstantDeploy(t *testing.T) {
+	f := newAppFixture(t)
+	h := newFakeHost(t, f)
+	f.e.runner.DatabasesDir = filepath.Join(h.state, "databases")
+	var created struct {
+		ID   string            `json:"id"`
+		Task *store.ServerTask `json:"task"`
+	}
+	expect(t, "base démarrée à la création", f.alice.do("POST", f.base+"/databases", map[string]any{"environment_id": f.envID,
+		"destination_id": f.destID, "type": "redis", "name": "Cache", "instant_deploy": true}, &created), 201)
+	if created.Task == nil || created.Task.Kind != "database_start" {
+		t.Fatalf("tâche de démarrage attendue : %+v", created)
+	}
+	if task := waitTask(t, f.alice, f.team, f.serverID, created.Task.ID); task.Status != "success" {
+		t.Fatalf("démarrage : %s %s\n%s", task.Status, task.Error, task.Output)
+	}
+	var plain struct {
+		Task *store.ServerTask `json:"task"`
+	}
+	expect(t, "sans démarrage", f.alice.do("POST", f.base+"/databases", map[string]any{"environment_id": f.envID,
+		"destination_id": f.destID, "type": "redis", "name": "Cache 2"}, &plain), 201)
+	if plain.Task != nil {
+		t.Fatal("aucune tâche sans instant_deploy")
+	}
+}
+
+func TestDatabaseSSL(t *testing.T) {
+	f := newAppFixture(t)
+	h := newFakeHost(t, f)
+	f.e.runner.DatabasesDir = filepath.Join(h.state, "databases")
+	req := func(typ string, settings map[string]any) map[string]any {
+		return map[string]any{"environment_id": f.envID, "destination_id": f.destID, "type": typ, "name": "DB " + typ, "settings": settings}
+	}
+	expect(t, "clickhouse sans TLS", f.alice.do("POST", f.base+"/databases", req("clickhouse", map[string]any{"enable_ssl": true}), nil), 422)
+	expect(t, "mode invalide", f.alice.do("POST", f.base+"/databases", req("postgresql", map[string]any{"enable_ssl": true, "ssl_mode": "requireTLS"}), nil), 422)
+	body := req("postgresql", map[string]any{"enable_ssl": true, "ssl_mode": "verify-full"})
+	body["instant_deploy"] = true
+	var created struct {
+		ID            string            `json:"id"`
+		InternalURL   string            `json:"internal_url"`
+		CACertificate string            `json:"ca_certificate"`
+		Task          *store.ServerTask `json:"task"`
+	}
+	expect(t, "postgres TLS", f.alice.do("POST", f.base+"/databases", body, &created), 201)
+	if !strings.HasSuffix(created.InternalURL, "?sslmode=verify-full") || !strings.HasPrefix(created.CACertificate, "-----BEGIN CERTIFICATE") {
+		t.Fatalf("réponse : %+v", created)
+	}
+	if task := waitTask(t, f.alice, f.team, f.serverID, created.Task.ID); task.Status != "success" || !strings.Contains(task.Output, "Certificats TLS") {
+		t.Fatalf("démarrage : %s %s\n%s", task.Status, task.Error, task.Output)
+	}
+	dir := filepath.Join(h.state, "databases", created.ID, "ssl")
+	for _, name := range []string{"ca.crt", "server.crt", "server.key"} {
+		if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
+			t.Fatalf("%s : %v", name, err)
+		}
+	}
+	if st, _ := os.Stat(filepath.Join(dir, "server.key")); st.Mode().Perm() != 0o600 {
+		t.Fatalf("droits de la clé : %v", st.Mode())
+	}
+	if !strings.Contains(h.calls(), "run --rm --no-deps --user root --entrypoint chown database postgres:postgres") {
+		t.Fatalf("propriétaire des certificats non posé :\n%s", h.calls())
+	}
+	compose, _ := os.ReadFile(filepath.Join(h.state, "databases", created.ID, "docker-compose.yml"))
+	if !strings.Contains(string(compose), "ssl=on") {
+		t.Fatalf("compose :\n%s", compose)
+	}
+	var ca map[string]string
+	expect(t, "autorité du serveur", f.alice.do("GET", f.base+"/servers/"+f.serverID+"/ca-certificate", nil, &ca), 200)
+	if ca["certificate"] != created.CACertificate {
+		t.Fatal("même autorité attendue")
+	}
+
+	// Désactivation : certificats retirés au démarrage suivant.
+	expect(t, "TLS désactivé", f.alice.do("PATCH", f.base+"/databases/"+created.ID, map[string]any{"settings": map[string]any{"enable_ssl": false}}, nil), 200)
+	var task store.ServerTask
+	expect(t, "redémarrage", f.alice.do("POST", f.base+"/databases/"+created.ID+"/restart", nil, &task), 202)
+	if task = waitTask(t, f.alice, f.team, f.serverID, task.ID); task.Status != "success" {
+		t.Fatalf("redémarrage : %s %s", task.Status, task.Error)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Fatalf("certificats non retirés : %v", err)
+	}
+}

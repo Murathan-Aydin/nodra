@@ -27,6 +27,8 @@ var (
 )
 
 type dbInput struct {
+	// InstantDeploy : démarrer la base dès sa création (soumis aux approbations resource.deploy).
+	InstantDeploy          bool                `json:"instant_deploy"`
 	EnvironmentID          string              `json:"environment_id"`
 	DestinationID          string              `json:"destination_id"`
 	Type                   string              `json:"type"`
@@ -138,6 +140,10 @@ func validateDatabase(d *store.Database) string {
 		return "username : root est réservé (utilisez root_password)"
 	case t.DB != "" && !dbNameRe.MatchString(d.DatabaseName), t.DB == "" && d.DatabaseName != "":
 		return "database_name invalide (non configurable pour " + d.Type + ")"
+	case st.EnableSSL && !deploy.ValidSSLMode(d.Type, ""):
+		return "TLS : non pris en charge pour " + d.Type
+	case st.EnableSSL && !deploy.ValidSSLMode(d.Type, st.SSLMode):
+		return "settings.ssl_mode : " + strings.Join(deploy.SSLTypes[d.Type].Modes, ", ") + " (vide pour le défaut)"
 	case d.CustomConfig != "" && t.ConfigPath == "":
 		return "custom_config : non pris en charge pour " + d.Type
 	case len(d.CustomConfig) > 64<<10:
@@ -223,6 +229,11 @@ func (s *Server) publicDatabase(ctx context.Context, d *store.Database, withSecr
 	_ = json.Unmarshal(b, &m)
 	port := deploy.DBTypes[d.Type].Port
 	m["internal_host"], m["internal_port"] = d.ID, port
+	if d.Settings.EnableSSL { // certificat public de l'autorité du serveur (vérification côté client)
+		if ca, err := s.serverCACert(ctx, d.ID); err == nil {
+			m["ca_certificate"] = ca
+		}
+	}
 	if !withSecrets {
 		return m, nil
 	}
@@ -337,10 +348,28 @@ func (s *Server) createDatabase(w http.ResponseWriter, r *http.Request) {
 	}
 	s.auditTeam(r, "database.created", "database", created.ID, map[string]any{"name": created.Name, "type": created.Type,
 		"environment_id": created.EnvironmentID, "server_id": sv.ID})
-	s.respondDatabase(w, r, created, http.StatusCreated)
+	extra := map[string]any{}
+	if in.InstantDeploy && sv.IsUsable {
+		uid := userFrom(ctx).ID
+		pending, err := s.gate(r, "resource.deploy", resourceScope(created.ID), "Démarrage de la base "+created.Name,
+			dbActionPayload{created.TeamID, created.ID, deploy.TaskDatabaseStart, &uid})
+		if err != nil {
+			s.fail(w, err)
+			return
+		}
+		if pending != nil {
+			extra["approval_request"] = pending
+		} else if task, err := s.enqueueDatabaseTask(ctx, created, deploy.TaskDatabaseStart, &uid); err == nil {
+			extra["task"] = task
+		} else {
+			s.internal(w, err)
+			return
+		}
+	}
+	s.respondDatabase(w, r, created, http.StatusCreated, extra)
 }
 
-func (s *Server) respondDatabase(w http.ResponseWriter, r *http.Request, d *store.Database, status int) {
+func (s *Server) respondDatabase(w http.ResponseWriter, r *http.Request, d *store.Database, status int, extra ...map[string]any) {
 	ctx := r.Context()
 	secrets, err := s.can(ctx, "resource.env.read", resourceScope(d.ID))
 	if err != nil {
@@ -351,6 +380,11 @@ func (s *Server) respondDatabase(w http.ResponseWriter, r *http.Request, d *stor
 	if err != nil {
 		s.internal(w, err)
 		return
+	}
+	for _, e := range extra {
+		for k, v := range e {
+			m[k] = v
+		}
 	}
 	writeJSON(w, status, m)
 }
@@ -697,4 +731,32 @@ func (s *Server) setDatabaseTags(w http.ResponseWriter, r *http.Request) {
 	}
 	s.auditTeam(r, "database.tags.updated", "database", d.ID, in)
 	writeJSON(w, http.StatusOK, tags)
+}
+
+// serverCACert : certificat de l'autorité du serveur d'une ressource (créée au besoin).
+func (s *Server) serverCACert(ctx context.Context, resourceID string) (string, error) {
+	loc, err := s.Store.ResourceLocation(ctx, resourceID)
+	if err != nil {
+		return "", err
+	}
+	sv, err := s.Store.ServerByIDAny(ctx, loc.ServerID)
+	if err != nil {
+		return "", err
+	}
+	cert, _, err := deploy.EnsureServerCA(ctx, s.Store, s.Box, sv)
+	return cert, err
+}
+
+// serverCA : GET /servers/{server}/ca-certificate.
+func (s *Server) serverCA(w http.ResponseWriter, r *http.Request) {
+	sv, ok := s.teamServer(w, r, "server.read")
+	if !ok {
+		return
+	}
+	cert, _, err := deploy.EnsureServerCA(r.Context(), s.Store, s.Box, sv)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"certificate": cert})
 }

@@ -364,12 +364,14 @@ Types (image par défaut, port interne) : `postgresql` (`postgres:17-alpine`, 54
 | Méthode | Route | Permission | Description |
 |---|---|---|---|
 | GET | `/databases?environment_id=` | `resource.read` (par base) | Sans identifiants |
-| POST | `/databases` | `resource.create` (environnement) + `server.read` | `201 Database`. Mots de passe générés s'ils sont absents (32 caractères alphanumériques) ; volumes de données créés (`<type>-<data>-<id>`). `409` si un port public ou publié est déjà utilisé sur le serveur (bases publiques, `ports_mappings`, port SSH). |
+| POST | `/databases` | `resource.create` (environnement) + `server.read` | `201 Database`. Mots de passe générés s'ils sont absents (32 caractères alphanumériques) ; volumes de données créés (`<type>-<data>-<id>`). `409` si un port public ou publié est déjà utilisé sur le serveur (bases publiques, `ports_mappings`, port SSH). `instant_deploy: true` lance aussitôt le démarrage (réponse avec `task` ou `approval_request`, règles `resource.deploy`). |
 | GET | `/databases/{id}` | `resource.read` | `{database, tags, server_id, project_id}` |
 | PATCH | `/databases/{id}` | `resource.update` (+ `resource.env.write` pour changer un mot de passe) | Champs partiels ; `limits` et `settings` fusionnés. Pris en compte au prochain démarrage, sauf `is_public`/`public_port` appliqués aussitôt (tâche `database_proxy`) si la base tourne. |
 | DELETE | `/databases/{id}?delete_volumes=true` | `resource.delete` | Soumis aux approbations ; supprime conteneurs, fichiers, (volumes), variables, stockages, tags et droits liés |
 | POST | `/databases/{id}/start` · `/restart` | `resource.deploy` | Soumis aux règles d'approbation `resource.deploy` → `202 ServerTask` (ou demande d'approbation). `409` si une action est déjà en cours ou si le serveur n'est pas validé. |
 | POST | `/databases/{id}/stop` | `resource.deploy` | `202 ServerTask` : arrête et supprime les conteneurs (volumes conservés) |
+
+**TLS** (`settings.enable_ssl`, `settings.ssl_mode`, appliqué au prochain démarrage) : PostgreSQL (`ssl_mode` require par défaut, verify-ca, verify-full, prefer, allow ; `sslmode=` ajouté aux URL), MySQL/MariaDB (connexions chiffrées obligatoires, `ssl-mode=REQUIRED`), MongoDB (`requireTLS` par défaut, `preferTLS`, `allowTLS`), Redis/KeyDB (port TLS 6380 en plus du 6379). Non pris en charge : Dragonfly, ClickHouse (`422`). Certificat serveur (RSA 2048, 1 an, noms : identifiant du conteneur, `localhost`, IP du serveur) régénéré à chaque démarrage et signé par l'autorité du serveur ; la réponse d'une base TLS contient `ca_certificate`. `GET /servers/{id}/ca-certificate` (`server.read`) → `{certificate}`.
 | GET | `/databases/{id}/tasks` | `resource.logs.read` | 50 dernières actions `[ServerTask]` (`kind` : `database_start`, `database_stop`, `database_restart`, `database_proxy` ; sortie dans `output`) |
 | GET | `/databases/{id}/logs?lines=100` | `resource.logs.read` | Logs des conteneurs (base et proxy) `{logs}` |
 | PUT | `/databases/{id}/tags` | `resource.update` | `{tag_ids}` → tags |

@@ -504,3 +504,25 @@ func (s *Store) TasksWithParam(ctx context.Context, key, value string, limit int
 	}
 	return collect(rows, scanTask)
 }
+
+// ServerCA : autorité de certification d'un serveur (clé chiffrée).
+type ServerCA struct {
+	CertPEM string
+	KeyEnc  string
+}
+
+func (s *Store) ServerCA(ctx context.Context, serverID string) (*ServerCA, error) {
+	ca := &ServerCA{}
+	err := s.Pool.QueryRow(ctx, `SELECT cert_pem, key_enc FROM server_cas WHERE server_id = $1`, serverID).Scan(&ca.CertPEM, &ca.KeyEnc)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	return ca, err
+}
+
+// SaveServerCA enregistre l'autorité si le serveur n'en a pas encore.
+func (s *Store) SaveServerCA(ctx context.Context, serverID, certPEM, keyEnc string) error {
+	_, err := s.Pool.Exec(ctx, `INSERT INTO server_cas (server_id, cert_pem, key_enc) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+		serverID, certPEM, keyEnc)
+	return err
+}

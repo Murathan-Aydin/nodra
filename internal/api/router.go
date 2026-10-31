@@ -264,6 +264,7 @@ func (s *Server) Router() http.Handler {
 						r.Get("/tasks/{task}/stream", s.streamServerTask)
 						r.Get("/resources", s.serverResources)
 						r.Get("/domains", s.serverDomains)
+						r.Get("/ca-certificate", s.serverCA)
 						r.Get("/terminal", s.serverTerminal)
 						r.Get("/proxy/logs/stream", s.streamProxyLogs)
 						r.Post("/tasks/{task}/cancel", s.cancelServerTask)
