@@ -103,6 +103,8 @@ L'ancien front complet **et** la refonte visuelle (y compris `app-shell.tsx`, `a
 
 **Configuration guidée une seule fois** (demande de l'utilisateur) : migration `00025_onboarding` (`instance_settings.onboarding_completed`, vraie pour les instances déjà utilisées), `/instance.onboarding`, `POST /admin/onboarding/complete` (« Accéder à Nodra » et « Passer la configuration ») ; `/onboarding` n'est accessible qu'à l'administrateur tant qu'elle n'est pas close, et `/` y renvoie tant qu'elle est en attente. Test Go ajouté.
 
+**Swagger** (demande de l'utilisateur, en plus de `docs/API.md` qui reste la référence) : `GET /api/docs` (Swagger UI depuis unpkg, version épinglée ; « Try it out » avec le cookie de session et l'en-tête anti-CSRF, ou un jeton via Authorize) et `GET /api/openapi.json` (OpenAPI 3 généré une fois par `chi.Walk` sur les routes réelles, enrichi par les tableaux de `docs/API.md` embarqué via le paquet `docs` : section, résumé, permission ; routes relatives rattachées au préfixe de leur section, tableau WebSocket traité en GET). Test : 291 opérations, 97 % documentées (les autres ne sont décrites qu'en texte). Schémas des corps et réponses non détaillés (objets libres).
+
 Côté backend, le correctif `PATCH /backups/{id}` (paramètres SQL inutilisés) trouvé pendant le front v1 est conservé, avec son test.
 
 ## Prochaine action

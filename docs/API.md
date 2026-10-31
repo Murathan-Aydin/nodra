@@ -539,6 +539,7 @@ Les jetons API sont refusés sur ces routes (`403`).
 
 | Méthode | Route | Description |
 |---|---|---|
+| POST | `/admin/onboarding/complete` | `204` : configuration guidée terminée ou passée, elle n'est plus proposée (`/instance.onboarding` faux) |
 | GET | `/admin/settings` | `{settings: InstanceSettings, version, update_available}` |
 | PATCH | `/admin/settings` | Champs partiels (voir ci-dessous) → même réponse ; journalisé `instance.settings.updated` |
 | POST | `/admin/update` | `{version?}` (dernière version connue par défaut, `vX.Y.Z`) → `202 ServerTask` : lance `update.sh` en arrière-plan sur le serveur localhost ; `409` hors installation `install.sh` ou sans serveur localhost |
@@ -580,6 +581,10 @@ Les jetons API sont refusés sur ces routes (`403`).
 | GET | `/servers/{id}/domains` | `server.read` + `resource.read` | `[{domain, resource_id, type, name}]` (applications et sous-services) |
 | POST | `/applications/{id}/clone`, `/databases/{id}/clone`, `/services/{id}/clone` | `resource.read` + `resource.create` sur l'environnement cible | `{name? ("<nom> (copie)"), environment_id?, destination_id?}` (même équipe, original par défaut) → `201 {id}`. Copie la configuration, les variables, les stockages (volumes renommés : **données non copiées**), les tags et les tâches planifiées (désactivées) ; arrêtée, nouveaux domaines générés (jamais ceux de l'original), base sans exposition publique, sous-services pour un service |
 | POST | `/applications/{id}/move`, `/databases/{id}/move`, `/services/{id}/move` | `resource.update` + `resource.create` sur l'environnement cible | `{environment_id}` (même équipe) → `204` ; serveur et conteneurs inchangés, les variables partagées du nouvel environnement s'appliquent au prochain déploiement |
+
+## Documentation interactive
+
+`GET /api/docs` : Swagger UI (public). `GET /api/openapi.json` : spécification OpenAPI 3 générée au démarrage à partir des routes enregistrées et des tableaux de ce fichier (résumé, permission, section), embarqué dans le binaire. « Try it out » utilise le cookie de session du navigateur (connectez-vous d'abord sur la même origine) ou un jeton API (bouton Authorize).
 
 ## Serveur MCP (`/api/v1/mcp`)
 

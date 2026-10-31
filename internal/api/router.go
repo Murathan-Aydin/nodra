@@ -463,6 +463,10 @@ func (s *Server) Router() http.Handler {
 			})
 		})
 	})
+	// Documentation interactive de l'API (spécification générée depuis les routes et docs/API.md).
+	spec, ui := openAPIHandlers(r)
+	r.Get("/api/openapi.json", spec)
+	r.Get("/api/docs", ui)
 	r.Handle("/*", spa(s.Web))
 	s.mux = r
 	return r
