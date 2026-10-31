@@ -214,7 +214,7 @@ Un projet est créé avec un environnement `production`. Les permissions peuvent
 | GET | `/projects/{p}/environments/{e}` | `project.read` (environnement) | `{project, environment}` |
 | PATCH | `/projects/{p}/environments/{e}` | `environment.update` | |
 | DELETE | `/projects/{p}/environments/{e}` | `environment.delete` | Soumis aux approbations ; `409` s'il reste des ressources |
-| POST | `/projects/{p}/environments/{e}/clone` | `project.read` (source) + `environment.create` (projet cible) | `{name, project_id?}` : copie l'environnement et ses variables (les ressources seront copiées par leurs modules) |
+| POST | `/projects/{p}/environments/{e}/clone` | `project.read` (source) + `environment.create` (projet cible) | `{name, project_id?, with_resources?: false}` : copie l'environnement et ses variables ; avec `with_resources`, aussi les ressources lisibles (comme `/clone` ci-dessous, mêmes destinations) |
 
 ## Variables partagées (`/teams/{team}/variables`)
 
@@ -562,4 +562,5 @@ Les jetons API sont refusés sur ces routes (`403`).
 | POST | `/deploy` | `resource.deploy` sur chaque ressource | `{resources?: [id], tags?: [nom], force_rebuild?}` ou `?uuid=a,b&tag=prod&force=true` (CI). Applications déployées, bases et services démarrés, 100 ressources max. → `200 {results: [{resource_id, type, status, response}]}` : chaque ressource passe par sa route unitaire (`status` 202 lancé ou en attente d'approbation, 403, 404, 409…) |
 | GET | `/servers/{id}/resources` | `server.read` + `resource.read` | Ressources hébergées par le serveur |
 | GET | `/servers/{id}/domains` | `server.read` + `resource.read` | `[{domain, resource_id, type, name}]` (applications et sous-services) |
+| POST | `/applications/{id}/clone`, `/databases/{id}/clone`, `/services/{id}/clone` | `resource.read` + `resource.create` sur l'environnement cible | `{name? ("<nom> (copie)"), environment_id?, destination_id?}` (même équipe, original par défaut) → `201 {id}`. Copie la configuration, les variables, les stockages (volumes renommés : **données non copiées**), les tags et les tâches planifiées (désactivées) ; arrêtée, nouveaux domaines générés (jamais ceux de l'original), base sans exposition publique, sous-services pour un service |
 | POST | `/applications/{id}/move`, `/databases/{id}/move`, `/services/{id}/move` | `resource.update` + `resource.create` sur l'environnement cible | `{environment_id}` (même équipe) → `204` ; serveur et conteneurs inchangés, les variables partagées du nouvel environnement s'appliquent au prochain déploiement |

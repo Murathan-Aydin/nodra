@@ -288,8 +288,9 @@ func (s *Server) cloneEnvironment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		Name      string `json:"name"`
-		ProjectID string `json:"project_id"`
+		Name          string `json:"name"`
+		ProjectID     string `json:"project_id"`
+		WithResources bool   `json:"with_resources"`
 	}
 	if !decode(w, r, &in) {
 		return
@@ -319,7 +320,14 @@ func (s *Server) cloneEnvironment(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, err)
 		return
 	}
-	s.auditTeam(r, "environment.cloned", "environment", clone.ID, map[string]string{"source_id": e.ID, "project_id": target.ID})
+	n := 0
+	if in.WithResources { // ressources lisibles copiées (arrêtées, nouveaux domaines et volumes)
+		if n, err = s.cloneEnvResources(r.Context(), p.TeamID, e.ID, clone.ID); err != nil {
+			s.internal(w, err)
+			return
+		}
+	}
+	s.auditTeam(r, "environment.cloned", "environment", clone.ID, map[string]any{"source_id": e.ID, "project_id": target.ID, "resources": n})
 	writeJSON(w, http.StatusCreated, clone)
 }
 
