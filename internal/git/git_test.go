@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -272,5 +273,47 @@ func TestWatchPaths(t *testing.T) {
 	e, _ := Parse(GitHub, http.Header{"X-Github-Event": {"push"}}, push)
 	if strings.Join(e.Files, ",") != "a.go,b.go,c.go" {
 		t.Fatalf("fichiers : %v", e.Files)
+	}
+}
+
+func TestCommentPRGitLabGitea(t *testing.T) {
+	var mu sync.Mutex
+	var seen []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		seen = append(seen, r.Method+" "+r.URL.EscapedPath()+" "+r.Header.Get("Authorization"))
+		mu.Unlock()
+		var body map[string]string
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["body"] == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		_, _ = w.Write([]byte(`{"id": 77}`))
+	}))
+	defer srv.Close()
+	ctx := context.Background()
+	gl := Source{Type: GitLab, APIURL: srv.URL + "/api/v4", AccessToken: "glpat"}
+	if id, err := CommentPR(ctx, gl, "acme/web", 3, 0, "preview"); err != nil || id != 77 {
+		t.Fatalf("gitlab : %d %v", id, err)
+	}
+	if _, err := CommentPR(ctx, gl, "acme/web", 3, 77, "maj"); err != nil {
+		t.Fatal(err)
+	}
+	gt := Source{Type: Gitea, APIURL: srv.URL + "/api/v1", AccessToken: "gtok"}
+	if id, err := CommentPR(ctx, gt, "acme/web", 4, 0, "preview"); err != nil || id != 77 {
+		t.Fatalf("gitea : %d %v", id, err)
+	}
+	if _, err := CommentPR(ctx, gt, "acme/web", 4, 77, "maj"); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"POST /api/v4/projects/acme%2Fweb/merge_requests/3/notes Bearer glpat",
+		"PUT /api/v4/projects/acme%2Fweb/merge_requests/3/notes/77 Bearer glpat",
+		"POST /api/v1/repos/acme/web/issues/4/comments token gtok",
+		"PATCH /api/v1/repos/acme/web/issues/comments/77 token gtok",
+	}
+	if strings.Join(seen, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("appels :\n%s", strings.Join(seen, "\n"))
 	}
 }

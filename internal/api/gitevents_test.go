@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -203,3 +205,54 @@ func TestPreviewDomains(t *testing.T) {
 }
 
 const sha40 = "0123456789abcdef0123456789abcdef01234567"
+
+func TestComposePreview(t *testing.T) {
+	f := newAppFixture(t)
+	h := newFakeHost(t, f)
+	alice, base := f.alice, f.base
+	f.e.api.Executors["resource.deploy"] = f.e.api.execResourceDeploy
+	var stack map[string]any
+	expect(t, "compose", alice.do("POST", base+"/applications", f.app(map[string]any{"name": "Stack", "build_pack": "dockercompose",
+		"docker_compose_raw":     "services:\n  web:\n    image: nginx\n    container_name: site\n    volumes: [\"data:/data\"]\nvolumes:\n  data:\n    name: site-data\n",
+		"docker_compose_domains": map[string][]string{"web": {"https://web.example.com"}}}), &stack), 201)
+	id := stack["id"].(string)
+	var d store.Deployment
+	expect(t, "production", alice.do("POST", base+"/applications/"+id+"/deploy", nil, &d), 202)
+	if d = waitDeployment(t, alice, base, id, d.ID); d.Status != "finished" {
+		t.Fatalf("production : %s", d.Error)
+	}
+	prod, _ := os.ReadFile(filepath.Join(h.state, "apps", id, "docker-compose.yml"))
+
+	var pd store.Deployment
+	expect(t, "preview", alice.do("POST", base+"/applications/"+id+"/previews", map[string]any{"pr_number": 5}, &pd), 202)
+	if pd = waitDeployment(t, alice, base, id, pd.ID); pd.Status != "finished" {
+		t.Fatalf("preview : %s\n%s", pd.Error, depLogs(t, alice, base, id, pd.ID, true))
+	}
+	var pv store.Preview
+	expect(t, "preview", alice.do("GET", base+"/applications/"+id+"/previews/5", nil, &pv), 200)
+	if len(pv.ComposeDomains["web"]) != 1 || pv.ComposeDomains["web"][0] != "https://5.web.example.com" {
+		t.Fatalf("domaines de la preview : %+v", pv)
+	}
+	preview, err := os.ReadFile(filepath.Join(h.state, "apps", id, "pr-5", "docker-compose.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Serveur de test sans proxy : pas de libellés de routage (vérifiés par TestTransformComposePreview).
+	for _, want := range []string{"nodra.pr=5", "container_name: site-pr-5", "name: site-data-pr-5"} {
+		if !strings.Contains(string(preview), want) {
+			t.Fatalf("%q absent du compose de la preview :\n%s", want, preview)
+		}
+	}
+	if after, _ := os.ReadFile(filepath.Join(h.state, "apps", id, "docker-compose.yml")); string(after) != string(prod) {
+		t.Fatal("le compose de production a été modifié par la preview")
+	}
+	expect(t, "domaines personnalisés", alice.do("PATCH", base+"/applications/"+id+"/previews/5",
+		map[string]any{"compose_domains": map[string][]string{"web": {"https://pr5.example.com"}}}, &pv), 200)
+	if pv.ComposeDomains["web"][0] != "https://pr5.example.com" {
+		t.Fatalf("mise à jour : %+v", pv)
+	}
+	expect(t, "arrêt de la preview", alice.do("POST", base+"/applications/"+id+"/previews/5/stop", nil, nil), 204)
+	if _, err := os.Stat(filepath.Join(h.state, "apps", id, "pr-5")); !os.IsNotExist(err) {
+		t.Fatalf("fichiers de la preview non retirés : %v", err)
+	}
+}

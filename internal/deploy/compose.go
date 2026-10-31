@@ -236,7 +236,9 @@ func AppCompose(s AppSpec, filesDir string) (string, error) {
 // TransformCompose adapte le docker-compose fourni par l'utilisateur : labels de gestion et de routage
 // (services ayant des domaines), réseau de la destination, redémarrage automatique.
 // dataDir : dossier stable du serveur où sont redirigés les montages relatifs (./data → dataDir/data).
-func TransformCompose(raw string, a *store.Application, deploymentID, network, proxyType, dataDir string, certs map[string][2]string) (string, error) {
+// Pour une preview (pr > 0), a.DockerComposeDomains porte les domaines de la preview ; routeurs, noms de
+// conteneurs et volumes explicitement nommés reçoivent le suffixe -pr-N (aucun partage avec la production).
+func TransformCompose(raw string, a *store.Application, deploymentID, network, proxyType, dataDir string, certs map[string][2]string, pr int) (string, error) {
 	var doc map[string]any
 	if err := yaml.Unmarshal([]byte(raw), &doc); err != nil {
 		return "", fmt.Errorf("docker-compose invalide : %w", err)
@@ -251,10 +253,17 @@ func TransformCompose(raw string, a *store.Application, deploymentID, network, p
 			return "", fmt.Errorf("service %s invalide", name)
 		}
 		labels := normalizeList(svc["labels"], "=")
-		labels = append(labels, ManagementLabels(a, deploymentID, 0)...)
+		labels = append(labels, ManagementLabels(a, deploymentID, pr)...)
 		labels = append(labels, "nodra.service="+name)
+		router := a.ID + "-" + name
+		if pr > 0 {
+			router = fmt.Sprintf("%s-pr-%d-%s", a.ID, pr, name)
+			if cn, ok := svc["container_name"].(string); ok && cn != "" {
+				svc["container_name"] = fmt.Sprintf("%s-pr-%d", cn, pr)
+			}
+		}
 		if domains := a.DockerComposeDomains[name]; len(domains) > 0 {
-			opts := RouteFor(a, domains, proxyType, network, a.ID+"-"+name, certs)
+			opts := RouteFor(a, domains, proxyType, network, router, certs)
 			opts.Port = ""
 			if p, ok := firstExposed(svc); ok {
 				opts.Port = p
@@ -270,6 +279,15 @@ func TransformCompose(raw string, a *store.Application, deploymentID, network, p
 	}
 	attachNetwork(doc, network)
 	declareVolumes(doc)
+	if vols, ok := doc["volumes"].(map[string]any); ok && pr > 0 {
+		for _, v := range vols {
+			if m, ok := v.(map[string]any); ok {
+				if n, ok := m["name"].(string); ok && n != "" {
+					m["name"] = fmt.Sprintf("%s-pr-%d", n, pr)
+				}
+			}
+		}
+	}
 	out, err := yaml.Marshal(doc)
 	return string(out), err
 }

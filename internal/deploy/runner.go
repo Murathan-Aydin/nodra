@@ -902,13 +902,25 @@ func (p *pipe) deployCompose(ctx context.Context) error {
 			raw = out
 		}
 	}
-	transformed, err := TransformCompose(raw, a, p.d.ID, p.loc.Network, p.sv.Proxy.Type, p.appDir+"/data", p.certs)
+	// Preview : domaines propres à la PR et fichiers séparés de ceux de la production.
+	prDir := p.appDir
+	route := a
+	if p.d.PRNumber > 0 {
+		prDir = fmt.Sprintf("%s/pr-%d", p.appDir, p.d.PRNumber)
+		cp := *a
+		cp.DockerComposeDomains = map[string][]string{}
+		if pv, err := p.r.Store.PreviewByNumber(ctx, a.ID, p.d.PRNumber); err == nil {
+			cp.DockerComposeDomains = pv.ComposeDomains
+		}
+		route = &cp
+	}
+	transformed, err := TransformCompose(raw, route, p.d.ID, p.loc.Network, p.sv.Proxy.Type, prDir+"/data", p.certs, p.d.PRNumber)
 	if err != nil {
 		return err
 	}
-	composeFile := p.appDir + "/docker-compose.yml"
-	envFile := p.appDir + "/.env"
-	if err := p.sh(ctx, "", fmt.Sprintf("mkdir -p %s %s\n", ssh.Quote(projectDir), ssh.Quote(p.appDir+"/data"))+
+	composeFile := prDir + "/docker-compose.yml"
+	envFile := prDir + "/.env"
+	if err := p.sh(ctx, "", fmt.Sprintf("mkdir -p %s %s\n", ssh.Quote(projectDir), ssh.Quote(prDir+"/data"))+
 		writeFile(composeFile, transformed, "600")+writeFile(envFile, dotenv(p.env.Runtime, p.env.Literal), "600"), true); err != nil {
 		return err
 	}
@@ -1033,6 +1045,9 @@ func (r *Runner) Stop(ctx context.Context, a *store.Application, pr int) error {
 			project = fmt.Sprintf("%s-pr-%d", a.ID, pr)
 		}
 		script = "docker compose -p " + ssh.Quote(project) + " down --remove-orphans >/dev/null 2>&1 || true\n" + script
+		if pr > 0 { // fichiers de la preview (recréés au prochain déploiement)
+			script += "rm -rf " + ssh.Quote(fmt.Sprintf("%s/%s/pr-%d", r.appsDir(), a.ID, pr)) + "\n"
+		}
 	}
 	if _, err := r.run(ctx, t, script); err != nil {
 		return err

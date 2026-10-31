@@ -127,7 +127,7 @@ func (s *Server) pullRequestEvent(r *http.Request, a *store.Application, ev *git
 		return skip(res, "PR venant d'un fork (public_pr_deployments désactivé)")
 	}
 	pv := &store.Preview{ApplicationID: a.ID, PRNumber: ev.PRNumber, PRURL: ev.PRURL, Title: truncate(ev.PRTitle, 255),
-		LastCommit: ev.Commit, Domains: previewDomains(a, ev.PRNumber)}
+		LastCommit: ev.Commit, Domains: previewDomains(a, ev.PRNumber), ComposeDomains: previewComposeDomains(a, ev.PRNumber)}
 	if _, err := s.Store.UpsertPreview(ctx, pv); err != nil {
 		return err
 	}
@@ -186,14 +186,29 @@ func (s *Server) removePreview(r *http.Request, a *store.Application, pr int) er
 // previewDomains dérive les domaines d'une preview de ceux de l'application via preview_url_template
 // ({{pr_id}}, {{domain}}, {{random}}) ; schéma, port et chemin sont conservés.
 func previewDomains(a *store.Application, pr int) []string {
+	return previewHosts(a.Domains, a.PreviewURLTemplate, pr)
+}
+
+// previewComposeDomains : mêmes règles, par service compose.
+func previewComposeDomains(a *store.Application, pr int) map[string][]string {
+	out := map[string][]string{}
+	for svc, domains := range a.DockerComposeDomains {
+		if d := previewHosts(domains, a.PreviewURLTemplate, pr); len(d) > 0 {
+			out[svc] = d
+		}
+	}
+	return out
+}
+
+func previewHosts(domains []string, template string, pr int) []string {
 	out := []string{}
-	for _, d := range a.Domains {
+	for _, d := range domains {
 		u, err := url.Parse(d)
 		if err != nil || u.Host == "" {
 			continue
 		}
 		host := strings.NewReplacer("{{pr_id}}", strconv.Itoa(pr), "{{domain}}", u.Hostname(), "{{random}}", randomHex(4)).
-			Replace(a.PreviewURLTemplate)
+			Replace(template)
 		if p := u.Port(); p != "" {
 			host += ":" + p
 		}
@@ -369,7 +384,7 @@ func (s *Server) createPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := s.Store.UpsertPreview(r.Context(), &store.Preview{ApplicationID: a.ID, PRNumber: in.PRNumber, PRURL: in.PRURL,
-		Title: truncate(in.Title, 255), Domains: previewDomains(a, in.PRNumber)}); err != nil {
+		Title: truncate(in.Title, 255), Domains: previewDomains(a, in.PRNumber), ComposeDomains: previewComposeDomains(a, in.PRNumber)}); err != nil {
 		s.internal(w, err)
 		return
 	}
@@ -398,26 +413,56 @@ func (s *Server) updatePreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		Domains []string `json:"domains"`
+		Domains        *[]string            `json:"domains"`
+		ComposeDomains *map[string][]string `json:"compose_domains"`
 	}
 	if !decode(w, r, &in) {
 		return
 	}
-	domains := []string{}
-	for _, d := range in.Domains {
-		n, _, ok := NormalizeAppDomain(d)
+	norm := func(list []string) ([]string, bool) {
+		out := []string{}
+		for _, d := range list {
+			n, _, ok := NormalizeAppDomain(d)
+			if !ok {
+				writeError(w, http.StatusUnprocessableEntity, "domaine invalide : "+d)
+				return nil, false
+			}
+			out = append(out, n)
+		}
+		return out, true
+	}
+	if in.Domains != nil {
+		domains, ok := norm(*in.Domains)
 		if !ok {
-			writeError(w, http.StatusUnprocessableEntity, "domaine invalide : "+d)
 			return
 		}
-		domains = append(domains, n)
+		if err := s.Store.UpdatePreviewDomains(r.Context(), a.ID, pv.PRNumber, domains); err != nil {
+			s.internal(w, err)
+			return
+		}
+		pv.Domains = domains
 	}
-	if err := s.Store.UpdatePreviewDomains(r.Context(), a.ID, pv.PRNumber, domains); err != nil {
-		s.internal(w, err)
-		return
+	if in.ComposeDomains != nil { // applications Docker Compose : domaines par service
+		cd := map[string][]string{}
+		for svc, list := range *in.ComposeDomains {
+			if !serviceRe.MatchString(svc) {
+				writeError(w, http.StatusUnprocessableEntity, "service invalide : "+svc)
+				return
+			}
+			domains, ok := norm(list)
+			if !ok {
+				return
+			}
+			cd[svc] = domains
+		}
+		if err := s.Store.UpdatePreviewComposeDomains(r.Context(), a.ID, pv.PRNumber, cd); err != nil {
+			s.internal(w, err)
+			return
+		}
+		pv.ComposeDomains = cd
 	}
-	pv.Domains = domains
-	s.auditTeam(r, "application.preview.updated", "application", a.ID, map[string]any{"pr_number": pv.PRNumber, "domains": domains})
+	s.auditTeam(r, "application.preview.updated", "application", a.ID, map[string]any{"pr_number": pv.PRNumber, "domains": pv.Domains,
+		"compose_domains": pv.ComposeDomains})
 	writeJSON(w, http.StatusOK, pv)
 }
 
@@ -452,7 +497,7 @@ func (s *Server) deletePreview(w http.ResponseWriter, r *http.Request) {
 
 // --- Commentaires de PR ---
 
-// DeploymentFinished publie (ou met à jour) un commentaire sur la PR GitHub à la fin d'un déploiement de preview.
+// DeploymentFinished publie (ou met à jour) un commentaire sur la PR (GitHub, GitLab, Gitea) à la fin d'un déploiement de preview.
 // Branché sur deploy.Runner.OnFinish.
 func (s *Server) DeploymentFinished(ctx context.Context, d *store.Deployment) {
 	if d.Status != "finished" && d.Status != "failed" {
@@ -473,7 +518,7 @@ func (s *Server) commentPreview(ctx context.Context, d *store.Deployment) error 
 		return err
 	}
 	g, err := s.Store.GitSourceByID(ctx, a.TeamID, *a.SourceID)
-	if err != nil || g.Type != git.GitHub || g.InstallationID == 0 {
+	if err != nil || (g.Type == git.GitHub && g.InstallationID == 0) {
 		return err
 	}
 	pv, err := s.Store.PreviewByNumber(ctx, a.ID, d.PRNumber)

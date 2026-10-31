@@ -340,13 +340,15 @@ Un déploiement est asynchrone (`202 Deployment`) ; on suit son statut et ses lo
 `DELETE /applications/{id}?delete_volumes=true` supprime aussi les volumes Docker.
 
 ### Prévisualisations de PR (`/applications/{id}/previews`)
+Applications Docker Compose : chaque service exposé reçoit ses domaines de preview (`compose_domains`, même modèle `preview_url_template`) ; la preview a son projet compose (`<app>-pr-N`), ses fichiers (`pr-N/`), et les `container_name` et volumes explicitement nommés reçoivent le suffixe `-pr-N` : aucun partage avec la production. Un commentaire est publié puis mis à jour sur la PR à la fin de chaque déploiement de preview (GitHub App, GitLab, Gitea/Forgejo).
+
 
 | Méthode | Route | Permission | Description |
 |---|---|---|---|
 | GET | `/previews` | `resource.read` | `[Preview]` |
 | POST | `/previews` | `resource.deploy` | `{pr_number, title?, pr_url?}` : crée la preview et la déploie → `202 Deployment` (ou approbation) |
 | GET | `/previews/{pr}` | `resource.read` | |
-| PATCH | `/previews/{pr}` | `resource.update` | `{domains}` (pris en compte au prochain déploiement) |
+| PATCH | `/previews/{pr}` | `resource.update` | `{domains?, compose_domains?: {service: [domaines]}}` (pris en compte au prochain déploiement) |
 | POST | `/previews/{pr}/deploy` | `resource.deploy` | `{force_rebuild?}` |
 | POST | `/previews/{pr}/stop` | `resource.deploy` | Arrête les conteneurs |
 | DELETE | `/previews/{pr}` | `resource.deploy` | Annule les déploiements, arrête les conteneurs, supprime la preview |

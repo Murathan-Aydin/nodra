@@ -13,6 +13,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	neturl "net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -188,22 +189,39 @@ func ConvertManifest(ctx context.Context, apiURL, code string) (*AppCredentials,
 
 // CommentPR crée (ou met à jour si commentID > 0) un commentaire sur une pull request GitHub.
 func CommentPR(ctx context.Context, s Source, repo string, pr int, commentID int64, body string) (int64, error) {
-	if s.Type != GitHub {
-		return 0, errors.New("commentaires de PR pris en charge pour GitHub uniquement")
-	}
 	if !validRepo(repo) {
 		return 0, errors.New("nom de dépôt invalide")
 	}
-	tok, err := InstallationToken(ctx, s)
-	if err != nil {
-		return 0, err
-	}
 	payload, _ := json.Marshal(map[string]string{"body": body})
-	method, url := "POST", fmt.Sprintf("%s/repos/%s/issues/%d/comments", s.APIURL, repo, pr)
-	if commentID > 0 {
-		method, url = "PATCH", fmt.Sprintf("%s/repos/%s/issues/comments/%d", s.APIURL, repo, commentID)
+	var method, url, auth string
+	switch s.Type {
+	case GitHub:
+		tok, err := InstallationToken(ctx, s)
+		if err != nil {
+			return 0, err
+		}
+		auth = "Bearer " + tok
+		method, url = "POST", fmt.Sprintf("%s/repos/%s/issues/%d/comments", s.APIURL, repo, pr)
+		if commentID > 0 {
+			method, url = "PATCH", fmt.Sprintf("%s/repos/%s/issues/comments/%d", s.APIURL, repo, commentID)
+		}
+	case GitLab: // note de merge request
+		auth = "Bearer " + s.AccessToken
+		project := neturl.PathEscape(repo)
+		method, url = "POST", fmt.Sprintf("%s/projects/%s/merge_requests/%d/notes", s.APIURL, project, pr)
+		if commentID > 0 {
+			method, url = "PUT", fmt.Sprintf("%s/projects/%s/merge_requests/%d/notes/%d", s.APIURL, project, pr, commentID)
+		}
+	case Gitea: // les pull requests sont des issues
+		auth = "token " + s.AccessToken
+		method, url = "POST", fmt.Sprintf("%s/repos/%s/issues/%d/comments", s.APIURL, repo, pr)
+		if commentID > 0 {
+			method, url = "PATCH", fmt.Sprintf("%s/repos/%s/issues/comments/%d", s.APIURL, repo, commentID)
+		}
+	default:
+		return 0, fmt.Errorf("type de source inconnu : %s", s.Type)
 	}
-	_, b, err := do(ctx, method, url, "Bearer "+tok, bytes.NewReader(payload))
+	_, b, err := do(ctx, method, url, auth, bytes.NewReader(payload))
 	if err != nil {
 		return 0, err
 	}

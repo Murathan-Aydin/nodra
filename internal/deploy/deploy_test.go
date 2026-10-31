@@ -161,7 +161,7 @@ func TestTransformCompose(t *testing.T) {
 networks:
   backend: {}
 `
-	out, err := TransformCompose(raw, a, "dep1", "nodra", "traefik", "/data/nodra/applications/app1/data", nil)
+	out, err := TransformCompose(raw, a, "dep1", "nodra", "traefik", "/data/nodra/applications/app1/data", nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ networks:
 	if vols := toStrings(db["volumes"]); vols[0] != "/data/nodra/applications/app1/data/pgdata:/var/lib/postgresql/data" || vols[1] != "named:/x" {
 		t.Fatalf("montages relatifs redirigés : %v", vols)
 	}
-	if _, err := TransformCompose("services: [", a, "d", "nodra", "traefik", "", nil); err == nil {
+	if _, err := TransformCompose("services: [", a, "d", "nodra", "traefik", "", nil, 0); err == nil {
 		t.Fatal("compose invalide accepté")
 	}
 }
@@ -231,5 +231,25 @@ func TestSplitArgs(t *testing.T) {
 	got, err := splitArgs(`--add-host "a b:1.2.3.4" --label='x y'`)
 	if err != nil || len(got) != 3 || got[1] != "a b:1.2.3.4" || got[2] != "--label=x y" {
 		t.Fatalf("%q %v", got, err)
+	}
+}
+
+func TestTransformComposePreview(t *testing.T) {
+	a := &store.Application{ID: "app1", TeamID: "t1", DockerComposeDomains: map[string][]string{"web": {"https://5.web.example.com"}},
+		Settings: store.DefaultAppSettings()}
+	raw := "services:\n  web:\n    image: nginx\n    container_name: site\n    ports: [\"80\"]\nvolumes:\n  data:\n    name: site-data\n"
+	out, err := TransformCompose(raw, a, "dep1", "nodra", "traefik", "/data/app1/pr-5/data", nil, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"Host(`5.web.example.com`)", "traefik.http.routers.https-0-app1-pr-5-web", "nodra.pr=5",
+		"container_name: site-pr-5", "name: site-data-pr-5"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("%q absent :\n%s", want, out)
+		}
+	}
+	prod, _ := TransformCompose(raw, a, "dep1", "nodra", "traefik", "/data/app1/data", nil, 0)
+	if strings.Contains(prod, "-pr-") || !strings.Contains(prod, "container_name: site\n") {
+		t.Errorf("production :\n%s", prod)
 	}
 }
