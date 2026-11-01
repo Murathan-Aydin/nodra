@@ -146,6 +146,12 @@ func TestShell(t *testing.T) {
 	if sh.Resize(0, 10) == nil {
 		t.Fatal("taille invalide acceptée")
 	}
+	// window-change part sans accusé de réception : attendre que le serveur l'ait reçu avant de fermer.
+	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+		if p := srv.Ptys(); len(p) == 1 && len(p[0].Sizes) == 2 {
+			break
+		}
+	}
 	_, _ = io.WriteString(sh.Stdin, "exit\n")
 	if code := sh.Wait(); code != 7 {
 		t.Fatalf("code %d", code)
