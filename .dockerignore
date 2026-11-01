@@ -4,7 +4,10 @@
 .env
 .dev
 bin
-docs
+# docs : seul le paquet Go (API.md embarqué pour /api/openapi.json) entre dans l'image.
+docs/*
+!docs/docs.go
+!docs/API.md
 graphify-out
 web/node_modules
 **/*_test.go
