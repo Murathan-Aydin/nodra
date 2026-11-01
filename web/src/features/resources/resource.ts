@@ -1,6 +1,7 @@
 import {
   ActivityIcon,
   BoxIcon,
+  ChartLineIcon,
   CalendarClockIcon,
   CodeXmlIcon,
   DatabaseBackupIcon,
@@ -50,6 +51,7 @@ export function resourceMenu(r: ResourceRef): NavMenu {
   const storages = item("Stockage persistant", HardDriveIcon, "/storages")
   const logs = item("Logs", ListIcon, "/logs")
   const terminal = item("Terminal", SquareTerminalIcon, "/terminal")
+  const metrics = item("Métriques", ChartLineIcon, "/metrics")
   const scheduled = item("Tâches planifiées", CalendarClockIcon, "/scheduled-tasks")
   const operations = item("Opérations", ServerCogIcon, "/operations")
   const tags = item("Tags", TagIcon, "/tags")
@@ -60,7 +62,7 @@ export function resourceMenu(r: ResourceRef): NavMenu {
       label: "Service",
       groups: [
         { items: [general, item("Domaines", GlobeIcon, "/domains"), envs] },
-        { items: [logs, terminal, item("Historique", HistoryIcon, "/tasks")] },
+        { items: [logs, terminal, metrics, item("Historique", HistoryIcon, "/tasks")] },
         { items: [scheduled, item("Webhooks", WebhookIcon, "/webhooks"), operations, tags] },
         { items: [danger] },
       ],
@@ -71,7 +73,7 @@ export function resourceMenu(r: ResourceRef): NavMenu {
       label: "Base de données",
       groups: [
         { items: [general, envs, storages, item("Sauvegardes", DatabaseBackupIcon, "/backups"), item("Importer un dump", UploadIcon, "/import")] },
-        { items: [logs, terminal, item("Historique", HistoryIcon, "/tasks")] },
+        { items: [logs, terminal, metrics, item("Historique", HistoryIcon, "/tasks")] },
         { items: [scheduled, item("Webhooks", WebhookIcon, "/webhooks"), operations, tags] },
         { items: [danger] },
       ],
@@ -81,7 +83,7 @@ export function resourceMenu(r: ResourceRef): NavMenu {
     label: "Application",
     groups: [
       { items: [general, item("Avancé", SlidersHorizontalIcon, "/advanced"), envs, storages, item("Source Git", GitBranchIcon, "/source")] },
-      { items: [item("Déploiements", RocketIcon, "/deployments"), logs, terminal] },
+      { items: [item("Déploiements", RocketIcon, "/deployments"), logs, terminal, metrics] },
       {
         items: [
           item("Previews", GitPullRequestIcon, "/previews"),

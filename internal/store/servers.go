@@ -433,11 +433,51 @@ func (s *Store) ServerMetrics(ctx context.Context, serverID string, since time.T
 	})
 }
 
-// PurgeServerMetrics supprime les points plus anciens que la rétention de chaque serveur.
+// PurgeServerMetrics supprime les points (serveur et ressources) plus anciens que la rétention de chaque serveur.
 func (s *Store) PurgeServerMetrics(ctx context.Context) error {
-	_, err := s.Pool.Exec(ctx, `DELETE FROM server_metrics m USING servers s WHERE m.server_id = s.id
-		AND m.ts < now() - make_interval(days => coalesce((s.settings->>'metrics_retention_days')::int, 7))`)
-	return err
+	for _, table := range []string{"server_metrics", "resource_metrics"} {
+		if _, err := s.Pool.Exec(ctx, `DELETE FROM `+table+` m USING servers s WHERE m.server_id = s.id
+		AND m.ts < now() - make_interval(days => coalesce((s.settings->>'metrics_retention_days')::int, 7))`); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ResourceMetric : consommation cumulée des conteneurs d'une ressource à un instant.
+type ResourceMetric struct {
+	TS         time.Time `json:"ts"`
+	CPUPercent float32   `json:"cpu_percent"` // 100 = un cœur
+	MemUsed    int64     `json:"mem_used"`
+	MemLimit   int64     `json:"mem_limit"`
+	NetRx      int64     `json:"net_rx"` // octets reçus depuis le démarrage des conteneurs
+	NetTx      int64     `json:"net_tx"`
+	Containers int       `json:"containers"`
+}
+
+// InsertResourceMetrics enregistre un relevé par ressource.
+func (s *Store) InsertResourceMetrics(ctx context.Context, serverID string, metrics map[string]ResourceMetric) error {
+	b := &pgx.Batch{}
+	for id, m := range metrics {
+		b.Queue(`INSERT INTO resource_metrics (resource_id, server_id, ts, cpu_percent, mem_used, mem_limit, net_rx, net_tx, containers)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT DO NOTHING`,
+			id, serverID, m.TS, m.CPUPercent, m.MemUsed, m.MemLimit, m.NetRx, m.NetTx, m.Containers)
+	}
+	return s.Pool.SendBatch(ctx, b).Close()
+}
+
+// ResourceMetrics renvoie les relevés d'une ressource depuis since.
+func (s *Store) ResourceMetrics(ctx context.Context, resourceID string, since time.Time) ([]ResourceMetric, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT ts, cpu_percent, mem_used, mem_limit, net_rx, net_tx, containers
+		FROM resource_metrics WHERE resource_id = $1 AND ts >= $2 ORDER BY ts LIMIT 20000`, resourceID, since)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (ResourceMetric, error) {
+		var m ResourceMetric
+		err := row.Scan(&m.TS, &m.CPUPercent, &m.MemUsed, &m.MemLimit, &m.NetRx, &m.NetTx, &m.Containers)
+		return m, err
+	})
 }
 
 // HasActiveServerTask indique si une tâche du type donné est en file ou en cours sur le serveur.

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -73,6 +74,18 @@ func TestDatabases(t *testing.T) {
 		pg["internal_url"] != "postgres://postgres:"+pass+"@"+id+":5432/app" || pg["public_url"] != "postgres://postgres:"+pass+"@"+f.ssh.Host+":54320/app" {
 		t.Fatalf("base créée : %v", pg)
 	}
+	// Métriques des conteneurs : relevées par le serveur, lues par la ressource (lecteur compris).
+	now := time.Now().Truncate(time.Second)
+	if err := f.e.st.InsertResourceMetrics(context.Background(), f.serverID, map[string]store.ResourceMetric{
+		id: {TS: now, CPUPercent: 12.5, MemUsed: 64 << 20, MemLimit: 1 << 30, NetRx: 10, NetTx: 20, Containers: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	var metrics []store.ResourceMetric
+	expect(t, "métriques (lecteur)", bob.do("GET", base+"/databases/"+id+"/metrics", nil, &metrics), 200)
+	if len(metrics) != 1 || metrics[0].MemUsed != 64<<20 || metrics[0].CPUPercent != 12.5 {
+		t.Fatalf("métriques : %+v", metrics)
+	}
+	expect(t, "since invalide", bob.do("GET", base+"/databases/"+id+"/metrics?since=hier", nil, nil), 400)
 	var storages []store.Storage
 	expect(t, "volumes", alice.do("GET", base+"/databases/"+id+"/storages", nil, &storages), 200)
 	if len(storages) != 1 || storages[0].Name != "postgresql-data-"+id {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/Murathan-Aydin/nodra/internal/envvars"
 	"github.com/Murathan-Aydin/nodra/internal/store"
@@ -437,5 +438,31 @@ func (s *Server) deleteStorage(load resourceLoader) http.HandlerFunc {
 		}
 		s.auditTeam(r, "resource.storage.deleted", "resource", id, map[string]string{"storage_id": sid})
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// resourceMetrics : GET /{applications|databases|services}/{id}/metrics?since= — consommation des
+// conteneurs de la ressource (dernière heure par défaut).
+func (s *Server) resourceMetrics(load resourceLoader) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, _, _, ok := load(w, r, "resource.read")
+		if !ok {
+			return
+		}
+		since := time.Now().Add(-time.Hour)
+		if v := r.URL.Query().Get("since"); v != "" {
+			t, err := time.Parse(time.RFC3339, v)
+			if err != nil {
+				writeError(w, http.StatusBadRequest, "since doit être une date RFC 3339")
+				return
+			}
+			since = t
+		}
+		list, err := s.Store.ResourceMetrics(r.Context(), id, since)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, list)
 	}
 }

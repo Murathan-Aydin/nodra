@@ -536,6 +536,8 @@ Les événements sont diffusés par PostgreSQL (`LISTEN/NOTIFY` sur `nodra_event
 
 Terminal : le client envoie la saisie en messages binaires (ou `{type: "input", data}`) et `{type: "resize", rows, cols}` ; le serveur répond `{type: "ready", container}`, la sortie en messages binaires, puis `{type: "exit", code}`. L'ouverture est journalisée (`server.terminal.opened`, `application.terminal.opened`…). Fermer la connexion coupe la session (SIGHUP).
 
+Métriques : `GET /applications/{id}/metrics?since=`, `/databases/{id}/metrics`, `/services/{id}/metrics` (`resource.read`, dernière heure par défaut) → `[{ts, cpu_percent (100 = un cœur), mem_used, mem_limit, net_rx, net_tx (octets cumulés depuis le démarrage des conteneurs), containers}]` : somme des conteneurs de la ressource (prévisualisations exclues), relevée chaque minute avec les métriques du serveur (`docker stats`), même rétention.
+
 Conteneurs : `GET /applications/{app}/containers?pr=`, `/databases/{db}/containers`, `/services/{svc}/containers` (`resource.read`) → `[{name, service, state, status, image}]`.
 
 ## Administration de l'instance (`/admin`, administrateur de l'instance, session uniquement)

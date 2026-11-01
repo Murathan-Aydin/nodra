@@ -17,6 +17,71 @@ import (
 // La dernière ligne donne l'état du conteneur du proxy.
 const metricsCommand = `head -1 /proc/stat; sleep 1; head -1 /proc/stat; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; df -Pk / | tail -1; cat /proc/loadavg; docker inspect -f '{{.State.Status}}' ` + ProxyContainer + ` 2>/dev/null || echo absent`
 
+// containerStatsCommand : conteneurs gérés (ressource, PR) puis leur consommation instantanée.
+const containerStatsCommand = `ids=$(docker ps -q --filter label=nodra.managed=true); [ -z "$ids" ] && exit 0
+docker ps --filter label=nodra.managed=true --format 'P|{{.ID}}|{{.Label "nodra.resource"}}|{{.Label "nodra.pr"}}'
+docker stats --no-stream --format 'S|{{.ID}}|{{.CPUPerc}}|{{.MemUsage}}|{{.NetIO}}' $ids`
+
+// ParseContainerStats additionne la consommation des conteneurs par ressource (prévisualisations exclues).
+func ParseContainerStats(out string, ts time.Time) map[string]store.ResourceMetric {
+	owner := map[string]string{}
+	stats := [][]string{}
+	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+		f := strings.Split(strings.TrimSpace(line), "|")
+		switch {
+		case len(f) >= 4 && f[0] == "P" && f[2] != "" && (f[3] == "" || f[3] == "0"):
+			owner[f[1]] = f[2]
+		case len(f) >= 5 && f[0] == "S":
+			stats = append(stats, f)
+		}
+	}
+	res := map[string]store.ResourceMetric{}
+	for _, f := range stats {
+		id, ok := owner[f[1]]
+		if !ok {
+			continue
+		}
+		m := res[id]
+		m.TS = ts
+		cpu, _ := strconv.ParseFloat(strings.TrimSuffix(strings.TrimSpace(f[2]), "%"), 32)
+		m.CPUPercent += float32(cpu)
+		used, limit := splitPair(f[3])
+		m.MemUsed += used
+		m.MemLimit += limit
+		rx, tx := splitPair(f[4])
+		m.NetRx += rx
+		m.NetTx += tx
+		m.Containers++
+		res[id] = m
+	}
+	return res
+}
+
+// splitPair lit « 12.5MiB / 1.9GiB » (sortie de docker stats) en octets.
+func splitPair(s string) (int64, int64) {
+	a, b, _ := strings.Cut(s, "/")
+	return parseSize(a), parseSize(b)
+}
+
+// parseSize lit une taille de docker stats (B, kB, KiB, MB, MiB, GB, GiB, TB, TiB).
+func parseSize(s string) int64 {
+	s = strings.TrimSpace(s)
+	i := strings.IndexFunc(s, func(r rune) bool { return (r < '0' || r > '9') && r != '.' })
+	if i <= 0 {
+		v, _ := strconv.ParseFloat(s, 64)
+		return int64(v)
+	}
+	v, err := strconv.ParseFloat(s[:i], 64)
+	if err != nil {
+		return 0
+	}
+	mult := map[string]float64{"B": 1, "kB": 1e3, "KB": 1e3, "KiB": 1 << 10, "MB": 1e6, "MiB": 1 << 20, "GB": 1e9, "GiB": 1 << 30, "TB": 1e12, "TiB": 1 << 40}[strings.TrimSpace(s[i:])]
+	if mult == 0 {
+		mult = 1
+	}
+	return int64(v * mult)
+}
+
 // ParseMetrics analyse la sortie de metricsCommand.
 func ParseMetrics(out string) (store.ServerMetric, error) {
 	var m store.ServerMetric
@@ -137,7 +202,18 @@ func (s *Service) collectOne(ctx context.Context, sv *store.Server) error {
 	}
 	m.TS = time.Now().Truncate(time.Second)
 	s.diskUsage(ctx, sv, m)
-	return s.Store.InsertServerMetric(ctx, sv.ID, m)
+	if err := s.Store.InsertServerMetric(ctx, sv.ID, m); err != nil {
+		return err
+	}
+	// Consommation par ressource : une erreur ici ne rend pas le serveur injoignable.
+	if out, err := s.SSH.Output(ctx, t, containerStatsCommand); err != nil {
+		s.Log.Warn("métriques des conteneurs", "server", sv.ID, "err", err)
+	} else if res := ParseContainerStats(out, m.TS); len(res) > 0 {
+		if err := s.Store.InsertResourceMetrics(ctx, sv.ID, res); err != nil {
+			s.Log.Warn("métriques des conteneurs", "server", sv.ID, "err", err)
+		}
+	}
+	return nil
 }
 
 // reachability publie « serveur injoignable » (au plus toutes les 6 h tant qu'il le reste) et « de nouveau joignable ».

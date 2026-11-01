@@ -272,7 +272,7 @@ function LogDrainForm({ team, server, drain }: { team: string; server: string; d
 
 type Metric = { ts: string; cpu_percent: number; mem_used: number; mem_total: number; disk_used: number; disk_total: number; load1: number }
 
-const RANGES = [
+export const RANGES = [
   { value: "1", label: "Dernière heure" },
   { value: "6", label: "6 heures" },
   { value: "24", label: "24 heures" },
@@ -328,7 +328,7 @@ export function ServerMetrics({ team, server }: { team: string; server: string }
   )
 }
 
-function Chart({ title, data, k, color, max }: { title: string; data: Record<string, number | string>[]; k: string; color: string; max?: number }) {
+export function Chart({ title, data, k, color, max }: { title: string; data: Record<string, number | string>[]; k: string; color: string; max?: number }) {
   return (
     <div>
       <p className="mb-2 text-xs font-medium text-muted-foreground">{title}</p>

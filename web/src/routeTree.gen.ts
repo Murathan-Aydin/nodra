@@ -63,6 +63,7 @@ import { Route as TTeamApplicationsApplicationEnvsRouteImport } from './routes/t
 import { Route as TTeamApplicationsApplicationHealthcheckRouteImport } from './routes/t/$team/applications/$application/healthcheck'
 import { Route as TTeamApplicationsApplicationLimitsRouteImport } from './routes/t/$team/applications/$application/limits'
 import { Route as TTeamApplicationsApplicationLogsRouteImport } from './routes/t/$team/applications/$application/logs'
+import { Route as TTeamApplicationsApplicationMetricsRouteImport } from './routes/t/$team/applications/$application/metrics'
 import { Route as TTeamApplicationsApplicationOperationsRouteImport } from './routes/t/$team/applications/$application/operations'
 import { Route as TTeamApplicationsApplicationPreviewsRouteImport } from './routes/t/$team/applications/$application/previews'
 import { Route as TTeamApplicationsApplicationScheduledTasksRouteImport } from './routes/t/$team/applications/$application/scheduled-tasks'
@@ -77,6 +78,7 @@ import { Route as TTeamDatabasesDatabaseDangerRouteImport } from './routes/t/$te
 import { Route as TTeamDatabasesDatabaseEnvsRouteImport } from './routes/t/$team/databases/$database/envs'
 import { Route as TTeamDatabasesDatabaseImportRouteImport } from './routes/t/$team/databases/$database/import'
 import { Route as TTeamDatabasesDatabaseLogsRouteImport } from './routes/t/$team/databases/$database/logs'
+import { Route as TTeamDatabasesDatabaseMetricsRouteImport } from './routes/t/$team/databases/$database/metrics'
 import { Route as TTeamDatabasesDatabaseOperationsRouteImport } from './routes/t/$team/databases/$database/operations'
 import { Route as TTeamDatabasesDatabaseScheduledTasksRouteImport } from './routes/t/$team/databases/$database/scheduled-tasks'
 import { Route as TTeamDatabasesDatabaseStoragesRouteImport } from './routes/t/$team/databases/$database/storages'
@@ -109,6 +111,7 @@ import { Route as TTeamServicesServiceDangerRouteImport } from './routes/t/$team
 import { Route as TTeamServicesServiceDomainsRouteImport } from './routes/t/$team/services/$service/domains'
 import { Route as TTeamServicesServiceEnvsRouteImport } from './routes/t/$team/services/$service/envs'
 import { Route as TTeamServicesServiceLogsRouteImport } from './routes/t/$team/services/$service/logs'
+import { Route as TTeamServicesServiceMetricsRouteImport } from './routes/t/$team/services/$service/metrics'
 import { Route as TTeamServicesServiceOperationsRouteImport } from './routes/t/$team/services/$service/operations'
 import { Route as TTeamServicesServiceScheduledTasksRouteImport } from './routes/t/$team/services/$service/scheduled-tasks'
 import { Route as TTeamServicesServiceTagsRouteImport } from './routes/t/$team/services/$service/tags'
@@ -413,6 +416,12 @@ const TTeamApplicationsApplicationLogsRoute =
     path: '/logs',
     getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
   } as any)
+const TTeamApplicationsApplicationMetricsRoute =
+  TTeamApplicationsApplicationMetricsRouteImport.update({
+    id: '/metrics',
+    path: '/metrics',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
 const TTeamApplicationsApplicationOperationsRoute =
   TTeamApplicationsApplicationOperationsRouteImport.update({
     id: '/operations',
@@ -495,6 +504,12 @@ const TTeamDatabasesDatabaseLogsRoute =
   TTeamDatabasesDatabaseLogsRouteImport.update({
     id: '/logs',
     path: '/logs',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseMetricsRoute =
+  TTeamDatabasesDatabaseMetricsRouteImport.update({
+    id: '/metrics',
+    path: '/metrics',
     getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
   } as any)
 const TTeamDatabasesDatabaseOperationsRoute =
@@ -686,6 +701,12 @@ const TTeamServicesServiceLogsRoute =
     path: '/logs',
     getParentRoute: () => TTeamServicesServiceRouteRoute,
   } as any)
+const TTeamServicesServiceMetricsRoute =
+  TTeamServicesServiceMetricsRouteImport.update({
+    id: '/metrics',
+    path: '/metrics',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
 const TTeamServicesServiceOperationsRoute =
   TTeamServicesServiceOperationsRouteImport.update({
     id: '/operations',
@@ -856,6 +877,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/applications/$application/healthcheck': typeof TTeamApplicationsApplicationHealthcheckRoute
   '/t/$team/applications/$application/limits': typeof TTeamApplicationsApplicationLimitsRoute
   '/t/$team/applications/$application/logs': typeof TTeamApplicationsApplicationLogsRoute
+  '/t/$team/applications/$application/metrics': typeof TTeamApplicationsApplicationMetricsRoute
   '/t/$team/applications/$application/operations': typeof TTeamApplicationsApplicationOperationsRoute
   '/t/$team/applications/$application/previews': typeof TTeamApplicationsApplicationPreviewsRoute
   '/t/$team/applications/$application/scheduled-tasks': typeof TTeamApplicationsApplicationScheduledTasksRoute
@@ -869,6 +891,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/databases/$database/envs': typeof TTeamDatabasesDatabaseEnvsRoute
   '/t/$team/databases/$database/import': typeof TTeamDatabasesDatabaseImportRoute
   '/t/$team/databases/$database/logs': typeof TTeamDatabasesDatabaseLogsRoute
+  '/t/$team/databases/$database/metrics': typeof TTeamDatabasesDatabaseMetricsRoute
   '/t/$team/databases/$database/operations': typeof TTeamDatabasesDatabaseOperationsRoute
   '/t/$team/databases/$database/scheduled-tasks': typeof TTeamDatabasesDatabaseScheduledTasksRoute
   '/t/$team/databases/$database/storages': typeof TTeamDatabasesDatabaseStoragesRoute
@@ -896,6 +919,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/services/$service/domains': typeof TTeamServicesServiceDomainsRoute
   '/t/$team/services/$service/envs': typeof TTeamServicesServiceEnvsRoute
   '/t/$team/services/$service/logs': typeof TTeamServicesServiceLogsRoute
+  '/t/$team/services/$service/metrics': typeof TTeamServicesServiceMetricsRoute
   '/t/$team/services/$service/operations': typeof TTeamServicesServiceOperationsRoute
   '/t/$team/services/$service/scheduled-tasks': typeof TTeamServicesServiceScheduledTasksRoute
   '/t/$team/services/$service/tags': typeof TTeamServicesServiceTagsRoute
@@ -971,6 +995,7 @@ export interface FileRoutesByTo {
   '/t/$team/applications/$application/healthcheck': typeof TTeamApplicationsApplicationHealthcheckRoute
   '/t/$team/applications/$application/limits': typeof TTeamApplicationsApplicationLimitsRoute
   '/t/$team/applications/$application/logs': typeof TTeamApplicationsApplicationLogsRoute
+  '/t/$team/applications/$application/metrics': typeof TTeamApplicationsApplicationMetricsRoute
   '/t/$team/applications/$application/operations': typeof TTeamApplicationsApplicationOperationsRoute
   '/t/$team/applications/$application/previews': typeof TTeamApplicationsApplicationPreviewsRoute
   '/t/$team/applications/$application/scheduled-tasks': typeof TTeamApplicationsApplicationScheduledTasksRoute
@@ -984,6 +1009,7 @@ export interface FileRoutesByTo {
   '/t/$team/databases/$database/envs': typeof TTeamDatabasesDatabaseEnvsRoute
   '/t/$team/databases/$database/import': typeof TTeamDatabasesDatabaseImportRoute
   '/t/$team/databases/$database/logs': typeof TTeamDatabasesDatabaseLogsRoute
+  '/t/$team/databases/$database/metrics': typeof TTeamDatabasesDatabaseMetricsRoute
   '/t/$team/databases/$database/operations': typeof TTeamDatabasesDatabaseOperationsRoute
   '/t/$team/databases/$database/scheduled-tasks': typeof TTeamDatabasesDatabaseScheduledTasksRoute
   '/t/$team/databases/$database/storages': typeof TTeamDatabasesDatabaseStoragesRoute
@@ -1011,6 +1037,7 @@ export interface FileRoutesByTo {
   '/t/$team/services/$service/domains': typeof TTeamServicesServiceDomainsRoute
   '/t/$team/services/$service/envs': typeof TTeamServicesServiceEnvsRoute
   '/t/$team/services/$service/logs': typeof TTeamServicesServiceLogsRoute
+  '/t/$team/services/$service/metrics': typeof TTeamServicesServiceMetricsRoute
   '/t/$team/services/$service/operations': typeof TTeamServicesServiceOperationsRoute
   '/t/$team/services/$service/scheduled-tasks': typeof TTeamServicesServiceScheduledTasksRoute
   '/t/$team/services/$service/tags': typeof TTeamServicesServiceTagsRoute
@@ -1093,6 +1120,7 @@ export interface FileRoutesById {
   '/t/$team/applications/$application/healthcheck': typeof TTeamApplicationsApplicationHealthcheckRoute
   '/t/$team/applications/$application/limits': typeof TTeamApplicationsApplicationLimitsRoute
   '/t/$team/applications/$application/logs': typeof TTeamApplicationsApplicationLogsRoute
+  '/t/$team/applications/$application/metrics': typeof TTeamApplicationsApplicationMetricsRoute
   '/t/$team/applications/$application/operations': typeof TTeamApplicationsApplicationOperationsRoute
   '/t/$team/applications/$application/previews': typeof TTeamApplicationsApplicationPreviewsRoute
   '/t/$team/applications/$application/scheduled-tasks': typeof TTeamApplicationsApplicationScheduledTasksRoute
@@ -1106,6 +1134,7 @@ export interface FileRoutesById {
   '/t/$team/databases/$database/envs': typeof TTeamDatabasesDatabaseEnvsRoute
   '/t/$team/databases/$database/import': typeof TTeamDatabasesDatabaseImportRoute
   '/t/$team/databases/$database/logs': typeof TTeamDatabasesDatabaseLogsRoute
+  '/t/$team/databases/$database/metrics': typeof TTeamDatabasesDatabaseMetricsRoute
   '/t/$team/databases/$database/operations': typeof TTeamDatabasesDatabaseOperationsRoute
   '/t/$team/databases/$database/scheduled-tasks': typeof TTeamDatabasesDatabaseScheduledTasksRoute
   '/t/$team/databases/$database/storages': typeof TTeamDatabasesDatabaseStoragesRoute
@@ -1133,6 +1162,7 @@ export interface FileRoutesById {
   '/t/$team/services/$service/domains': typeof TTeamServicesServiceDomainsRoute
   '/t/$team/services/$service/envs': typeof TTeamServicesServiceEnvsRoute
   '/t/$team/services/$service/logs': typeof TTeamServicesServiceLogsRoute
+  '/t/$team/services/$service/metrics': typeof TTeamServicesServiceMetricsRoute
   '/t/$team/services/$service/operations': typeof TTeamServicesServiceOperationsRoute
   '/t/$team/services/$service/scheduled-tasks': typeof TTeamServicesServiceScheduledTasksRoute
   '/t/$team/services/$service/tags': typeof TTeamServicesServiceTagsRoute
@@ -1216,6 +1246,7 @@ export interface FileRouteTypes {
     | '/t/$team/applications/$application/healthcheck'
     | '/t/$team/applications/$application/limits'
     | '/t/$team/applications/$application/logs'
+    | '/t/$team/applications/$application/metrics'
     | '/t/$team/applications/$application/operations'
     | '/t/$team/applications/$application/previews'
     | '/t/$team/applications/$application/scheduled-tasks'
@@ -1229,6 +1260,7 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/envs'
     | '/t/$team/databases/$database/import'
     | '/t/$team/databases/$database/logs'
+    | '/t/$team/databases/$database/metrics'
     | '/t/$team/databases/$database/operations'
     | '/t/$team/databases/$database/scheduled-tasks'
     | '/t/$team/databases/$database/storages'
@@ -1256,6 +1288,7 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service/domains'
     | '/t/$team/services/$service/envs'
     | '/t/$team/services/$service/logs'
+    | '/t/$team/services/$service/metrics'
     | '/t/$team/services/$service/operations'
     | '/t/$team/services/$service/scheduled-tasks'
     | '/t/$team/services/$service/tags'
@@ -1331,6 +1364,7 @@ export interface FileRouteTypes {
     | '/t/$team/applications/$application/healthcheck'
     | '/t/$team/applications/$application/limits'
     | '/t/$team/applications/$application/logs'
+    | '/t/$team/applications/$application/metrics'
     | '/t/$team/applications/$application/operations'
     | '/t/$team/applications/$application/previews'
     | '/t/$team/applications/$application/scheduled-tasks'
@@ -1344,6 +1378,7 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/envs'
     | '/t/$team/databases/$database/import'
     | '/t/$team/databases/$database/logs'
+    | '/t/$team/databases/$database/metrics'
     | '/t/$team/databases/$database/operations'
     | '/t/$team/databases/$database/scheduled-tasks'
     | '/t/$team/databases/$database/storages'
@@ -1371,6 +1406,7 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service/domains'
     | '/t/$team/services/$service/envs'
     | '/t/$team/services/$service/logs'
+    | '/t/$team/services/$service/metrics'
     | '/t/$team/services/$service/operations'
     | '/t/$team/services/$service/scheduled-tasks'
     | '/t/$team/services/$service/tags'
@@ -1452,6 +1488,7 @@ export interface FileRouteTypes {
     | '/t/$team/applications/$application/healthcheck'
     | '/t/$team/applications/$application/limits'
     | '/t/$team/applications/$application/logs'
+    | '/t/$team/applications/$application/metrics'
     | '/t/$team/applications/$application/operations'
     | '/t/$team/applications/$application/previews'
     | '/t/$team/applications/$application/scheduled-tasks'
@@ -1465,6 +1502,7 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/envs'
     | '/t/$team/databases/$database/import'
     | '/t/$team/databases/$database/logs'
+    | '/t/$team/databases/$database/metrics'
     | '/t/$team/databases/$database/operations'
     | '/t/$team/databases/$database/scheduled-tasks'
     | '/t/$team/databases/$database/storages'
@@ -1492,6 +1530,7 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service/domains'
     | '/t/$team/services/$service/envs'
     | '/t/$team/services/$service/logs'
+    | '/t/$team/services/$service/metrics'
     | '/t/$team/services/$service/operations'
     | '/t/$team/services/$service/scheduled-tasks'
     | '/t/$team/services/$service/tags'
@@ -1912,6 +1951,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamApplicationsApplicationLogsRouteImport
       parentRoute: typeof TTeamApplicationsApplicationRouteRoute
     }
+    '/t/$team/applications/$application/metrics': {
+      id: '/t/$team/applications/$application/metrics'
+      path: '/metrics'
+      fullPath: '/t/$team/applications/$application/metrics'
+      preLoaderRoute: typeof TTeamApplicationsApplicationMetricsRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
     '/t/$team/applications/$application/operations': {
       id: '/t/$team/applications/$application/operations'
       path: '/operations'
@@ -2008,6 +2054,13 @@ declare module '@tanstack/react-router' {
       path: '/logs'
       fullPath: '/t/$team/databases/$database/logs'
       preLoaderRoute: typeof TTeamDatabasesDatabaseLogsRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/metrics': {
+      id: '/t/$team/databases/$database/metrics'
+      path: '/metrics'
+      fullPath: '/t/$team/databases/$database/metrics'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseMetricsRouteImport
       parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
     }
     '/t/$team/databases/$database/operations': {
@@ -2234,6 +2287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamServicesServiceLogsRouteImport
       parentRoute: typeof TTeamServicesServiceRouteRoute
     }
+    '/t/$team/services/$service/metrics': {
+      id: '/t/$team/services/$service/metrics'
+      path: '/metrics'
+      fullPath: '/t/$team/services/$service/metrics'
+      preLoaderRoute: typeof TTeamServicesServiceMetricsRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
     '/t/$team/services/$service/operations': {
       id: '/t/$team/services/$service/operations'
       path: '/operations'
@@ -2378,6 +2438,7 @@ interface TTeamApplicationsApplicationRouteRouteChildren {
   TTeamApplicationsApplicationHealthcheckRoute: typeof TTeamApplicationsApplicationHealthcheckRoute
   TTeamApplicationsApplicationLimitsRoute: typeof TTeamApplicationsApplicationLimitsRoute
   TTeamApplicationsApplicationLogsRoute: typeof TTeamApplicationsApplicationLogsRoute
+  TTeamApplicationsApplicationMetricsRoute: typeof TTeamApplicationsApplicationMetricsRoute
   TTeamApplicationsApplicationOperationsRoute: typeof TTeamApplicationsApplicationOperationsRoute
   TTeamApplicationsApplicationPreviewsRoute: typeof TTeamApplicationsApplicationPreviewsRoute
   TTeamApplicationsApplicationScheduledTasksRoute: typeof TTeamApplicationsApplicationScheduledTasksRoute
@@ -2407,6 +2468,8 @@ const TTeamApplicationsApplicationRouteRouteChildren: TTeamApplicationsApplicati
       TTeamApplicationsApplicationLimitsRoute,
     TTeamApplicationsApplicationLogsRoute:
       TTeamApplicationsApplicationLogsRoute,
+    TTeamApplicationsApplicationMetricsRoute:
+      TTeamApplicationsApplicationMetricsRoute,
     TTeamApplicationsApplicationOperationsRoute:
       TTeamApplicationsApplicationOperationsRoute,
     TTeamApplicationsApplicationPreviewsRoute:
@@ -2442,6 +2505,7 @@ interface TTeamDatabasesDatabaseRouteRouteChildren {
   TTeamDatabasesDatabaseEnvsRoute: typeof TTeamDatabasesDatabaseEnvsRoute
   TTeamDatabasesDatabaseImportRoute: typeof TTeamDatabasesDatabaseImportRoute
   TTeamDatabasesDatabaseLogsRoute: typeof TTeamDatabasesDatabaseLogsRoute
+  TTeamDatabasesDatabaseMetricsRoute: typeof TTeamDatabasesDatabaseMetricsRoute
   TTeamDatabasesDatabaseOperationsRoute: typeof TTeamDatabasesDatabaseOperationsRoute
   TTeamDatabasesDatabaseScheduledTasksRoute: typeof TTeamDatabasesDatabaseScheduledTasksRoute
   TTeamDatabasesDatabaseStoragesRoute: typeof TTeamDatabasesDatabaseStoragesRoute
@@ -2459,6 +2523,7 @@ const TTeamDatabasesDatabaseRouteRouteChildren: TTeamDatabasesDatabaseRouteRoute
     TTeamDatabasesDatabaseEnvsRoute: TTeamDatabasesDatabaseEnvsRoute,
     TTeamDatabasesDatabaseImportRoute: TTeamDatabasesDatabaseImportRoute,
     TTeamDatabasesDatabaseLogsRoute: TTeamDatabasesDatabaseLogsRoute,
+    TTeamDatabasesDatabaseMetricsRoute: TTeamDatabasesDatabaseMetricsRoute,
     TTeamDatabasesDatabaseOperationsRoute:
       TTeamDatabasesDatabaseOperationsRoute,
     TTeamDatabasesDatabaseScheduledTasksRoute:
@@ -2532,6 +2597,7 @@ interface TTeamServicesServiceRouteRouteChildren {
   TTeamServicesServiceDomainsRoute: typeof TTeamServicesServiceDomainsRoute
   TTeamServicesServiceEnvsRoute: typeof TTeamServicesServiceEnvsRoute
   TTeamServicesServiceLogsRoute: typeof TTeamServicesServiceLogsRoute
+  TTeamServicesServiceMetricsRoute: typeof TTeamServicesServiceMetricsRoute
   TTeamServicesServiceOperationsRoute: typeof TTeamServicesServiceOperationsRoute
   TTeamServicesServiceScheduledTasksRoute: typeof TTeamServicesServiceScheduledTasksRoute
   TTeamServicesServiceTagsRoute: typeof TTeamServicesServiceTagsRoute
@@ -2547,6 +2613,7 @@ const TTeamServicesServiceRouteRouteChildren: TTeamServicesServiceRouteRouteChil
     TTeamServicesServiceDomainsRoute: TTeamServicesServiceDomainsRoute,
     TTeamServicesServiceEnvsRoute: TTeamServicesServiceEnvsRoute,
     TTeamServicesServiceLogsRoute: TTeamServicesServiceLogsRoute,
+    TTeamServicesServiceMetricsRoute: TTeamServicesServiceMetricsRoute,
     TTeamServicesServiceOperationsRoute: TTeamServicesServiceOperationsRoute,
     TTeamServicesServiceScheduledTasksRoute:
       TTeamServicesServiceScheduledTasksRoute,
