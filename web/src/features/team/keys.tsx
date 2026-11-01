@@ -5,7 +5,7 @@ import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/confirm"
 import { CopyInput } from "@/components/copy-input"
 import { Field } from "@/components/field"
-import { PageHeader, SettingsCard } from "@/components/page"
+import { EmptyPanel, PageHeader, SettingsCard } from "@/components/page"
 import { Pill } from "@/components/task-status"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -56,7 +56,7 @@ export function PrivateKeysPage({ team }: { team: string }) {
       />
       <div className="space-y-4">
         {keys.data?.map((k) => <KeyCard key={k.id} team={team} k={k} onDelete={() => setDeleting(k)} />)}
-        {keys.data?.length === 0 && <p className="text-sm text-muted-foreground">Aucune clé.</p>}
+        {keys.data?.length === 0 && <EmptyPanel title="Aucune clé SSH" />}
       </div>
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent>

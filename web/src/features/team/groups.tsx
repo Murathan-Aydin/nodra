@@ -3,7 +3,7 @@ import { useState } from "react"
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/confirm"
-import { PageHeader, SettingsCard } from "@/components/page"
+import { EmptyPanel, PageHeader, SettingsCard } from "@/components/page"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -30,7 +30,7 @@ export function GroupsPage({ team }: { team: string }) {
       <PageHeader title="Groupes" description="Attribuez un rôle à un groupe (page Membres) : tous ses membres en héritent." />
       {manage && (
         <form
-          className="mb-6 flex max-w-md gap-2"
+          className="glass-panel mb-6 flex max-w-md gap-2 rounded-2xl p-2"
           onSubmit={(e) => {
             e.preventDefault()
             if (name.trim()) create.mutate()
@@ -46,7 +46,7 @@ export function GroupsPage({ team }: { team: string }) {
         {groups.map((g) => (
           <GroupCard key={g.id} team={team} group={g} manage={manage} />
         ))}
-        {groups.length === 0 && <p className="text-sm text-muted-foreground">Aucun groupe.</p>}
+        {groups.length === 0 && <EmptyPanel title="Aucun groupe" />}
       </div>
     </>
   )

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { PlusIcon, RocketIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/confirm"
-import { PageHeader, SettingsCard } from "@/components/page"
+import { EmptyPanel, PageHeader, SettingsCard } from "@/components/page"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { resourcePage } from "@/features/resources/resource"
@@ -31,7 +31,7 @@ export function TagsPage({ team }: { team: string }) {
     <>
       <PageHeader title="Tags" description="Regroupez des ressources pour les déployer ensemble (POST /deploy?tag=…)." />
       <form
-        className="mb-6 flex max-w-md gap-2"
+        className="glass-panel mb-6 flex max-w-md gap-2 rounded-2xl p-2"
         onSubmit={(e) => {
           e.preventDefault()
           if (name.trim()) create.mutate()
@@ -44,7 +44,7 @@ export function TagsPage({ team }: { team: string }) {
       </form>
       <div className="space-y-4">
         {tags.data?.map((t) => <TagCard key={t.id + t.name + t.color} team={team} tag={t} resources={resources.filter((r) => (r as ResourceSummary & { tags?: Tag[] }).tags?.some((x) => x.id === t.id))} />)}
-        {tags.data?.length === 0 && <p className="text-sm text-muted-foreground">Aucun tag.</p>}
+        {tags.data?.length === 0 && <EmptyPanel title="Aucun tag" />}
       </div>
     </>
   )

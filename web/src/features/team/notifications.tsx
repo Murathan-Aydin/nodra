@@ -4,7 +4,7 @@ import { SendIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/confirm"
 import { Field } from "@/components/field"
-import { PageHeader, SettingsCard } from "@/components/page"
+import { EmptyPanel, PageHeader, SettingsCard } from "@/components/page"
 import { Pill } from "@/components/task-status"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -60,7 +60,7 @@ export function ChannelsPage({ team }: { team: string }) {
         {channels.map((c) => (
           <ChannelCard key={c.id + JSON.stringify(c)} team={team} channel={c} />
         ))}
-        {!adding && channels.length === 0 && <p className="text-sm text-muted-foreground">Aucun canal. Choisissez un type pour en ajouter un.</p>}
+        {!adding && channels.length === 0 && <EmptyPanel title="Aucun canal" text="Choisissez un type en haut à droite pour en ajouter un." />}
       </div>
     </>
   )

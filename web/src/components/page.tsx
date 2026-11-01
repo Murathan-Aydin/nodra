@@ -15,7 +15,7 @@ export function PageHeader({ title, description, actions }: { /** @deprecated ig
         <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight [text-shadow:0_1px_8px_rgb(0_0_0/0.25)]">{title}</h1>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
-      {description && <p className="text-sm text-muted-foreground [text-shadow:0_1px_6px_rgb(0_0_0/0.2)]">{description}</p>}
+      {description && <p className="text-sm font-medium text-foreground/85 [text-shadow:0_1px_2px_rgb(0_0_0/0.6),0_1px_10px_rgb(0_0_0/0.5)]">{description}</p>}
     </header>
   )
 }

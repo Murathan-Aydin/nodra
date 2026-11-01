@@ -4,7 +4,7 @@ import { CheckCircle2Icon, ExternalLinkIcon, PlusIcon, RefreshCwIcon, Trash2Icon
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/confirm"
 import { Field } from "@/components/field"
-import { PageHeader, SettingsCard } from "@/components/page"
+import { EmptyPanel, PageHeader, SettingsCard } from "@/components/page"
 import { Pill } from "@/components/task-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -77,7 +77,7 @@ export function SourcesPage({ team }: { team: string }) {
             </p>
           </SettingsCard>
         ))}
-        {!adding && sources.length === 0 && <p className="text-sm text-muted-foreground">Aucune source.</p>}
+        {!adding && sources.length === 0 && <EmptyPanel title="Aucune source Git" />}
       </div>
       <ConfirmDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)} title={`Supprimer « ${deleting?.name} » ?`} description="Refusé si des applications l'utilisent." actionLabel="Supprimer" loading={remove.isPending} onConfirm={() => deleting && remove.mutate(deleting)} />
     </>
@@ -262,7 +262,7 @@ export function S3Page({ team }: { team: string }) {
         {list.map((s) => (
           <S3Card key={s.id + s.is_usable + s.name} team={team} queryKey={key} s3={s} />
         ))}
-        {!adding && list.length === 0 && <p className="text-sm text-muted-foreground">Aucun stockage.</p>}
+        {!adding && list.length === 0 && <EmptyPanel title="Aucun stockage S3" />}
       </div>
     </>
   )
