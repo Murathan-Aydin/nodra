@@ -76,7 +76,7 @@ function Servers() {
         </div>
       )}
       <Dialog open={adding} onOpenChange={setAdding}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Ajouter un serveur</DialogTitle>
             <DialogDescription>Nodra s'y connecte en SSH, vérifie le système et Docker, puis démarre le proxy.</DialogDescription>

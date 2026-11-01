@@ -1,8 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useRef, useState } from "react"
+import { CheckIcon, ChevronsUpDownIcon, SearchIcon } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ChooseGitHubApp } from "@/features/integrations/github-app"
 import { toast } from "sonner"
 import { Field } from "@/components/field"
-import { Section } from "@/components/page"
+import { Section, SettingsCard } from "@/components/page"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -341,7 +344,7 @@ export function AppForm({ kind, ...ctx }: Ctx & { kind: Kind }) {
     case "github":
     case "gitlab":
     case "gitea":
-      return <SourceRepoForm type={kind} {...ctx} />
+      return kind === "github" ? <GitHubRepoForm {...ctx} /> : <SourceRepoForm type={kind} {...ctx} />
     case "dockerfile":
       return <DockerfileForm {...ctx} />
     case "compose":
@@ -351,4 +354,129 @@ export function AppForm({ kind, ...ctx }: Ctx & { kind: Kind }) {
     default:
       return null
   }
+}
+
+/** Repo par GitHub App, comme Coolify : choisir l'App, puis le dépôt (recherche, « Charger le dépôt »), puis la configuration. */
+export function GitHubRepoForm(ctx: Ctx) {
+  const create = useCreateApp(ctx)
+  const [app, setApp] = useState("")
+  const [repo, setRepo] = useState("")
+  const [loaded, setLoaded] = useState("")
+  const [b, setB] = useState(BUILD)
+  const here = typeof location === "undefined" ? "" : location.pathname + location.search
+  const repos = useQuery({
+    queryKey: ["team", ctx.team, "source", app, "repos"],
+    queryFn: () => get<Repo[]>(teamPath(ctx.team, `/sources/${app}/repositories`)),
+    enabled: !!app,
+  })
+  const branches = useQuery({
+    queryKey: ["team", ctx.team, "source", app, "branches", loaded],
+    queryFn: () => get<string[]>(teamPath(ctx.team, `/sources/${app}/branches?repo=${encodeURIComponent(loaded)}`)),
+    enabled: !!app && !!loaded,
+  })
+  if (!app) return <ChooseGitHubApp team={ctx.team} value={app} onChange={setApp} returnTo={here} />
+  return (
+    <div className="space-y-6">
+      <SettingsCard
+        title="Choisir un dépôt"
+        description="Dépôts accessibles par la GitHub App choisie."
+        actions={
+          <Button size="sm" variant="ghost" onClick={() => (setApp(""), setRepo(""), setLoaded(""))}>
+            Changer d'App
+          </Button>
+        }
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <Field label="Dépôt *" className="flex-1" error={repos.isError ? (repos.error instanceof ApiError ? repos.error.message : "Liste indisponible") : undefined}>
+            <RepoPicker repos={repos.data ?? []} loading={repos.isFetching} value={repo} onChange={setRepo} />
+          </Field>
+          <Button
+            variant="outline"
+            disabled={!repo}
+            onClick={() => {
+              setLoaded(repo)
+              const def = repos.data?.find((r) => r.full_name === repo)?.default_branch
+              if (def) setB((x) => ({ ...x, branch: def }))
+            }}
+          >
+            Charger le dépôt
+          </Button>
+        </div>
+      </SettingsCard>
+      {loaded && (
+        <SettingsCard title="Configuration" description={loaded}>
+          <form
+            className="space-y-5"
+            onSubmit={(e) => {
+              e.preventDefault()
+              create.mutate({ name: loaded.split("/").pop(), git_repository: loaded, source_id: app, ...buildBody(b) })
+            }}
+          >
+            {branches.data && branches.data.length > 0 && (
+              <Field label="Branches disponibles">
+                <Select value={b.branch} onValueChange={(v) => setB({ ...b, branch: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.data.map((br) => (
+                      <SelectItem key={br} value={br}>
+                        {br}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
+            <BuildFields v={b} set={setB} />
+            <Submit pending={create.isPending} disabled={!loaded} />
+          </form>
+        </SettingsCard>
+      )}
+    </div>
+  )
+}
+
+/** Liste déroulante des dépôts avec recherche (comme le sélecteur de dépôt de Coolify). */
+function RepoPicker({ repos, loading, value, onChange }: { repos: Repo[]; loading: boolean; value: string; onChange: (v: string) => void }) {
+  const [search, setSearch] = useState("")
+  const input = useRef<HTMLInputElement>(null)
+  const shown = repos.filter((r) => r.full_name.toLowerCase().includes(search.toLowerCase()))
+  return (
+    <DropdownMenu
+      onOpenChange={(o) => {
+        if (!o) return
+        setSearch("")
+        setTimeout(() => input.current?.focus(), 0)
+      }}
+    >
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="outline" className="h-9 w-full justify-between font-normal" disabled={loading && !repos.length}>
+          <span className="truncate">{value || (loading ? "Chargement…" : "Choisir un dépôt")}</span>
+          <ChevronsUpDownIcon className="text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-80 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto">
+        <div className="relative mb-1">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            ref={input}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key !== "Escape" && e.stopPropagation()}
+            placeholder="Rechercher un dépôt…"
+            className="h-8 w-full rounded-md border border-border bg-transparent pr-2 pl-8 text-sm outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+        {shown.map((r) => (
+          <DropdownMenuItem key={r.full_name} onSelect={() => onChange(r.full_name)}>
+            <span className="min-w-0 flex-1 truncate">{r.full_name}</span>
+            {r.private && <span className="text-[10px] text-muted-foreground">privé</span>}
+            {r.full_name === value && <CheckIcon className="size-4" />}
+          </DropdownMenuItem>
+        ))}
+        {shown.length === 0 && <p className="px-2 py-3 text-center text-xs text-muted-foreground">Aucun dépôt.</p>}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 }

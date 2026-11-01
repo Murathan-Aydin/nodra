@@ -27,7 +27,6 @@ import { Route as TTeamDatabasesDatabaseRouteRouteImport } from './routes/t/$tea
 import { Route as TTeamIntegrationsIndexRouteImport } from './routes/t/$team/integrations/index'
 import { Route as TTeamIntegrationsRegistriesRouteImport } from './routes/t/$team/integrations/registries'
 import { Route as TTeamIntegrationsS3RouteImport } from './routes/t/$team/integrations/s3'
-import { Route as TTeamIntegrationsSourcesRouteImport } from './routes/t/$team/integrations/sources'
 import { Route as TTeamKeysIndexRouteImport } from './routes/t/$team/keys/index'
 import { Route as TTeamKeysTokensRouteImport } from './routes/t/$team/keys/tokens'
 import { Route as TTeamMonitoringIndexRouteImport } from './routes/t/$team/monitoring/index'
@@ -45,6 +44,7 @@ import { Route as TTeamSettingsEmailRouteImport } from './routes/t/$team/setting
 import { Route as TTeamSettingsOauthRouteImport } from './routes/t/$team/settings/oauth'
 import { Route as TTeamSettingsUpdatesRouteImport } from './routes/t/$team/settings/updates'
 import { Route as TTeamSettingsUsersRouteImport } from './routes/t/$team/settings/users'
+import { Route as TTeamSourcesSourceRouteImport } from './routes/t/$team/sources/$source'
 import { Route as TTeamTagsIndexRouteImport } from './routes/t/$team/tags/index'
 import { Route as TTeamTeamIndexRouteImport } from './routes/t/$team/team/index'
 import { Route as TTeamTeamApprovalsRouteImport } from './routes/t/$team/team/approvals'
@@ -83,6 +83,8 @@ import { Route as TTeamDatabasesDatabaseStoragesRouteImport } from './routes/t/$
 import { Route as TTeamDatabasesDatabaseTagsRouteImport } from './routes/t/$team/databases/$database/tags'
 import { Route as TTeamDatabasesDatabaseTasksRouteImport } from './routes/t/$team/databases/$database/tasks'
 import { Route as TTeamDatabasesDatabaseTerminalRouteImport } from './routes/t/$team/databases/$database/terminal'
+import { Route as TTeamIntegrationsSourcesIndexRouteImport } from './routes/t/$team/integrations/sources/index'
+import { Route as TTeamIntegrationsSourcesSourceRouteImport } from './routes/t/$team/integrations/sources/$source'
 import { Route as TTeamProjectsProjectIndexRouteImport } from './routes/t/$team/projects/$project/index'
 import { Route as TTeamProjectsProjectNewRouteImport } from './routes/t/$team/projects/$project/new'
 import { Route as TTeamProjectsProjectSettingsRouteImport } from './routes/t/$team/projects/$project/settings'
@@ -214,12 +216,6 @@ const TTeamIntegrationsS3Route = TTeamIntegrationsS3RouteImport.update({
   path: '/integrations/s3',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
-const TTeamIntegrationsSourcesRoute =
-  TTeamIntegrationsSourcesRouteImport.update({
-    id: '/integrations/sources',
-    path: '/integrations/sources',
-    getParentRoute: () => TTeamRouteRoute,
-  } as any)
 const TTeamKeysIndexRoute = TTeamKeysIndexRouteImport.update({
   id: '/keys/',
   path: '/keys/',
@@ -306,6 +302,11 @@ const TTeamSettingsUpdatesRoute = TTeamSettingsUpdatesRouteImport.update({
 const TTeamSettingsUsersRoute = TTeamSettingsUsersRouteImport.update({
   id: '/settings/users',
   path: '/settings/users',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamSourcesSourceRoute = TTeamSourcesSourceRouteImport.update({
+  id: '/sources/$source',
+  path: '/sources/$source',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
 const TTeamTagsIndexRoute = TTeamTagsIndexRouteImport.update({
@@ -525,6 +526,18 @@ const TTeamDatabasesDatabaseTerminalRoute =
     id: '/terminal',
     path: '/terminal',
     getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamIntegrationsSourcesIndexRoute =
+  TTeamIntegrationsSourcesIndexRouteImport.update({
+    id: '/integrations/sources/',
+    path: '/integrations/sources/',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamIntegrationsSourcesSourceRoute =
+  TTeamIntegrationsSourcesSourceRouteImport.update({
+    id: '/integrations/sources/$source',
+    path: '/integrations/sources/$source',
+    getParentRoute: () => TTeamRouteRoute,
   } as any)
 const TTeamProjectsProjectIndexRoute =
   TTeamProjectsProjectIndexRouteImport.update({
@@ -765,7 +778,6 @@ export interface FileRoutesByFullPath {
   '/t/$team/services/$service': typeof TTeamServicesServiceRouteRouteWithChildren
   '/t/$team/integrations/registries': typeof TTeamIntegrationsRegistriesRoute
   '/t/$team/integrations/s3': typeof TTeamIntegrationsS3Route
-  '/t/$team/integrations/sources': typeof TTeamIntegrationsSourcesRoute
   '/t/$team/keys/tokens': typeof TTeamKeysTokensRoute
   '/t/$team/notifications/deliveries': typeof TTeamNotificationsDeliveriesRoute
   '/t/$team/notifications/events': typeof TTeamNotificationsEventsRoute
@@ -775,6 +787,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/settings/oauth': typeof TTeamSettingsOauthRoute
   '/t/$team/settings/updates': typeof TTeamSettingsUpdatesRoute
   '/t/$team/settings/users': typeof TTeamSettingsUsersRoute
+  '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/team/approvals': typeof TTeamTeamApprovalsRoute
   '/t/$team/team/audit': typeof TTeamTeamAuditRoute
   '/t/$team/team/danger': typeof TTeamTeamDangerRoute
@@ -819,6 +832,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
   '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
   '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
+  '/t/$team/integrations/sources/$source': typeof TTeamIntegrationsSourcesSourceRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
   '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
@@ -846,6 +860,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/services/$service/terminal': typeof TTeamServicesServiceTerminalRoute
   '/t/$team/applications/$application/': typeof TTeamApplicationsApplicationIndexRoute
   '/t/$team/databases/$database/': typeof TTeamDatabasesDatabaseIndexRoute
+  '/t/$team/integrations/sources/': typeof TTeamIntegrationsSourcesIndexRoute
   '/t/$team/projects/$project/': typeof TTeamProjectsProjectIndexRoute
   '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
   '/t/$team/services/$service/': typeof TTeamServicesServiceIndexRoute
@@ -873,7 +888,6 @@ export interface FileRoutesByTo {
   '/t/$team': typeof TTeamIndexRoute
   '/t/$team/integrations/registries': typeof TTeamIntegrationsRegistriesRoute
   '/t/$team/integrations/s3': typeof TTeamIntegrationsS3Route
-  '/t/$team/integrations/sources': typeof TTeamIntegrationsSourcesRoute
   '/t/$team/keys/tokens': typeof TTeamKeysTokensRoute
   '/t/$team/notifications/deliveries': typeof TTeamNotificationsDeliveriesRoute
   '/t/$team/notifications/events': typeof TTeamNotificationsEventsRoute
@@ -883,6 +897,7 @@ export interface FileRoutesByTo {
   '/t/$team/settings/oauth': typeof TTeamSettingsOauthRoute
   '/t/$team/settings/updates': typeof TTeamSettingsUpdatesRoute
   '/t/$team/settings/users': typeof TTeamSettingsUsersRoute
+  '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/team/approvals': typeof TTeamTeamApprovalsRoute
   '/t/$team/team/audit': typeof TTeamTeamAuditRoute
   '/t/$team/team/danger': typeof TTeamTeamDangerRoute
@@ -927,6 +942,7 @@ export interface FileRoutesByTo {
   '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
   '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
   '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
+  '/t/$team/integrations/sources/$source': typeof TTeamIntegrationsSourcesSourceRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
   '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
@@ -954,6 +970,7 @@ export interface FileRoutesByTo {
   '/t/$team/services/$service/terminal': typeof TTeamServicesServiceTerminalRoute
   '/t/$team/applications/$application': typeof TTeamApplicationsApplicationIndexRoute
   '/t/$team/databases/$database': typeof TTeamDatabasesDatabaseIndexRoute
+  '/t/$team/integrations/sources': typeof TTeamIntegrationsSourcesIndexRoute
   '/t/$team/projects/$project': typeof TTeamProjectsProjectIndexRoute
   '/t/$team/servers/$server': typeof TTeamServersServerIndexRoute
   '/t/$team/services/$service': typeof TTeamServicesServiceIndexRoute
@@ -987,7 +1004,6 @@ export interface FileRoutesById {
   '/t/$team/services/$service': typeof TTeamServicesServiceRouteRouteWithChildren
   '/t/$team/integrations/registries': typeof TTeamIntegrationsRegistriesRoute
   '/t/$team/integrations/s3': typeof TTeamIntegrationsS3Route
-  '/t/$team/integrations/sources': typeof TTeamIntegrationsSourcesRoute
   '/t/$team/keys/tokens': typeof TTeamKeysTokensRoute
   '/t/$team/notifications/deliveries': typeof TTeamNotificationsDeliveriesRoute
   '/t/$team/notifications/events': typeof TTeamNotificationsEventsRoute
@@ -997,6 +1013,7 @@ export interface FileRoutesById {
   '/t/$team/settings/oauth': typeof TTeamSettingsOauthRoute
   '/t/$team/settings/updates': typeof TTeamSettingsUpdatesRoute
   '/t/$team/settings/users': typeof TTeamSettingsUsersRoute
+  '/t/$team/sources/$source': typeof TTeamSourcesSourceRoute
   '/t/$team/team/approvals': typeof TTeamTeamApprovalsRoute
   '/t/$team/team/audit': typeof TTeamTeamAuditRoute
   '/t/$team/team/danger': typeof TTeamTeamDangerRoute
@@ -1041,6 +1058,7 @@ export interface FileRoutesById {
   '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
   '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
   '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
+  '/t/$team/integrations/sources/$source': typeof TTeamIntegrationsSourcesSourceRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
   '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
@@ -1068,6 +1086,7 @@ export interface FileRoutesById {
   '/t/$team/services/$service/terminal': typeof TTeamServicesServiceTerminalRoute
   '/t/$team/applications/$application/': typeof TTeamApplicationsApplicationIndexRoute
   '/t/$team/databases/$database/': typeof TTeamDatabasesDatabaseIndexRoute
+  '/t/$team/integrations/sources/': typeof TTeamIntegrationsSourcesIndexRoute
   '/t/$team/projects/$project/': typeof TTeamProjectsProjectIndexRoute
   '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
   '/t/$team/services/$service/': typeof TTeamServicesServiceIndexRoute
@@ -1102,7 +1121,6 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service'
     | '/t/$team/integrations/registries'
     | '/t/$team/integrations/s3'
-    | '/t/$team/integrations/sources'
     | '/t/$team/keys/tokens'
     | '/t/$team/notifications/deliveries'
     | '/t/$team/notifications/events'
@@ -1112,6 +1130,7 @@ export interface FileRouteTypes {
     | '/t/$team/settings/oauth'
     | '/t/$team/settings/updates'
     | '/t/$team/settings/users'
+    | '/t/$team/sources/$source'
     | '/t/$team/team/approvals'
     | '/t/$team/team/audit'
     | '/t/$team/team/danger'
@@ -1156,6 +1175,7 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/tags'
     | '/t/$team/databases/$database/tasks'
     | '/t/$team/databases/$database/terminal'
+    | '/t/$team/integrations/sources/$source'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
     | '/t/$team/servers/$server/advanced'
@@ -1183,6 +1203,7 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service/terminal'
     | '/t/$team/applications/$application/'
     | '/t/$team/databases/$database/'
+    | '/t/$team/integrations/sources/'
     | '/t/$team/projects/$project/'
     | '/t/$team/servers/$server/'
     | '/t/$team/services/$service/'
@@ -1210,7 +1231,6 @@ export interface FileRouteTypes {
     | '/t/$team'
     | '/t/$team/integrations/registries'
     | '/t/$team/integrations/s3'
-    | '/t/$team/integrations/sources'
     | '/t/$team/keys/tokens'
     | '/t/$team/notifications/deliveries'
     | '/t/$team/notifications/events'
@@ -1220,6 +1240,7 @@ export interface FileRouteTypes {
     | '/t/$team/settings/oauth'
     | '/t/$team/settings/updates'
     | '/t/$team/settings/users'
+    | '/t/$team/sources/$source'
     | '/t/$team/team/approvals'
     | '/t/$team/team/audit'
     | '/t/$team/team/danger'
@@ -1264,6 +1285,7 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/tags'
     | '/t/$team/databases/$database/tasks'
     | '/t/$team/databases/$database/terminal'
+    | '/t/$team/integrations/sources/$source'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
     | '/t/$team/servers/$server/advanced'
@@ -1291,6 +1313,7 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service/terminal'
     | '/t/$team/applications/$application'
     | '/t/$team/databases/$database'
+    | '/t/$team/integrations/sources'
     | '/t/$team/projects/$project'
     | '/t/$team/servers/$server'
     | '/t/$team/services/$service'
@@ -1323,7 +1346,6 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service'
     | '/t/$team/integrations/registries'
     | '/t/$team/integrations/s3'
-    | '/t/$team/integrations/sources'
     | '/t/$team/keys/tokens'
     | '/t/$team/notifications/deliveries'
     | '/t/$team/notifications/events'
@@ -1333,6 +1355,7 @@ export interface FileRouteTypes {
     | '/t/$team/settings/oauth'
     | '/t/$team/settings/updates'
     | '/t/$team/settings/users'
+    | '/t/$team/sources/$source'
     | '/t/$team/team/approvals'
     | '/t/$team/team/audit'
     | '/t/$team/team/danger'
@@ -1377,6 +1400,7 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/tags'
     | '/t/$team/databases/$database/tasks'
     | '/t/$team/databases/$database/terminal'
+    | '/t/$team/integrations/sources/$source'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
     | '/t/$team/servers/$server/advanced'
@@ -1404,6 +1428,7 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service/terminal'
     | '/t/$team/applications/$application/'
     | '/t/$team/databases/$database/'
+    | '/t/$team/integrations/sources/'
     | '/t/$team/projects/$project/'
     | '/t/$team/servers/$server/'
     | '/t/$team/services/$service/'
@@ -1559,13 +1584,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamIntegrationsS3RouteImport
       parentRoute: typeof TTeamRouteRoute
     }
-    '/t/$team/integrations/sources': {
-      id: '/t/$team/integrations/sources'
-      path: '/integrations/sources'
-      fullPath: '/t/$team/integrations/sources'
-      preLoaderRoute: typeof TTeamIntegrationsSourcesRouteImport
-      parentRoute: typeof TTeamRouteRoute
-    }
     '/t/$team/keys/': {
       id: '/t/$team/keys/'
       path: '/keys'
@@ -1683,6 +1701,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/users'
       fullPath: '/t/$team/settings/users'
       preLoaderRoute: typeof TTeamSettingsUsersRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/sources/$source': {
+      id: '/t/$team/sources/$source'
+      path: '/sources/$source'
+      fullPath: '/t/$team/sources/$source'
+      preLoaderRoute: typeof TTeamSourcesSourceRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
     '/t/$team/tags/': {
@@ -1950,6 +1975,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/t/$team/databases/$database/terminal'
       preLoaderRoute: typeof TTeamDatabasesDatabaseTerminalRouteImport
       parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/integrations/sources/': {
+      id: '/t/$team/integrations/sources/'
+      path: '/integrations/sources'
+      fullPath: '/t/$team/integrations/sources/'
+      preLoaderRoute: typeof TTeamIntegrationsSourcesIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/integrations/sources/$source': {
+      id: '/t/$team/integrations/sources/$source'
+      path: '/integrations/sources/$source'
+      fullPath: '/t/$team/integrations/sources/$source'
+      preLoaderRoute: typeof TTeamIntegrationsSourcesSourceRouteImport
+      parentRoute: typeof TTeamRouteRoute
     }
     '/t/$team/projects/$project/': {
       id: '/t/$team/projects/$project/'
@@ -2410,7 +2449,6 @@ interface TTeamRouteRouteChildren {
   TTeamServicesServiceRouteRoute: typeof TTeamServicesServiceRouteRouteWithChildren
   TTeamIntegrationsRegistriesRoute: typeof TTeamIntegrationsRegistriesRoute
   TTeamIntegrationsS3Route: typeof TTeamIntegrationsS3Route
-  TTeamIntegrationsSourcesRoute: typeof TTeamIntegrationsSourcesRoute
   TTeamKeysTokensRoute: typeof TTeamKeysTokensRoute
   TTeamNotificationsDeliveriesRoute: typeof TTeamNotificationsDeliveriesRoute
   TTeamNotificationsEventsRoute: typeof TTeamNotificationsEventsRoute
@@ -2420,6 +2458,7 @@ interface TTeamRouteRouteChildren {
   TTeamSettingsOauthRoute: typeof TTeamSettingsOauthRoute
   TTeamSettingsUpdatesRoute: typeof TTeamSettingsUpdatesRoute
   TTeamSettingsUsersRoute: typeof TTeamSettingsUsersRoute
+  TTeamSourcesSourceRoute: typeof TTeamSourcesSourceRoute
   TTeamTeamApprovalsRoute: typeof TTeamTeamApprovalsRoute
   TTeamTeamAuditRoute: typeof TTeamTeamAuditRoute
   TTeamTeamDangerRoute: typeof TTeamTeamDangerRoute
@@ -2438,8 +2477,10 @@ interface TTeamRouteRouteChildren {
   TTeamTeamIndexRoute: typeof TTeamTeamIndexRoute
   TTeamTerminalIndexRoute: typeof TTeamTerminalIndexRoute
   TTeamVariablesIndexRoute: typeof TTeamVariablesIndexRoute
+  TTeamIntegrationsSourcesSourceRoute: typeof TTeamIntegrationsSourcesSourceRoute
   TTeamProjectsProjectNewRoute: typeof TTeamProjectsProjectNewRoute
   TTeamProjectsProjectSettingsRoute: typeof TTeamProjectsProjectSettingsRoute
+  TTeamIntegrationsSourcesIndexRoute: typeof TTeamIntegrationsSourcesIndexRoute
   TTeamProjectsProjectIndexRoute: typeof TTeamProjectsProjectIndexRoute
   TTeamProjectsProjectEnvNewRoute: typeof TTeamProjectsProjectEnvNewRoute
   TTeamProjectsProjectEnvSettingsRoute: typeof TTeamProjectsProjectEnvSettingsRoute
@@ -2457,7 +2498,6 @@ const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamServicesServiceRouteRoute: TTeamServicesServiceRouteRouteWithChildren,
   TTeamIntegrationsRegistriesRoute: TTeamIntegrationsRegistriesRoute,
   TTeamIntegrationsS3Route: TTeamIntegrationsS3Route,
-  TTeamIntegrationsSourcesRoute: TTeamIntegrationsSourcesRoute,
   TTeamKeysTokensRoute: TTeamKeysTokensRoute,
   TTeamNotificationsDeliveriesRoute: TTeamNotificationsDeliveriesRoute,
   TTeamNotificationsEventsRoute: TTeamNotificationsEventsRoute,
@@ -2467,6 +2507,7 @@ const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamSettingsOauthRoute: TTeamSettingsOauthRoute,
   TTeamSettingsUpdatesRoute: TTeamSettingsUpdatesRoute,
   TTeamSettingsUsersRoute: TTeamSettingsUsersRoute,
+  TTeamSourcesSourceRoute: TTeamSourcesSourceRoute,
   TTeamTeamApprovalsRoute: TTeamTeamApprovalsRoute,
   TTeamTeamAuditRoute: TTeamTeamAuditRoute,
   TTeamTeamDangerRoute: TTeamTeamDangerRoute,
@@ -2485,8 +2526,10 @@ const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamTeamIndexRoute: TTeamTeamIndexRoute,
   TTeamTerminalIndexRoute: TTeamTerminalIndexRoute,
   TTeamVariablesIndexRoute: TTeamVariablesIndexRoute,
+  TTeamIntegrationsSourcesSourceRoute: TTeamIntegrationsSourcesSourceRoute,
   TTeamProjectsProjectNewRoute: TTeamProjectsProjectNewRoute,
   TTeamProjectsProjectSettingsRoute: TTeamProjectsProjectSettingsRoute,
+  TTeamIntegrationsSourcesIndexRoute: TTeamIntegrationsSourcesIndexRoute,
   TTeamProjectsProjectIndexRoute: TTeamProjectsProjectIndexRoute,
   TTeamProjectsProjectEnvNewRoute: TTeamProjectsProjectEnvNewRoute,
   TTeamProjectsProjectEnvSettingsRoute: TTeamProjectsProjectEnvSettingsRoute,

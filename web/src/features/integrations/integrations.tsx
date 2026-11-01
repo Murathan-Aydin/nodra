@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { CheckCircle2Icon, ExternalLinkIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from "lucide-react"
+import { CheckCircle2Icon, PlusIcon, RefreshCwIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/confirm"
 import { Field } from "@/components/field"
@@ -9,8 +9,9 @@ import { Pill } from "@/components/task-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { api, get, post } from "@/lib/api"
+import { Link } from "@tanstack/react-router"
+import { NewGitHubAppDialog, sourceState, type Source as GHSource } from "./github-app"
 import { relativeTime } from "@/lib/format"
 
 type Source = { id: string; type: "github" | "gitlab" | "gitea"; name: string; html_url: string; api_url: string; organization: string; is_public: boolean; app_id: number | null; app_slug: string; installation_id: number | null; configured: boolean; installed: boolean; has_access_token: boolean; created_at: string }
@@ -48,7 +49,7 @@ export function SourcesPage({ team }: { team: string }) {
         }
       />
       <div className="space-y-4">
-        {adding === "github" && <GitHubManifest team={team} onDone={() => setAdding("")} />}
+        <NewGitHubAppDialog team={team} open={adding === "github"} onOpenChange={(o) => !o && setAdding("")} />
         {(adding === "gitlab" || adding === "gitea") && <TokenSource key={adding} team={team} type={adding} onDone={() => setAdding("")} />}
         {sources.map((s) => (
           <SettingsCard
@@ -57,10 +58,12 @@ export function SourcesPage({ team }: { team: string }) {
             description={`${SOURCE_LABEL[s.type]} · ${s.html_url}${s.organization ? ` · ${s.organization}` : ""}`}
             actions={
               <>
-                <Pill label={s.type === "github" ? (s.installed ? "Installée" : s.configured ? "À installer" : "Incomplète") : s.has_access_token ? "Connectée" : "Sans jeton"} dot={s.installed || s.has_access_token ? "bg-success" : "bg-warning"} />
-                {s.type === "github" && s.app_slug && !s.installed && (
+                <Pill {...sourceState(s as GHSource)} />
+                {s.type === "github" && (
                   <Button size="sm" variant="outline" asChild>
-                    <a href={`${s.html_url}/apps/${s.app_slug}/installations/new`}>Installer l'App</a>
+                    <Link to="/t/$team/integrations/sources/$source" params={{ team, source: s.id }}>
+                      {s.installed ? "Ouvrir" : "Terminer l'installation"}
+                    </Link>
                   </Button>
                 )}
                 <Button size="sm" variant="ghost" aria-label="Supprimer" onClick={() => setDeleting(s)}>
@@ -81,58 +84,6 @@ export function SourcesPage({ team }: { team: string }) {
       </div>
       <ConfirmDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)} title={`Supprimer « ${deleting?.name} » ?`} description="Refusé si des applications l'utilisent." actionLabel="Supprimer" loading={remove.isPending} onConfirm={() => deleting && remove.mutate(deleting)} />
     </>
-  )
-}
-
-/** Création automatique d'une GitHub App (manifeste) : le formulaire est soumis directement à GitHub. */
-function GitHubManifest({ team, onDone }: { team: string; onDone: () => void }) {
-  const [d, setD] = useState({ name: "", organization: "", html_url: "https://github.com", is_public: false })
-  const start = useMutation({
-    mutationFn: () => post<{ form_action: string; manifest: string }>(`/teams/${team}/sources/github/manifest`, { ...d, organization: d.organization || undefined }),
-    onSuccess: (r) => {
-      const form = document.createElement("form")
-      form.method = "POST"
-      form.action = r.form_action
-      const input = document.createElement("input")
-      input.type = "hidden"
-      input.name = "manifest"
-      input.value = typeof r.manifest === "string" ? r.manifest : JSON.stringify(r.manifest)
-      form.append(input)
-      document.body.append(form)
-      form.submit()
-    },
-    onError: (e) => toast.error(e.message),
-  })
-  return (
-    <SettingsCard
-      title="Nouvelle GitHub App"
-      description="Nodra prépare l'App ; GitHub vous demande de confirmer sa création puis de l'installer sur vos dépôts."
-      actions={
-        <>
-          <Button size="sm" variant="ghost" onClick={onDone}>
-            Annuler
-          </Button>
-          <Button size="sm" disabled={!d.name} loading={start.isPending} onClick={() => start.mutate()}>
-            <ExternalLinkIcon /> Continuer sur GitHub
-          </Button>
-        </>
-      }
-    >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nom *">
-          <Input value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} placeholder="nodra-monequipe" />
-        </Field>
-        <Field label="Organisation" hint="Vide = votre compte personnel.">
-          <Input value={d.organization} onChange={(e) => setD({ ...d, organization: e.target.value })} />
-        </Field>
-        <Field label="Adresse de GitHub" hint="Changez-la pour GitHub Enterprise Server.">
-          <Input value={d.html_url} onChange={(e) => setD({ ...d, html_url: e.target.value })} className="font-mono" />
-        </Field>
-        <label className="flex items-center gap-2 self-end pb-2 text-sm">
-          <Switch checked={d.is_public} onCheckedChange={(v) => setD({ ...d, is_public: v })} /> App publique
-        </label>
-      </div>
-    </SettingsCard>
   )
 }
 
