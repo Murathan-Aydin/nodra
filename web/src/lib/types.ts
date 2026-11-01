@@ -31,8 +31,10 @@ export interface Team {
 export interface PrivateKey {
   id: string
   name: string
+  description?: string
   public_key: string
   fingerprint: string
+  created_at?: string
 }
 
 export interface Server {
@@ -48,8 +50,15 @@ export interface Server {
   os_id: string
   os_version: string
   docker_version: string
+  compose_version?: string
   validation_error: string
   validated_at: string | null
+  private_key_id?: string
+  host_key?: string
+  last_seen_at?: string | null
+  last_cleanup_at?: string | null
+  settings?: Record<string, unknown>
+  team_id?: string
 }
 
 export interface ServerTask {
@@ -60,6 +69,8 @@ export interface ServerTask {
   output?: string
   error: string
   created_at: string
+  started_at?: string | null
+  finished_at?: string | null
 }
 
 export interface Project {
@@ -90,8 +101,18 @@ export interface Deployment {
   application_id: string
   server_id: string
   status: "queued" | "in_progress" | "finished" | "failed" | "cancelled"
+  trigger?: "manual" | "api" | "webhook" | "rollback" | "restart" | "approval" | "preview"
+  branch?: string
+  commit_sha?: string
+  commit_message?: string
   pr_number: number
+  force_rebuild?: boolean
+  image?: string
+  error?: string
+  cancel_requested?: boolean
   created_at: string
+  started_at?: string | null
+  finished_at?: string | null
 }
 
 export interface ServerMetric {
@@ -138,3 +159,161 @@ export interface ServiceTemplate {
   category: string
   tags: string[] | null
 }
+
+export interface Service {
+  id: string
+  environment_id: string
+  name: string
+  description: string
+  template: string
+  docker_compose_raw: string
+  status: string
+}
+
+export interface ServiceApp {
+  id: string
+  name: string
+  image: string
+  domains: string[] | null
+  port: string
+  exclude_from_status: boolean
+}
+
+export interface Container {
+  name: string
+  service: string
+  state: string
+  status: string
+  image: string
+}
+
+export interface EnvVar {
+  id: string
+  key: string
+  value: string
+  is_secret: boolean
+  is_literal: boolean
+  is_multiline: boolean
+  comment: string
+}
+
+export interface Tag {
+  id: string
+  name: string
+  color: string
+}
+
+export interface Database {
+  id: string
+  environment_id: string
+  type: "postgresql" | "mysql" | "mariadb" | "mongodb" | "redis" | "keydb" | "dragonfly" | "clickhouse"
+  name: string
+  description: string
+  image: string
+  username: string
+  password?: string
+  root_password?: string
+  database_name: string
+  custom_config: string
+  init_scripts: { filename: string; content: string }[] | null
+  is_public: boolean
+  public_port: number | null
+  ports_mappings: string
+  custom_docker_run_options: string
+  limits: Record<string, string | number>
+  settings: Record<string, unknown>
+  status: string
+  internal_host: string
+  internal_port: number
+  internal_url?: string
+  public_url?: string
+  ca_certificate?: string
+  started_at: string | null
+  created_at: string
+}
+
+export interface HealthCheck {
+  enabled: boolean
+  type: "http" | "cmd"
+  path: string
+  port: string
+  host: string
+  method: string
+  return_code: number
+  scheme: string
+  response_text: string
+  interval: number
+  timeout: number
+  retries: number
+  start_period: number
+  command: string
+}
+
+export type BuildPack = "nixpacks" | "dockerfile" | "dockercompose" | "dockerimage" | "static"
+
+export interface Application {
+  id: string
+  environment_id: string
+  destination_id: string
+  name: string
+  description: string
+  status: string
+  git_repository: string
+  git_branch: string
+  git_commit_sha: string
+  source_id: string | null
+  private_key_id: string | null
+  build_pack: BuildPack
+  docker_image: string
+  docker_image_tag: string
+  static_image: string
+  base_directory: string
+  publish_directory: string
+  dockerfile: string
+  dockerfile_location: string
+  dockerfile_target: string
+  docker_compose_location: string
+  docker_compose_raw: string
+  docker_compose_domains: Record<string, string[]> | null
+  install_command: string
+  build_command: string
+  start_command: string
+  watch_paths: string
+  ports_exposes: string
+  ports_mappings: string
+  domains: string[] | null
+  redirect: "both" | "www" | "non-www"
+  preview_url_template: string
+  custom_labels: string
+  custom_docker_run_options: string
+  pre_deployment_command: string
+  pre_deployment_container: string
+  post_deployment_command: string
+  post_deployment_container: string
+  health_check: HealthCheck
+  limits: Record<string, string | number>
+  settings: Record<string, unknown>
+  basic_auth_password_set?: boolean
+  created_at: string
+}
+
+export interface DeploymentLog {
+  id: number
+  created_at: string
+  kind: string
+  hidden: boolean
+  message: string
+}
+
+export interface Preview {
+  id: string
+  application_id: string
+  pr_number: number
+  pr_url: string
+  title: string
+  domains: string[] | null
+  status: "stopped" | "running"
+  last_commit: string
+  created_at: string
+}
+

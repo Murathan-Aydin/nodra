@@ -35,11 +35,6 @@ function EnvironmentPage() {
   return (
     <>
       <PageHeader
-        crumbs={[
-          { label: "Projets", to: `/t/${team}/projects` },
-          { label: data?.project.name ?? "…", to: `/t/${team}/projects/${project}` },
-          { label: data?.environment.name ?? "…" },
-        ]}
         title={data?.environment.name ?? <Skeleton className="h-8 w-40" />}
         description={data?.environment.description || "Ressources de cet environnement."}
         actions={

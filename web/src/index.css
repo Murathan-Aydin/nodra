@@ -190,3 +190,215 @@
   border: 1px solid var(--border);
   box-shadow: var(--glass-shine), var(--glass-strong-shadow);
 }
+
+/* ── Cadre de l'application : repris du fork Coolify (layouts/app.blade.php, navigation flottante) ── */
+@layer components {
+:root {
+  --floating-gap: 0.5rem;
+  --floating-radius: 8px;
+  --floating-top: calc(3rem + var(--floating-gap) * 2);
+  --sidebar-w: 14rem;
+  --sidebar-collapsed-w: 3.25rem;
+}
+
+.app-topbar {
+  position: fixed;
+  top: var(--floating-gap);
+  left: var(--floating-gap);
+  z-index: 50;
+  display: flex;
+  height: 3rem;
+  max-width: calc(100vw - var(--floating-gap) * 2);
+  align-items: center;
+  border-radius: var(--floating-radius);
+}
+.app-topbar:has(~ .app-actions:not(:empty)) {
+  max-width: calc(100vw - var(--floating-gap) * 3 - var(--actions-w, 0px));
+}
+.app-topbar-brand {
+  display: flex;
+  height: 100%;
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  border-right: 1px solid var(--border);
+  transition: width 200ms;
+}
+.app-shell[data-collapsed] .app-topbar-brand {
+  width: var(--sidebar-collapsed-w);
+  justify-content: center;
+  padding: 0;
+}
+
+.app-actions:not(:empty) {
+  position: fixed;
+  top: var(--floating-gap);
+  right: var(--floating-gap);
+  z-index: 50;
+  display: flex;
+  height: 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+  border-radius: var(--floating-radius);
+}
+
+.app-sidebar {
+  position: fixed;
+  top: var(--floating-top);
+  bottom: var(--floating-gap);
+  left: var(--floating-gap);
+  z-index: 40;
+  display: flex;
+  width: var(--sidebar-w);
+  flex-direction: column;
+  padding: 0.5rem 0.5rem 0;
+  border-radius: var(--floating-radius);
+  transition: width 200ms;
+}
+.app-shell[data-collapsed] .app-sidebar {
+  width: var(--sidebar-collapsed-w);
+  padding-left: 0.3125rem;
+  padding-right: 0.3125rem;
+}
+
+.app-main {
+  min-height: 100vh;
+  margin-left: calc(var(--sidebar-w) + var(--floating-gap));
+  padding: calc(var(--floating-top) + 1px) 2.5rem 2.5rem;
+  transition: margin 200ms;
+}
+.app-shell[data-collapsed] .app-main {
+  margin-left: calc(var(--sidebar-collapsed-w) + var(--floating-gap));
+}
+
+/* Entrées de navigation (menu-item, menu-item-active, nav-section du fork, style « flat »). */
+.menu-item {
+  position: relative;
+  display: flex;
+  height: 2rem;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  transition: background-color 150ms, color 150ms;
+}
+.menu-item:hover {
+  background-color: color-mix(in oklab, var(--foreground) 5%, transparent);
+  color: var(--foreground);
+}
+.menu-item-active,
+.menu-item-active:hover {
+  background-color: color-mix(in oklab, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+}
+.menu-item-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+.menu-item-active .menu-item-icon {
+  opacity: 1;
+}
+.menu-item-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-section {
+  padding: 0.25rem 0.625rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  user-select: none;
+}
+.app-shell[data-collapsed] .menu-item {
+  justify-content: center;
+  padding: 0;
+}
+
+  /* Carte de réglages (application-settings-section du fork) : boîte extérieure en verre,
+     petit en-tête, puis un « puits » intérieur plus sombre (application-settings-section-body). */
+  .settings-card {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    padding: 0.375rem;
+    border-radius: 1.25rem;
+  }
+  .settings-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.25rem 0.5rem 0.625rem;
+  }
+  .settings-card-header h2 {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25rem;
+    color: color-mix(in oklab, var(--foreground) 80%, transparent);
+    text-decoration: underline;
+    text-underline-offset: 5px;
+    text-decoration-thickness: 1px;
+  }
+  .settings-card-header p {
+    margin-top: 0.125rem;
+    font-size: 11px;
+    color: var(--muted-foreground);
+  }
+  .settings-card-body {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0.9rem;
+    background: color-mix(in oklab, var(--background) 35%, transparent);
+  }
+
+  /* Petit écran (moins de 1024 px, comme le fork) : barre latérale en tiroir, contenu pleine largeur,
+     actions de la page en bas à droite. */
+  @media (max-width: 1023px) {
+    .app-topbar-brand,
+    .app-shell[data-collapsed] .app-topbar-brand {
+      width: auto;
+      padding: 0 0.75rem;
+    }
+    .app-topbar {
+      right: var(--floating-gap);
+    }
+    .app-topbar:has(~ .app-actions:not(:empty)) {
+      max-width: calc(100vw - var(--floating-gap) * 2);
+    }
+    .app-actions:not(:empty) {
+      top: auto;
+      bottom: var(--floating-gap);
+    }
+    .app-sidebar,
+    .app-shell[data-collapsed] .app-sidebar {
+      width: 16rem;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+      transform: translateX(calc(-100% - var(--floating-gap) * 2));
+      transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1);
+      z-index: 60;
+    }
+    .app-shell[data-mobile-open] .app-sidebar {
+      transform: none;
+    }
+    .app-main,
+    .app-shell[data-collapsed] .app-main {
+      margin-left: 0;
+      padding: calc(var(--floating-top) + 1px) 1rem 5rem;
+    }
+  }
+}

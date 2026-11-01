@@ -1,30 +1,16 @@
 import { Link } from "@tanstack/react-router"
 import type { ReactNode } from "react"
-import { ChevronRightIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type Crumb = { label: string; to?: string }
 
-/** En-tête de page : fil d'Ariane, titre, description et actions (comme les pages de Coolify). */
-export function PageHeader({ crumbs, title, description, actions }: { crumbs?: Crumb[]; title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
+/**
+ * En-tête de page : titre, description et actions (comme les pages de Coolify).
+ * Le fil d'Ariane est dans la barre du haut (components/top-breadcrumb.tsx), déduit de l'URL.
+ */
+export function PageHeader({ title, description, actions }: { /** @deprecated ignoré : le fil d'Ariane est dans la barre du haut. */ crumbs?: Crumb[]; title?: ReactNode; description?: ReactNode; actions?: ReactNode }) {
   return (
     <header className="mb-6 space-y-2">
-      {crumbs && crumbs.length > 0 && (
-        <nav aria-label="Fil d'Ariane" className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-          {crumbs.map((c, i) => (
-            <span key={i} className="flex items-center gap-1">
-              {i > 0 && <ChevronRightIcon className="size-3.5" />}
-              {c.to ? (
-                <Link to={c.to as "/"} className="hover:text-foreground">
-                  {c.label}
-                </Link>
-              ) : (
-                <span className="text-foreground">{c.label}</span>
-              )}
-            </span>
-          ))}
-        </nav>
-      )}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight [text-shadow:0_1px_8px_rgb(0_0_0/0.25)]">{title}</h1>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -65,6 +51,39 @@ export function Section({ title, description, children, className }: { title?: s
         </header>
       )}
       {children}
+    </section>
+  )
+}
+
+/**
+ * Carte de réglages comme dans Coolify : titre souligné et actions sur la boîte extérieure,
+ * contenu dans un « puits » intérieur. `bodyClassName` règle l'espacement du puits (p-5 par défaut).
+ */
+export function SettingsCard({
+  title,
+  description,
+  actions,
+  children,
+  bodyClassName,
+  className,
+}: {
+  title: string
+  description?: ReactNode
+  actions?: ReactNode
+  children: ReactNode
+  bodyClassName?: string
+  className?: string
+}) {
+  return (
+    <section className={cn("settings-card glass-panel", className)}>
+      <header className="settings-card-header">
+        <div>
+          <h2>{title}</h2>
+          {description && <p>{description}</p>}
+        </div>
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
+      </header>
+      <div className={cn("settings-card-body", bodyClassName ?? "p-5")}>{children}</div>
     </section>
   )
 }

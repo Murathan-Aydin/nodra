@@ -1,35 +1,29 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 import {
-  ChevronsUpDownIcon,
-  CheckIcon,
+  ChevronDownIcon,
+  MenuIcon,
   LogOutIcon,
   PaletteIcon,
   PanelLeftIcon,
   SearchIcon,
   UserIcon,
 } from "lucide-react"
-import { NAV } from "@/components/nav"
+import { SidebarNav } from "@/components/sidebar-nav"
+import { TopBreadcrumb } from "@/components/top-breadcrumb"
 import { AppearanceDialog } from "@/components/appearance-dialog"
 import { CommandPalette } from "@/components/command-palette"
 import { Logo } from "@/components/logo"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { post } from "@/lib/api"
-import { instanceQuery, meQuery, teamsQuery } from "@/lib/queries"
+import { instanceQuery, meQuery } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
 const COLLAPSED_KEY = "nodra-sidebar-collapsed"
 
-/** Libellé de la page courante pour le fil d'Ariane. */
-function currentLabel(pathname: string, team: string): string {
-  const rest = pathname.slice(`/t/${team}`.length).replace(/\/$/, "")
-  for (const g of NAV) for (const i of g.items) if (i.path && (rest === i.path || rest.startsWith(i.path + "/"))) return i.label
-  return rest === "" ? "Tableau de bord" : ""
-}
-
 export function AppShell({ team, children }: { team: string; children: ReactNode }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(COLLAPSED_KEY) === "1"
@@ -38,6 +32,11 @@ export function AppShell({ team, children }: { team: string; children: ReactNode
     }
   })
   const [search, setSearch] = useState(false)
+  const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null)
+  // Tiroir mobile : ouvert seulement sur la page où on l'a ouvert (il se ferme en changeant de page).
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const [drawerOn, setDrawerOn] = useState<string | null>(null)
+  const drawer = drawerOn === pathname
   const [appearance, setAppearance] = useState(false)
   useEffect(() => {
     try {
@@ -57,112 +56,89 @@ export function AppShell({ team, children }: { team: string; children: ReactNode
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
+  // Largeur du panneau d'actions, pour que la barre du haut s'arrête avant lui (--resource-actions-w du fork).
+  useEffect(() => {
+    if (!actionsSlot) return
+    const ro = new ResizeObserver(([entry]) => document.documentElement.style.setProperty("--actions-w", `${entry.borderBoxSize[0].inlineSize}px`))
+    ro.observe(actionsSlot)
+    return () => ro.disconnect()
+  }, [actionsSlot])
+
   return (
-    <div className="flex min-h-screen flex-col gap-3 p-3">
-      <TopBar team={team} page={currentLabel(pathname, team)} />
-      <div className="flex flex-1 gap-3">
-        <aside className={cn("glass-panel sticky top-3 flex h-[calc(100vh-5.25rem)] shrink-0 flex-col rounded-2xl p-3 transition-[width]", collapsed ? "w-16" : "w-64")}>
+    <div className="app-shell" data-collapsed={collapsed ? "" : undefined} data-mobile-open={drawer ? "" : undefined}>
+      <TopBar team={team} collapsed={collapsed} onMenu={() => setDrawerOn(drawer ? null : pathname)} />
+      {drawer && <button type="button" aria-label="Fermer le menu" className="fixed inset-0 z-50 bg-black/40 lg:hidden" onClick={() => setDrawerOn(null)} />}
+
+      {/* Actions de la page (resource-action-hud-slot du fork), remplies par <TopBarActions>. */}
+      <div ref={setActionsSlot} className="app-actions glass-panel" />
+
+      <aside className="app-sidebar glass-panel">
+        <button type="button" onClick={() => setSearch(true)} className="menu-item mb-2 justify-between rounded-lg! bg-muted" aria-label="Rechercher">
+          <span className="flex min-w-0 items-center gap-2.5">
+            <SearchIcon className="menu-item-icon" />
+            {!collapsed && <span className="menu-item-label">Rechercher</span>}
+          </span>
+          {!collapsed && <kbd className="rounded border border-border px-1.5 font-mono text-[10px] text-muted-foreground">⌘K</kbd>}
+        </button>
+        <nav className="-mx-1 flex min-h-0 flex-1 flex-col gap-y-0.5 overflow-y-auto px-1 pb-2">
+          <SidebarNav team={team} collapsed={collapsed} />
+        </nav>
+        <div className={cn("flex shrink-0 items-center gap-1 border-t border-border py-2", collapsed && "flex-col")}>
+          <UserMenu team={team} collapsed={collapsed} onAppearance={() => setAppearance(true)} />
           <button
             type="button"
-            onClick={() => setSearch(true)}
-            className={cn(
-              "mb-3 flex h-9 items-center gap-2 rounded-lg border border-border bg-muted px-2.5 text-sm text-muted-foreground hover:text-foreground",
-              collapsed && "justify-center px-0",
-            )}
-            aria-label="Rechercher"
+            onClick={() => setCollapsed(!collapsed)}
+            className="menu-item w-8 shrink-0 justify-center px-0"
+            aria-label={collapsed ? "Déplier la barre latérale" : "Replier la barre latérale"}
           >
-            <SearchIcon className="size-4 shrink-0" />
-            {!collapsed && (
-              <>
-                <span className="flex-1 text-left">Rechercher…</span>
-                <kbd className="rounded border border-border px-1.5 font-mono text-[10px]">⌘K</kbd>
-              </>
-            )}
+            <PanelLeftIcon className="menu-item-icon" />
           </button>
-          <nav className="flex-1 space-y-5 overflow-y-auto">
-            {NAV.map((g, i) => (
-              <div key={i} className="space-y-0.5">
-                {g.title && !collapsed && <p className="px-2.5 pb-1 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">{g.title}</p>}
-                {g.items.map((item) => {
-                  const href = `/t/${team}${item.path}`
-                  const active = item.path === "" ? pathname === `/t/${team}` || pathname === `/t/${team}/` : pathname.startsWith(href)
-                  return (
-                    <Link
-                      key={item.label}
-                      to={href}
-                      title={collapsed ? item.label : undefined}
-                      className={cn(
-                        "flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm transition-colors",
-                        active ? "bg-sidebar-accent font-medium text-foreground" : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
-                        collapsed && "justify-center px-0",
-                      )}
-                    >
-                      <item.icon className="size-[18px] shrink-0" />
-                      {!collapsed && item.label}
-                    </Link>
-                  )
-                })}
-              </div>
-            ))}
-          </nav>
-          <div className={cn("mt-3 flex items-center gap-2", collapsed && "flex-col")}>
-            <UserMenu team={team} collapsed={collapsed} onAppearance={() => setAppearance(true)} />
-            <button
-              type="button"
-              onClick={() => setCollapsed(!collapsed)}
-              className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-              aria-label={collapsed ? "Déplier la barre latérale" : "Replier la barre latérale"}
-            >
-              <PanelLeftIcon className="size-4" />
-            </button>
-          </div>
-        </aside>
-        <main className="min-w-0 flex-1 pb-6">{children}</main>
-      </div>
+        </div>
+      </aside>
+
+      <main className="app-main">
+        <div className="mx-auto w-full max-w-[1400px]">
+          <ActionsSlot.Provider value={actionsSlot}>{children}</ActionsSlot.Provider>
+        </div>
+      </main>
       <CommandPalette team={team} open={search} onOpenChange={setSearch} />
       <AppearanceDialog open={appearance} onOpenChange={setAppearance} />
     </div>
   )
 }
 
-function TopBar({ team, page }: { team: string; page: string }) {
+function TopBar({ team, collapsed, onMenu }: { team: string; collapsed: boolean; onMenu: () => void }) {
   const instance = useQuery(instanceQuery).data
-  const teams = useQuery(teamsQuery).data ?? []
-  const navigate = useNavigate()
-  const current = teams.find((t) => t.id === team)
   return (
-    <header className="glass-panel flex h-12 w-fit max-w-full items-center rounded-2xl text-sm">
-      <Link to="/t/$team" params={{ team }} className="flex items-center gap-2.5 border-r border-border px-4">
-        <Logo className="size-6 rounded-md" />
-        <span className="font-semibold">{instance?.name ?? "Nodra"}</span>
-        {instance?.version && <span className="font-mono text-xs text-muted-foreground">{instance.version}</span>}
-      </Link>
-      <div className="flex items-center gap-2 px-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-sidebar-accent">
-            <span className="flex size-6 items-center justify-center rounded-md bg-muted text-xs font-semibold uppercase">{current?.name.slice(0, 1) ?? "·"}</span>
-            <span className="max-w-48 truncate font-medium">{current?.name ?? "Équipe"}</span>
-            <ChevronsUpDownIcon className="size-3.5 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64">
-            <DropdownMenuLabel>Équipes</DropdownMenuLabel>
-            {teams.map((t) => (
-              <DropdownMenuItem key={t.id} onSelect={() => void navigate({ to: "/t/$team", params: { team: t.id } })}>
-                <span className="flex-1 truncate">{t.name}</span>
-                {t.id === team && <CheckIcon className="size-4" />}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {page && (
-          <>
-            <span className="text-muted-foreground">/</span>
-            <span className="pr-2 font-medium">{page}</span>
-          </>
-        )}
+    <header className="app-topbar glass-panel">
+      <div className="app-topbar-brand">
+        <Link to="/t/$team" params={{ team }} title={instance?.name ?? "Nodra"} className="flex min-w-0 items-baseline gap-1.5 transition-opacity hover:opacity-80">
+          {collapsed ? (
+            <Logo className="size-5 rounded-md" />
+          ) : (
+            <>
+              <span className="text-[15px] font-semibold tracking-tight">{instance?.name ?? "Nodra"}</span>
+              {instance?.version && <span className="truncate text-[10.5px] font-medium text-muted-foreground">{instance.version}</span>}
+            </>
+          )}
+        </Link>
       </div>
+      <div className="flex h-full min-w-0 flex-1 items-center gap-0.5 overflow-x-auto pr-4 pl-3 [scrollbar-width:none]">
+        <TopBreadcrumb team={team} />
+      </div>
+      <button type="button" onClick={onMenu} aria-label="Menu" className="mr-2 flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-foreground/5 hover:text-foreground lg:hidden">
+        <MenuIcon className="size-5" />
+      </button>
     </header>
   )
+}
+
+const ActionsSlot = createContext<HTMLElement | null>(null)
+
+/** Place ses enfants dans la barre du haut, à droite (boutons d'action de la page). */
+export function TopBarActions({ children }: { children: ReactNode }) {
+  const slot = useContext(ActionsSlot)
+  return slot ? createPortal(children, slot) : null
 }
 
 function UserMenu({ team, collapsed, onAppearance }: { team: string; collapsed: boolean; onAppearance: () => void }) {
@@ -180,14 +156,14 @@ function UserMenu({ team, collapsed, onAppearance }: { team: string; collapsed: 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={cn("flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-border bg-muted px-2 text-left hover:bg-sidebar-accent", collapsed && "size-9 flex-none justify-center px-0")}
+        className={cn("menu-item min-w-0 flex-1 rounded-lg! border border-border", collapsed && "w-8 flex-none justify-center px-0")}
       >
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">{initial}</span>
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-semibold text-foreground">{initial}</span>
         {!collapsed && (
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium">{me?.name || me?.email}</span>
-            <span className="block truncate text-[11px] text-muted-foreground">{me?.email}</span>
-          </span>
+          <>
+            <span className="menu-item-label">{me?.name || me?.email}</span>
+            <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+          </>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-56">

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError, get, post, teamPath } from "@/lib/api"
-import { projectQueries, teamQueries } from "@/lib/queries"
+import { teamQueries } from "@/lib/queries"
 import type { Server, ServiceTemplate } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { AppForm } from "@/features/new-resource/app-forms"
@@ -27,11 +27,10 @@ export const Route = createFileRoute("/t/$team/projects/$project/$env/new")({
 })
 
 function NewResource() {
-  const { team, project, env } = Route.useParams()
+  const { team, env } = Route.useParams()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const go = (s: Search) => void navigate({ search: (p) => ({ ...p, ...s }) })
-  const data = useQuery(projectQueries.environment(team, project, env)).data
   const step = search.step ?? "type"
   const option = ALL_OPTIONS.find((o) => o.id === search.kind)
   // Une équipe = un serveur : la ressource y est créée directement (destination par défaut).
@@ -42,12 +41,6 @@ function NewResource() {
   return (
     <>
       <PageHeader
-        crumbs={[
-          { label: "Projets", to: `/t/${team}/projects` },
-          { label: data?.project.name ?? "…", to: `/t/${team}/projects/${project}` },
-          { label: data?.environment.name ?? "…", to: `/t/${team}/projects/${project}/${env}` },
-          { label: "Nouvelle ressource" },
-        ]}
         title={step === "type" ? "Nouvelle ressource" : (option?.name ?? (service ? `Service ${service}` : "Nouvelle ressource"))}
         actions={
           step !== "type" && (

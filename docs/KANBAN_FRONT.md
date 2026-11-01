@@ -20,6 +20,10 @@ _(rien)_
 
 **Premier démarrage** (demandé par l'utilisateur) : création du compte administrateur (`/setup`), configuration guidée (`/onboarding` : serveur « Cette machine » ou SSH, validation suivie, premier projet, récapitulatif), connexion avec double authentification (`/login`). Cadre de l'application (barre du haut, barre latérale, recherche ⌘K, menu utilisateur) et tableau de bord façon Coolify.
 
+**F0-05 · WebSocket** : `lib/socket.ts` (`useSocket` avec reconnexion progressive, `useTeamEvents` qui invalide les requêtes de l'équipe), branché dans `TeamLayout`.
+
+**Phase 2 complète, sur le modèle du fork Coolify (2026-11-01)** — toutes les cartes des lots 0 à 13 ont un écran : socle (F0-01 à F0-07 : cadre flottant du fork, client typé, WebSocket, utilitaires `lib/format.ts`, permissions `lib/permissions.tsx` avec `usePermission`/`<Can>`), authentification (connexion avec OAuth, inscription, mot de passe oublié et réinitialisation, vérification d'adresse, acceptation d'invitation), compte (profil, mot de passe, 2FA avec QR code, sessions, comptes liés, apparence), équipe (général, sous-équipes, transfert, membres, invitations, attributions, rôles, groupes, approbations, audit, zone de danger), serveurs (lot 5 complet), projets et environnements, variables partagées, tags, sources Git (dont GitHub App par manifeste), applications, bases, services, intégrations (registres, S3), notifications, administration de l'instance, supervision, temps réel (toasts de fin de déploiement), mobile (tiroir), tests unitaires. Détail dans PROGRESS.md.
+
 ---
 
 ## Conventions communes (à lire avant de commencer)

@@ -20,7 +20,6 @@ function ProjectSettings() {
   return (
     <>
       <PageHeader
-        crumbs={[{ label: "Projets", to: `/t/${team}/projects` }, { label: data?.project.name ?? "…", to: `/t/${team}/projects/${project}` }, { label: "Réglages" }]}
         title="Réglages du projet"
       />
       {data && <ProjectForm key={data.project.name + data.project.description} team={team} project={data.project} />}

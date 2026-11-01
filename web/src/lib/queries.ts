@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import { get } from "./api"
-import type { Deployment, Environment, Instance, ProjectSummary, ResourceSummary, Server, Team, User } from "./types"
+import type { Application, Container, Database, Deployment, EnvVar, Tag, Environment, Instance, ProjectSummary, ResourceSummary, Server, Team, Service, ServiceApp, User } from "./types"
 
 export const instanceQuery = queryOptions({ queryKey: ["instance"], queryFn: () => get<Instance>("/instance") })
 
@@ -36,5 +36,53 @@ export const projectQueries = {
       queryKey: ["team", team, "resources", { env }],
       queryFn: () => get<ResourceSummary[]>(`/teams/${team}/resources?environment_id=${env}`),
       refetchInterval: 15_000,
+    }),
+}
+
+export const serviceQueries = {
+  service: (team: string, id: string) =>
+    queryOptions({
+      queryKey: ["team", team, "service", id],
+      queryFn: () => get<{ service: Service; apps: ServiceApp[]; tags: Tag[] | null }>(`/teams/${team}/services/${id}`),
+    }),
+  containers: (team: string, id: string) =>
+    queryOptions({
+      queryKey: ["team", team, "service", id, "containers"],
+      queryFn: () => get<Container[]>(`/teams/${team}/services/${id}/containers`),
+      refetchInterval: 15_000,
+    }),
+  envs: (team: string, id: string) =>
+    queryOptions({
+      queryKey: ["team", team, "service", id, "envs"],
+      queryFn: () => get<EnvVar[]>(`/teams/${team}/services/${id}/envs`),
+    }),
+}
+
+export const templateQuery = (slug: string) =>
+  queryOptions({
+    queryKey: ["service-template", slug],
+    queryFn: () => get<{ slug: string; name: string; documentation: string }>(`/service-templates/${slug}`),
+    enabled: !!slug,
+    staleTime: Infinity,
+  })
+
+export const databaseQueries = {
+  database: (team: string, id: string) =>
+    queryOptions({
+      queryKey: ["team", team, "database", id],
+      queryFn: () => get<{ database: Database; tags: Tag[] | null; server_id: string; project_id: string }>(`/teams/${team}/databases/${id}`),
+    }),
+}
+
+export const applicationQueries = {
+  application: (team: string, id: string) =>
+    queryOptions({
+      queryKey: ["team", team, "application", id],
+      queryFn: () => get<{ application: Application; tags: Tag[] | null; server_id: string; project_id: string }>(`/teams/${team}/applications/${id}`),
+    }),
+  deployments: (team: string, id: string) =>
+    queryOptions({
+      queryKey: ["team", team, "application", id, "deployments"],
+      queryFn: () => get<Deployment[]>(`/teams/${team}/applications/${id}/deployments`),
     }),
 }

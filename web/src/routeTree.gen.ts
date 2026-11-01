@@ -10,23 +10,125 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 import { Route as TTeamRouteRouteImport } from './routes/t/$team/route'
 import { Route as TTeamIndexRouteImport } from './routes/t/$team/index'
 import { Route as TTeamSplatRouteImport } from './routes/t/$team/$'
+import { Route as TTeamAccountIndexRouteImport } from './routes/t/$team/account/index'
+import { Route as TTeamApplicationsApplicationRouteRouteImport } from './routes/t/$team/applications/$application/route'
+import { Route as TTeamDatabasesDatabaseRouteRouteImport } from './routes/t/$team/databases/$database/route'
+import { Route as TTeamIntegrationsIndexRouteImport } from './routes/t/$team/integrations/index'
+import { Route as TTeamIntegrationsRegistriesRouteImport } from './routes/t/$team/integrations/registries'
+import { Route as TTeamIntegrationsS3RouteImport } from './routes/t/$team/integrations/s3'
+import { Route as TTeamIntegrationsSourcesRouteImport } from './routes/t/$team/integrations/sources'
+import { Route as TTeamKeysIndexRouteImport } from './routes/t/$team/keys/index'
+import { Route as TTeamKeysTokensRouteImport } from './routes/t/$team/keys/tokens'
+import { Route as TTeamMonitoringIndexRouteImport } from './routes/t/$team/monitoring/index'
+import { Route as TTeamNotificationsIndexRouteImport } from './routes/t/$team/notifications/index'
+import { Route as TTeamNotificationsDeliveriesRouteImport } from './routes/t/$team/notifications/deliveries'
+import { Route as TTeamNotificationsEventsRouteImport } from './routes/t/$team/notifications/events'
 import { Route as TTeamProjectsIndexRouteImport } from './routes/t/$team/projects/index'
+import { Route as TTeamServersIndexRouteImport } from './routes/t/$team/servers/index'
+import { Route as TTeamServersServerRouteRouteImport } from './routes/t/$team/servers/$server/route'
+import { Route as TTeamServicesServiceRouteRouteImport } from './routes/t/$team/services/$service/route'
+import { Route as TTeamSettingsIndexRouteImport } from './routes/t/$team/settings/index'
+import { Route as TTeamSettingsAdvancedRouteImport } from './routes/t/$team/settings/advanced'
+import { Route as TTeamSettingsAuditRouteImport } from './routes/t/$team/settings/audit'
+import { Route as TTeamSettingsEmailRouteImport } from './routes/t/$team/settings/email'
+import { Route as TTeamSettingsOauthRouteImport } from './routes/t/$team/settings/oauth'
+import { Route as TTeamSettingsUpdatesRouteImport } from './routes/t/$team/settings/updates'
+import { Route as TTeamSettingsUsersRouteImport } from './routes/t/$team/settings/users'
+import { Route as TTeamTagsIndexRouteImport } from './routes/t/$team/tags/index'
+import { Route as TTeamTeamIndexRouteImport } from './routes/t/$team/team/index'
+import { Route as TTeamTeamApprovalsRouteImport } from './routes/t/$team/team/approvals'
+import { Route as TTeamTeamAuditRouteImport } from './routes/t/$team/team/audit'
+import { Route as TTeamTeamDangerRouteImport } from './routes/t/$team/team/danger'
+import { Route as TTeamTeamGroupsRouteImport } from './routes/t/$team/team/groups'
+import { Route as TTeamTeamMembersRouteImport } from './routes/t/$team/team/members'
+import { Route as TTeamTeamRolesRouteImport } from './routes/t/$team/team/roles'
+import { Route as TTeamTerminalIndexRouteImport } from './routes/t/$team/terminal/index'
+import { Route as TTeamVariablesIndexRouteImport } from './routes/t/$team/variables/index'
+import { Route as TTeamApplicationsApplicationIndexRouteImport } from './routes/t/$team/applications/$application/index'
+import { Route as TTeamApplicationsApplicationAdvancedRouteImport } from './routes/t/$team/applications/$application/advanced'
+import { Route as TTeamApplicationsApplicationComposeRouteImport } from './routes/t/$team/applications/$application/compose'
+import { Route as TTeamApplicationsApplicationDangerRouteImport } from './routes/t/$team/applications/$application/danger'
+import { Route as TTeamApplicationsApplicationEnvsRouteImport } from './routes/t/$team/applications/$application/envs'
+import { Route as TTeamApplicationsApplicationHealthcheckRouteImport } from './routes/t/$team/applications/$application/healthcheck'
+import { Route as TTeamApplicationsApplicationLimitsRouteImport } from './routes/t/$team/applications/$application/limits'
+import { Route as TTeamApplicationsApplicationLogsRouteImport } from './routes/t/$team/applications/$application/logs'
+import { Route as TTeamApplicationsApplicationOperationsRouteImport } from './routes/t/$team/applications/$application/operations'
+import { Route as TTeamApplicationsApplicationPreviewsRouteImport } from './routes/t/$team/applications/$application/previews'
+import { Route as TTeamApplicationsApplicationScheduledTasksRouteImport } from './routes/t/$team/applications/$application/scheduled-tasks'
+import { Route as TTeamApplicationsApplicationSourceRouteImport } from './routes/t/$team/applications/$application/source'
+import { Route as TTeamApplicationsApplicationStoragesRouteImport } from './routes/t/$team/applications/$application/storages'
+import { Route as TTeamApplicationsApplicationTagsRouteImport } from './routes/t/$team/applications/$application/tags'
+import { Route as TTeamApplicationsApplicationTerminalRouteImport } from './routes/t/$team/applications/$application/terminal'
+import { Route as TTeamApplicationsApplicationWebhooksRouteImport } from './routes/t/$team/applications/$application/webhooks'
+import { Route as TTeamDatabasesDatabaseIndexRouteImport } from './routes/t/$team/databases/$database/index'
+import { Route as TTeamDatabasesDatabaseBackupsRouteImport } from './routes/t/$team/databases/$database/backups'
+import { Route as TTeamDatabasesDatabaseDangerRouteImport } from './routes/t/$team/databases/$database/danger'
+import { Route as TTeamDatabasesDatabaseEnvsRouteImport } from './routes/t/$team/databases/$database/envs'
+import { Route as TTeamDatabasesDatabaseImportRouteImport } from './routes/t/$team/databases/$database/import'
+import { Route as TTeamDatabasesDatabaseLogsRouteImport } from './routes/t/$team/databases/$database/logs'
+import { Route as TTeamDatabasesDatabaseOperationsRouteImport } from './routes/t/$team/databases/$database/operations'
+import { Route as TTeamDatabasesDatabaseScheduledTasksRouteImport } from './routes/t/$team/databases/$database/scheduled-tasks'
+import { Route as TTeamDatabasesDatabaseStoragesRouteImport } from './routes/t/$team/databases/$database/storages'
+import { Route as TTeamDatabasesDatabaseTagsRouteImport } from './routes/t/$team/databases/$database/tags'
+import { Route as TTeamDatabasesDatabaseTasksRouteImport } from './routes/t/$team/databases/$database/tasks'
+import { Route as TTeamDatabasesDatabaseTerminalRouteImport } from './routes/t/$team/databases/$database/terminal'
 import { Route as TTeamProjectsProjectIndexRouteImport } from './routes/t/$team/projects/$project/index'
 import { Route as TTeamProjectsProjectNewRouteImport } from './routes/t/$team/projects/$project/new'
 import { Route as TTeamProjectsProjectSettingsRouteImport } from './routes/t/$team/projects/$project/settings'
+import { Route as TTeamServersServerIndexRouteImport } from './routes/t/$team/servers/$server/index'
+import { Route as TTeamServersServerAdvancedRouteImport } from './routes/t/$team/servers/$server/advanced'
+import { Route as TTeamServersServerCaCertificateRouteImport } from './routes/t/$team/servers/$server/ca-certificate'
+import { Route as TTeamServersServerCleanupRouteImport } from './routes/t/$team/servers/$server/cleanup'
+import { Route as TTeamServersServerCloudflareRouteImport } from './routes/t/$team/servers/$server/cloudflare'
+import { Route as TTeamServersServerCommandRouteImport } from './routes/t/$team/servers/$server/command'
+import { Route as TTeamServersServerDangerRouteImport } from './routes/t/$team/servers/$server/danger'
+import { Route as TTeamServersServerDestinationsRouteImport } from './routes/t/$team/servers/$server/destinations'
+import { Route as TTeamServersServerLogDrainsRouteImport } from './routes/t/$team/servers/$server/log-drains'
+import { Route as TTeamServersServerMetricsRouteImport } from './routes/t/$team/servers/$server/metrics'
+import { Route as TTeamServersServerPackagesRouteImport } from './routes/t/$team/servers/$server/packages'
+import { Route as TTeamServersServerPrivateKeyRouteImport } from './routes/t/$team/servers/$server/private-key'
+import { Route as TTeamServersServerResourcesRouteImport } from './routes/t/$team/servers/$server/resources'
+import { Route as TTeamServersServerTasksRouteImport } from './routes/t/$team/servers/$server/tasks'
+import { Route as TTeamServersServerTerminalRouteImport } from './routes/t/$team/servers/$server/terminal'
+import { Route as TTeamServicesServiceIndexRouteImport } from './routes/t/$team/services/$service/index'
+import { Route as TTeamServicesServiceDangerRouteImport } from './routes/t/$team/services/$service/danger'
+import { Route as TTeamServicesServiceDomainsRouteImport } from './routes/t/$team/services/$service/domains'
+import { Route as TTeamServicesServiceEnvsRouteImport } from './routes/t/$team/services/$service/envs'
+import { Route as TTeamServicesServiceLogsRouteImport } from './routes/t/$team/services/$service/logs'
+import { Route as TTeamServicesServiceOperationsRouteImport } from './routes/t/$team/services/$service/operations'
+import { Route as TTeamServicesServiceScheduledTasksRouteImport } from './routes/t/$team/services/$service/scheduled-tasks'
+import { Route as TTeamServicesServiceTagsRouteImport } from './routes/t/$team/services/$service/tags'
+import { Route as TTeamServicesServiceTasksRouteImport } from './routes/t/$team/services/$service/tasks'
+import { Route as TTeamServicesServiceTerminalRouteImport } from './routes/t/$team/services/$service/terminal'
+import { Route as TTeamApplicationsApplicationDeploymentsIndexRouteImport } from './routes/t/$team/applications/$application/deployments/index'
+import { Route as TTeamApplicationsApplicationDeploymentsDeploymentRouteImport } from './routes/t/$team/applications/$application/deployments/$deployment'
 import { Route as TTeamProjectsProjectEnvIndexRouteImport } from './routes/t/$team/projects/$project/$env/index'
 import { Route as TTeamProjectsProjectEnvNewRouteImport } from './routes/t/$team/projects/$project/$env/new'
 import { Route as TTeamProjectsProjectEnvSettingsRouteImport } from './routes/t/$team/projects/$project/$env/settings'
+import { Route as TTeamServersServerProxyIndexRouteImport } from './routes/t/$team/servers/$server/proxy/index'
+import { Route as TTeamServersServerProxyCertificatesRouteImport } from './routes/t/$team/servers/$server/proxy/certificates'
+import { Route as TTeamServersServerProxyDynamicRouteImport } from './routes/t/$team/servers/$server/proxy/dynamic'
+import { Route as TTeamServersServerProxyLogsRouteImport } from './routes/t/$team/servers/$server/proxy/logs'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -39,9 +141,29 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
+  id: '/invitations/accept',
+  path: '/invitations/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TTeamRouteRoute = TTeamRouteRouteImport.update({
@@ -59,11 +181,351 @@ const TTeamSplatRoute = TTeamSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
+const TTeamAccountIndexRoute = TTeamAccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamApplicationsApplicationRouteRoute =
+  TTeamApplicationsApplicationRouteRouteImport.update({
+    id: '/applications/$application',
+    path: '/applications/$application',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseRouteRoute =
+  TTeamDatabasesDatabaseRouteRouteImport.update({
+    id: '/databases/$database',
+    path: '/databases/$database',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamIntegrationsIndexRoute = TTeamIntegrationsIndexRouteImport.update({
+  id: '/integrations/',
+  path: '/integrations/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamIntegrationsRegistriesRoute =
+  TTeamIntegrationsRegistriesRouteImport.update({
+    id: '/integrations/registries',
+    path: '/integrations/registries',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamIntegrationsS3Route = TTeamIntegrationsS3RouteImport.update({
+  id: '/integrations/s3',
+  path: '/integrations/s3',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamIntegrationsSourcesRoute =
+  TTeamIntegrationsSourcesRouteImport.update({
+    id: '/integrations/sources',
+    path: '/integrations/sources',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamKeysIndexRoute = TTeamKeysIndexRouteImport.update({
+  id: '/keys/',
+  path: '/keys/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamKeysTokensRoute = TTeamKeysTokensRouteImport.update({
+  id: '/keys/tokens',
+  path: '/keys/tokens',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamMonitoringIndexRoute = TTeamMonitoringIndexRouteImport.update({
+  id: '/monitoring/',
+  path: '/monitoring/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamNotificationsIndexRoute = TTeamNotificationsIndexRouteImport.update({
+  id: '/notifications/',
+  path: '/notifications/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamNotificationsDeliveriesRoute =
+  TTeamNotificationsDeliveriesRouteImport.update({
+    id: '/notifications/deliveries',
+    path: '/notifications/deliveries',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamNotificationsEventsRoute =
+  TTeamNotificationsEventsRouteImport.update({
+    id: '/notifications/events',
+    path: '/notifications/events',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
 const TTeamProjectsIndexRoute = TTeamProjectsIndexRouteImport.update({
   id: '/projects/',
   path: '/projects/',
   getParentRoute: () => TTeamRouteRoute,
 } as any)
+const TTeamServersIndexRoute = TTeamServersIndexRouteImport.update({
+  id: '/servers/',
+  path: '/servers/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamServersServerRouteRoute = TTeamServersServerRouteRouteImport.update({
+  id: '/servers/$server',
+  path: '/servers/$server',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamServicesServiceRouteRoute =
+  TTeamServicesServiceRouteRouteImport.update({
+    id: '/services/$service',
+    path: '/services/$service',
+    getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamSettingsIndexRoute = TTeamSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamSettingsAdvancedRoute = TTeamSettingsAdvancedRouteImport.update({
+  id: '/settings/advanced',
+  path: '/settings/advanced',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamSettingsAuditRoute = TTeamSettingsAuditRouteImport.update({
+  id: '/settings/audit',
+  path: '/settings/audit',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamSettingsEmailRoute = TTeamSettingsEmailRouteImport.update({
+  id: '/settings/email',
+  path: '/settings/email',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamSettingsOauthRoute = TTeamSettingsOauthRouteImport.update({
+  id: '/settings/oauth',
+  path: '/settings/oauth',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamSettingsUpdatesRoute = TTeamSettingsUpdatesRouteImport.update({
+  id: '/settings/updates',
+  path: '/settings/updates',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamSettingsUsersRoute = TTeamSettingsUsersRouteImport.update({
+  id: '/settings/users',
+  path: '/settings/users',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTagsIndexRoute = TTeamTagsIndexRouteImport.update({
+  id: '/tags/',
+  path: '/tags/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTeamIndexRoute = TTeamTeamIndexRouteImport.update({
+  id: '/team/',
+  path: '/team/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTeamApprovalsRoute = TTeamTeamApprovalsRouteImport.update({
+  id: '/team/approvals',
+  path: '/team/approvals',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTeamAuditRoute = TTeamTeamAuditRouteImport.update({
+  id: '/team/audit',
+  path: '/team/audit',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTeamDangerRoute = TTeamTeamDangerRouteImport.update({
+  id: '/team/danger',
+  path: '/team/danger',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTeamGroupsRoute = TTeamTeamGroupsRouteImport.update({
+  id: '/team/groups',
+  path: '/team/groups',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTeamMembersRoute = TTeamTeamMembersRouteImport.update({
+  id: '/team/members',
+  path: '/team/members',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTeamRolesRoute = TTeamTeamRolesRouteImport.update({
+  id: '/team/roles',
+  path: '/team/roles',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamTerminalIndexRoute = TTeamTerminalIndexRouteImport.update({
+  id: '/terminal/',
+  path: '/terminal/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamVariablesIndexRoute = TTeamVariablesIndexRouteImport.update({
+  id: '/variables/',
+  path: '/variables/',
+  getParentRoute: () => TTeamRouteRoute,
+} as any)
+const TTeamApplicationsApplicationIndexRoute =
+  TTeamApplicationsApplicationIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationAdvancedRoute =
+  TTeamApplicationsApplicationAdvancedRouteImport.update({
+    id: '/advanced',
+    path: '/advanced',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationComposeRoute =
+  TTeamApplicationsApplicationComposeRouteImport.update({
+    id: '/compose',
+    path: '/compose',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationDangerRoute =
+  TTeamApplicationsApplicationDangerRouteImport.update({
+    id: '/danger',
+    path: '/danger',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationEnvsRoute =
+  TTeamApplicationsApplicationEnvsRouteImport.update({
+    id: '/envs',
+    path: '/envs',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationHealthcheckRoute =
+  TTeamApplicationsApplicationHealthcheckRouteImport.update({
+    id: '/healthcheck',
+    path: '/healthcheck',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationLimitsRoute =
+  TTeamApplicationsApplicationLimitsRouteImport.update({
+    id: '/limits',
+    path: '/limits',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationLogsRoute =
+  TTeamApplicationsApplicationLogsRouteImport.update({
+    id: '/logs',
+    path: '/logs',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationOperationsRoute =
+  TTeamApplicationsApplicationOperationsRouteImport.update({
+    id: '/operations',
+    path: '/operations',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationPreviewsRoute =
+  TTeamApplicationsApplicationPreviewsRouteImport.update({
+    id: '/previews',
+    path: '/previews',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationScheduledTasksRoute =
+  TTeamApplicationsApplicationScheduledTasksRouteImport.update({
+    id: '/scheduled-tasks',
+    path: '/scheduled-tasks',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationSourceRoute =
+  TTeamApplicationsApplicationSourceRouteImport.update({
+    id: '/source',
+    path: '/source',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationStoragesRoute =
+  TTeamApplicationsApplicationStoragesRouteImport.update({
+    id: '/storages',
+    path: '/storages',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationTagsRoute =
+  TTeamApplicationsApplicationTagsRouteImport.update({
+    id: '/tags',
+    path: '/tags',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationTerminalRoute =
+  TTeamApplicationsApplicationTerminalRouteImport.update({
+    id: '/terminal',
+    path: '/terminal',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationWebhooksRoute =
+  TTeamApplicationsApplicationWebhooksRouteImport.update({
+    id: '/webhooks',
+    path: '/webhooks',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseIndexRoute =
+  TTeamDatabasesDatabaseIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseBackupsRoute =
+  TTeamDatabasesDatabaseBackupsRouteImport.update({
+    id: '/backups',
+    path: '/backups',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseDangerRoute =
+  TTeamDatabasesDatabaseDangerRouteImport.update({
+    id: '/danger',
+    path: '/danger',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseEnvsRoute =
+  TTeamDatabasesDatabaseEnvsRouteImport.update({
+    id: '/envs',
+    path: '/envs',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseImportRoute =
+  TTeamDatabasesDatabaseImportRouteImport.update({
+    id: '/import',
+    path: '/import',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseLogsRoute =
+  TTeamDatabasesDatabaseLogsRouteImport.update({
+    id: '/logs',
+    path: '/logs',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseOperationsRoute =
+  TTeamDatabasesDatabaseOperationsRouteImport.update({
+    id: '/operations',
+    path: '/operations',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseScheduledTasksRoute =
+  TTeamDatabasesDatabaseScheduledTasksRouteImport.update({
+    id: '/scheduled-tasks',
+    path: '/scheduled-tasks',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseStoragesRoute =
+  TTeamDatabasesDatabaseStoragesRouteImport.update({
+    id: '/storages',
+    path: '/storages',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseTagsRoute =
+  TTeamDatabasesDatabaseTagsRouteImport.update({
+    id: '/tags',
+    path: '/tags',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseTasksRoute =
+  TTeamDatabasesDatabaseTasksRouteImport.update({
+    id: '/tasks',
+    path: '/tasks',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
+const TTeamDatabasesDatabaseTerminalRoute =
+  TTeamDatabasesDatabaseTerminalRouteImport.update({
+    id: '/terminal',
+    path: '/terminal',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
 const TTeamProjectsProjectIndexRoute =
   TTeamProjectsProjectIndexRouteImport.update({
     id: '/projects/$project/',
@@ -80,6 +542,166 @@ const TTeamProjectsProjectSettingsRoute =
     id: '/projects/$project/settings',
     path: '/projects/$project/settings',
     getParentRoute: () => TTeamRouteRoute,
+  } as any)
+const TTeamServersServerIndexRoute = TTeamServersServerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TTeamServersServerRouteRoute,
+} as any)
+const TTeamServersServerAdvancedRoute =
+  TTeamServersServerAdvancedRouteImport.update({
+    id: '/advanced',
+    path: '/advanced',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerCaCertificateRoute =
+  TTeamServersServerCaCertificateRouteImport.update({
+    id: '/ca-certificate',
+    path: '/ca-certificate',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerCleanupRoute =
+  TTeamServersServerCleanupRouteImport.update({
+    id: '/cleanup',
+    path: '/cleanup',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerCloudflareRoute =
+  TTeamServersServerCloudflareRouteImport.update({
+    id: '/cloudflare',
+    path: '/cloudflare',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerCommandRoute =
+  TTeamServersServerCommandRouteImport.update({
+    id: '/command',
+    path: '/command',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerDangerRoute =
+  TTeamServersServerDangerRouteImport.update({
+    id: '/danger',
+    path: '/danger',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerDestinationsRoute =
+  TTeamServersServerDestinationsRouteImport.update({
+    id: '/destinations',
+    path: '/destinations',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerLogDrainsRoute =
+  TTeamServersServerLogDrainsRouteImport.update({
+    id: '/log-drains',
+    path: '/log-drains',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerMetricsRoute =
+  TTeamServersServerMetricsRouteImport.update({
+    id: '/metrics',
+    path: '/metrics',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerPackagesRoute =
+  TTeamServersServerPackagesRouteImport.update({
+    id: '/packages',
+    path: '/packages',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerPrivateKeyRoute =
+  TTeamServersServerPrivateKeyRouteImport.update({
+    id: '/private-key',
+    path: '/private-key',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerResourcesRoute =
+  TTeamServersServerResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerTasksRoute = TTeamServersServerTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => TTeamServersServerRouteRoute,
+} as any)
+const TTeamServersServerTerminalRoute =
+  TTeamServersServerTerminalRouteImport.update({
+    id: '/terminal',
+    path: '/terminal',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServicesServiceIndexRoute =
+  TTeamServicesServiceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamServicesServiceDangerRoute =
+  TTeamServicesServiceDangerRouteImport.update({
+    id: '/danger',
+    path: '/danger',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamServicesServiceDomainsRoute =
+  TTeamServicesServiceDomainsRouteImport.update({
+    id: '/domains',
+    path: '/domains',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamServicesServiceEnvsRoute =
+  TTeamServicesServiceEnvsRouteImport.update({
+    id: '/envs',
+    path: '/envs',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamServicesServiceLogsRoute =
+  TTeamServicesServiceLogsRouteImport.update({
+    id: '/logs',
+    path: '/logs',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamServicesServiceOperationsRoute =
+  TTeamServicesServiceOperationsRouteImport.update({
+    id: '/operations',
+    path: '/operations',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamServicesServiceScheduledTasksRoute =
+  TTeamServicesServiceScheduledTasksRouteImport.update({
+    id: '/scheduled-tasks',
+    path: '/scheduled-tasks',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamServicesServiceTagsRoute =
+  TTeamServicesServiceTagsRouteImport.update({
+    id: '/tags',
+    path: '/tags',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamServicesServiceTasksRoute =
+  TTeamServicesServiceTasksRouteImport.update({
+    id: '/tasks',
+    path: '/tasks',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamServicesServiceTerminalRoute =
+  TTeamServicesServiceTerminalRouteImport.update({
+    id: '/terminal',
+    path: '/terminal',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationDeploymentsIndexRoute =
+  TTeamApplicationsApplicationDeploymentsIndexRouteImport.update({
+    id: '/deployments/',
+    path: '/deployments/',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
+  } as any)
+const TTeamApplicationsApplicationDeploymentsDeploymentRoute =
+  TTeamApplicationsApplicationDeploymentsDeploymentRouteImport.update({
+    id: '/deployments/$deployment',
+    path: '/deployments/$deployment',
+    getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
   } as any)
 const TTeamProjectsProjectEnvIndexRoute =
   TTeamProjectsProjectEnvIndexRouteImport.update({
@@ -99,111 +721,714 @@ const TTeamProjectsProjectEnvSettingsRoute =
     path: '/projects/$project/$env/settings',
     getParentRoute: () => TTeamRouteRoute,
   } as any)
+const TTeamServersServerProxyIndexRoute =
+  TTeamServersServerProxyIndexRouteImport.update({
+    id: '/proxy/',
+    path: '/proxy/',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerProxyCertificatesRoute =
+  TTeamServersServerProxyCertificatesRouteImport.update({
+    id: '/proxy/certificates',
+    path: '/proxy/certificates',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerProxyDynamicRoute =
+  TTeamServersServerProxyDynamicRouteImport.update({
+    id: '/proxy/dynamic',
+    path: '/proxy/dynamic',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
+const TTeamServersServerProxyLogsRoute =
+  TTeamServersServerProxyLogsRouteImport.update({
+    id: '/proxy/logs',
+    path: '/proxy/logs',
+    getParentRoute: () => TTeamServersServerRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/t/$team': typeof TTeamRouteRouteWithChildren
+  '/invitations/accept': typeof InvitationsAcceptRoute
   '/t/$team/$': typeof TTeamSplatRoute
   '/t/$team/': typeof TTeamIndexRoute
+  '/t/$team/applications/$application': typeof TTeamApplicationsApplicationRouteRouteWithChildren
+  '/t/$team/databases/$database': typeof TTeamDatabasesDatabaseRouteRouteWithChildren
+  '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
+  '/t/$team/services/$service': typeof TTeamServicesServiceRouteRouteWithChildren
+  '/t/$team/integrations/registries': typeof TTeamIntegrationsRegistriesRoute
+  '/t/$team/integrations/s3': typeof TTeamIntegrationsS3Route
+  '/t/$team/integrations/sources': typeof TTeamIntegrationsSourcesRoute
+  '/t/$team/keys/tokens': typeof TTeamKeysTokensRoute
+  '/t/$team/notifications/deliveries': typeof TTeamNotificationsDeliveriesRoute
+  '/t/$team/notifications/events': typeof TTeamNotificationsEventsRoute
+  '/t/$team/settings/advanced': typeof TTeamSettingsAdvancedRoute
+  '/t/$team/settings/audit': typeof TTeamSettingsAuditRoute
+  '/t/$team/settings/email': typeof TTeamSettingsEmailRoute
+  '/t/$team/settings/oauth': typeof TTeamSettingsOauthRoute
+  '/t/$team/settings/updates': typeof TTeamSettingsUpdatesRoute
+  '/t/$team/settings/users': typeof TTeamSettingsUsersRoute
+  '/t/$team/team/approvals': typeof TTeamTeamApprovalsRoute
+  '/t/$team/team/audit': typeof TTeamTeamAuditRoute
+  '/t/$team/team/danger': typeof TTeamTeamDangerRoute
+  '/t/$team/team/groups': typeof TTeamTeamGroupsRoute
+  '/t/$team/team/members': typeof TTeamTeamMembersRoute
+  '/t/$team/team/roles': typeof TTeamTeamRolesRoute
+  '/t/$team/account/': typeof TTeamAccountIndexRoute
+  '/t/$team/integrations/': typeof TTeamIntegrationsIndexRoute
+  '/t/$team/keys/': typeof TTeamKeysIndexRoute
+  '/t/$team/monitoring/': typeof TTeamMonitoringIndexRoute
+  '/t/$team/notifications/': typeof TTeamNotificationsIndexRoute
   '/t/$team/projects/': typeof TTeamProjectsIndexRoute
+  '/t/$team/servers/': typeof TTeamServersIndexRoute
+  '/t/$team/settings/': typeof TTeamSettingsIndexRoute
+  '/t/$team/tags/': typeof TTeamTagsIndexRoute
+  '/t/$team/team/': typeof TTeamTeamIndexRoute
+  '/t/$team/terminal/': typeof TTeamTerminalIndexRoute
+  '/t/$team/variables/': typeof TTeamVariablesIndexRoute
+  '/t/$team/applications/$application/advanced': typeof TTeamApplicationsApplicationAdvancedRoute
+  '/t/$team/applications/$application/compose': typeof TTeamApplicationsApplicationComposeRoute
+  '/t/$team/applications/$application/danger': typeof TTeamApplicationsApplicationDangerRoute
+  '/t/$team/applications/$application/envs': typeof TTeamApplicationsApplicationEnvsRoute
+  '/t/$team/applications/$application/healthcheck': typeof TTeamApplicationsApplicationHealthcheckRoute
+  '/t/$team/applications/$application/limits': typeof TTeamApplicationsApplicationLimitsRoute
+  '/t/$team/applications/$application/logs': typeof TTeamApplicationsApplicationLogsRoute
+  '/t/$team/applications/$application/operations': typeof TTeamApplicationsApplicationOperationsRoute
+  '/t/$team/applications/$application/previews': typeof TTeamApplicationsApplicationPreviewsRoute
+  '/t/$team/applications/$application/scheduled-tasks': typeof TTeamApplicationsApplicationScheduledTasksRoute
+  '/t/$team/applications/$application/source': typeof TTeamApplicationsApplicationSourceRoute
+  '/t/$team/applications/$application/storages': typeof TTeamApplicationsApplicationStoragesRoute
+  '/t/$team/applications/$application/tags': typeof TTeamApplicationsApplicationTagsRoute
+  '/t/$team/applications/$application/terminal': typeof TTeamApplicationsApplicationTerminalRoute
+  '/t/$team/applications/$application/webhooks': typeof TTeamApplicationsApplicationWebhooksRoute
+  '/t/$team/databases/$database/backups': typeof TTeamDatabasesDatabaseBackupsRoute
+  '/t/$team/databases/$database/danger': typeof TTeamDatabasesDatabaseDangerRoute
+  '/t/$team/databases/$database/envs': typeof TTeamDatabasesDatabaseEnvsRoute
+  '/t/$team/databases/$database/import': typeof TTeamDatabasesDatabaseImportRoute
+  '/t/$team/databases/$database/logs': typeof TTeamDatabasesDatabaseLogsRoute
+  '/t/$team/databases/$database/operations': typeof TTeamDatabasesDatabaseOperationsRoute
+  '/t/$team/databases/$database/scheduled-tasks': typeof TTeamDatabasesDatabaseScheduledTasksRoute
+  '/t/$team/databases/$database/storages': typeof TTeamDatabasesDatabaseStoragesRoute
+  '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
+  '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
+  '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
+  '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
+  '/t/$team/servers/$server/ca-certificate': typeof TTeamServersServerCaCertificateRoute
+  '/t/$team/servers/$server/cleanup': typeof TTeamServersServerCleanupRoute
+  '/t/$team/servers/$server/cloudflare': typeof TTeamServersServerCloudflareRoute
+  '/t/$team/servers/$server/command': typeof TTeamServersServerCommandRoute
+  '/t/$team/servers/$server/danger': typeof TTeamServersServerDangerRoute
+  '/t/$team/servers/$server/destinations': typeof TTeamServersServerDestinationsRoute
+  '/t/$team/servers/$server/log-drains': typeof TTeamServersServerLogDrainsRoute
+  '/t/$team/servers/$server/metrics': typeof TTeamServersServerMetricsRoute
+  '/t/$team/servers/$server/packages': typeof TTeamServersServerPackagesRoute
+  '/t/$team/servers/$server/private-key': typeof TTeamServersServerPrivateKeyRoute
+  '/t/$team/servers/$server/resources': typeof TTeamServersServerResourcesRoute
+  '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
+  '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/services/$service/danger': typeof TTeamServicesServiceDangerRoute
+  '/t/$team/services/$service/domains': typeof TTeamServicesServiceDomainsRoute
+  '/t/$team/services/$service/envs': typeof TTeamServicesServiceEnvsRoute
+  '/t/$team/services/$service/logs': typeof TTeamServicesServiceLogsRoute
+  '/t/$team/services/$service/operations': typeof TTeamServicesServiceOperationsRoute
+  '/t/$team/services/$service/scheduled-tasks': typeof TTeamServicesServiceScheduledTasksRoute
+  '/t/$team/services/$service/tags': typeof TTeamServicesServiceTagsRoute
+  '/t/$team/services/$service/tasks': typeof TTeamServicesServiceTasksRoute
+  '/t/$team/services/$service/terminal': typeof TTeamServicesServiceTerminalRoute
+  '/t/$team/applications/$application/': typeof TTeamApplicationsApplicationIndexRoute
+  '/t/$team/databases/$database/': typeof TTeamDatabasesDatabaseIndexRoute
   '/t/$team/projects/$project/': typeof TTeamProjectsProjectIndexRoute
+  '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
+  '/t/$team/services/$service/': typeof TTeamServicesServiceIndexRoute
+  '/t/$team/applications/$application/deployments/$deployment': typeof TTeamApplicationsApplicationDeploymentsDeploymentRoute
   '/t/$team/projects/$project/$env/new': typeof TTeamProjectsProjectEnvNewRoute
   '/t/$team/projects/$project/$env/settings': typeof TTeamProjectsProjectEnvSettingsRoute
+  '/t/$team/servers/$server/proxy/certificates': typeof TTeamServersServerProxyCertificatesRoute
+  '/t/$team/servers/$server/proxy/dynamic': typeof TTeamServersServerProxyDynamicRoute
+  '/t/$team/servers/$server/proxy/logs': typeof TTeamServersServerProxyLogsRoute
+  '/t/$team/applications/$application/deployments/': typeof TTeamApplicationsApplicationDeploymentsIndexRoute
   '/t/$team/projects/$project/$env/': typeof TTeamProjectsProjectEnvIndexRoute
+  '/t/$team/servers/$server/proxy/': typeof TTeamServersServerProxyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
   '/t/$team/$': typeof TTeamSplatRoute
   '/t/$team': typeof TTeamIndexRoute
+  '/t/$team/integrations/registries': typeof TTeamIntegrationsRegistriesRoute
+  '/t/$team/integrations/s3': typeof TTeamIntegrationsS3Route
+  '/t/$team/integrations/sources': typeof TTeamIntegrationsSourcesRoute
+  '/t/$team/keys/tokens': typeof TTeamKeysTokensRoute
+  '/t/$team/notifications/deliveries': typeof TTeamNotificationsDeliveriesRoute
+  '/t/$team/notifications/events': typeof TTeamNotificationsEventsRoute
+  '/t/$team/settings/advanced': typeof TTeamSettingsAdvancedRoute
+  '/t/$team/settings/audit': typeof TTeamSettingsAuditRoute
+  '/t/$team/settings/email': typeof TTeamSettingsEmailRoute
+  '/t/$team/settings/oauth': typeof TTeamSettingsOauthRoute
+  '/t/$team/settings/updates': typeof TTeamSettingsUpdatesRoute
+  '/t/$team/settings/users': typeof TTeamSettingsUsersRoute
+  '/t/$team/team/approvals': typeof TTeamTeamApprovalsRoute
+  '/t/$team/team/audit': typeof TTeamTeamAuditRoute
+  '/t/$team/team/danger': typeof TTeamTeamDangerRoute
+  '/t/$team/team/groups': typeof TTeamTeamGroupsRoute
+  '/t/$team/team/members': typeof TTeamTeamMembersRoute
+  '/t/$team/team/roles': typeof TTeamTeamRolesRoute
+  '/t/$team/account': typeof TTeamAccountIndexRoute
+  '/t/$team/integrations': typeof TTeamIntegrationsIndexRoute
+  '/t/$team/keys': typeof TTeamKeysIndexRoute
+  '/t/$team/monitoring': typeof TTeamMonitoringIndexRoute
+  '/t/$team/notifications': typeof TTeamNotificationsIndexRoute
   '/t/$team/projects': typeof TTeamProjectsIndexRoute
+  '/t/$team/servers': typeof TTeamServersIndexRoute
+  '/t/$team/settings': typeof TTeamSettingsIndexRoute
+  '/t/$team/tags': typeof TTeamTagsIndexRoute
+  '/t/$team/team': typeof TTeamTeamIndexRoute
+  '/t/$team/terminal': typeof TTeamTerminalIndexRoute
+  '/t/$team/variables': typeof TTeamVariablesIndexRoute
+  '/t/$team/applications/$application/advanced': typeof TTeamApplicationsApplicationAdvancedRoute
+  '/t/$team/applications/$application/compose': typeof TTeamApplicationsApplicationComposeRoute
+  '/t/$team/applications/$application/danger': typeof TTeamApplicationsApplicationDangerRoute
+  '/t/$team/applications/$application/envs': typeof TTeamApplicationsApplicationEnvsRoute
+  '/t/$team/applications/$application/healthcheck': typeof TTeamApplicationsApplicationHealthcheckRoute
+  '/t/$team/applications/$application/limits': typeof TTeamApplicationsApplicationLimitsRoute
+  '/t/$team/applications/$application/logs': typeof TTeamApplicationsApplicationLogsRoute
+  '/t/$team/applications/$application/operations': typeof TTeamApplicationsApplicationOperationsRoute
+  '/t/$team/applications/$application/previews': typeof TTeamApplicationsApplicationPreviewsRoute
+  '/t/$team/applications/$application/scheduled-tasks': typeof TTeamApplicationsApplicationScheduledTasksRoute
+  '/t/$team/applications/$application/source': typeof TTeamApplicationsApplicationSourceRoute
+  '/t/$team/applications/$application/storages': typeof TTeamApplicationsApplicationStoragesRoute
+  '/t/$team/applications/$application/tags': typeof TTeamApplicationsApplicationTagsRoute
+  '/t/$team/applications/$application/terminal': typeof TTeamApplicationsApplicationTerminalRoute
+  '/t/$team/applications/$application/webhooks': typeof TTeamApplicationsApplicationWebhooksRoute
+  '/t/$team/databases/$database/backups': typeof TTeamDatabasesDatabaseBackupsRoute
+  '/t/$team/databases/$database/danger': typeof TTeamDatabasesDatabaseDangerRoute
+  '/t/$team/databases/$database/envs': typeof TTeamDatabasesDatabaseEnvsRoute
+  '/t/$team/databases/$database/import': typeof TTeamDatabasesDatabaseImportRoute
+  '/t/$team/databases/$database/logs': typeof TTeamDatabasesDatabaseLogsRoute
+  '/t/$team/databases/$database/operations': typeof TTeamDatabasesDatabaseOperationsRoute
+  '/t/$team/databases/$database/scheduled-tasks': typeof TTeamDatabasesDatabaseScheduledTasksRoute
+  '/t/$team/databases/$database/storages': typeof TTeamDatabasesDatabaseStoragesRoute
+  '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
+  '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
+  '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
+  '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
+  '/t/$team/servers/$server/ca-certificate': typeof TTeamServersServerCaCertificateRoute
+  '/t/$team/servers/$server/cleanup': typeof TTeamServersServerCleanupRoute
+  '/t/$team/servers/$server/cloudflare': typeof TTeamServersServerCloudflareRoute
+  '/t/$team/servers/$server/command': typeof TTeamServersServerCommandRoute
+  '/t/$team/servers/$server/danger': typeof TTeamServersServerDangerRoute
+  '/t/$team/servers/$server/destinations': typeof TTeamServersServerDestinationsRoute
+  '/t/$team/servers/$server/log-drains': typeof TTeamServersServerLogDrainsRoute
+  '/t/$team/servers/$server/metrics': typeof TTeamServersServerMetricsRoute
+  '/t/$team/servers/$server/packages': typeof TTeamServersServerPackagesRoute
+  '/t/$team/servers/$server/private-key': typeof TTeamServersServerPrivateKeyRoute
+  '/t/$team/servers/$server/resources': typeof TTeamServersServerResourcesRoute
+  '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
+  '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/services/$service/danger': typeof TTeamServicesServiceDangerRoute
+  '/t/$team/services/$service/domains': typeof TTeamServicesServiceDomainsRoute
+  '/t/$team/services/$service/envs': typeof TTeamServicesServiceEnvsRoute
+  '/t/$team/services/$service/logs': typeof TTeamServicesServiceLogsRoute
+  '/t/$team/services/$service/operations': typeof TTeamServicesServiceOperationsRoute
+  '/t/$team/services/$service/scheduled-tasks': typeof TTeamServicesServiceScheduledTasksRoute
+  '/t/$team/services/$service/tags': typeof TTeamServicesServiceTagsRoute
+  '/t/$team/services/$service/tasks': typeof TTeamServicesServiceTasksRoute
+  '/t/$team/services/$service/terminal': typeof TTeamServicesServiceTerminalRoute
+  '/t/$team/applications/$application': typeof TTeamApplicationsApplicationIndexRoute
+  '/t/$team/databases/$database': typeof TTeamDatabasesDatabaseIndexRoute
   '/t/$team/projects/$project': typeof TTeamProjectsProjectIndexRoute
+  '/t/$team/servers/$server': typeof TTeamServersServerIndexRoute
+  '/t/$team/services/$service': typeof TTeamServicesServiceIndexRoute
+  '/t/$team/applications/$application/deployments/$deployment': typeof TTeamApplicationsApplicationDeploymentsDeploymentRoute
   '/t/$team/projects/$project/$env/new': typeof TTeamProjectsProjectEnvNewRoute
   '/t/$team/projects/$project/$env/settings': typeof TTeamProjectsProjectEnvSettingsRoute
+  '/t/$team/servers/$server/proxy/certificates': typeof TTeamServersServerProxyCertificatesRoute
+  '/t/$team/servers/$server/proxy/dynamic': typeof TTeamServersServerProxyDynamicRoute
+  '/t/$team/servers/$server/proxy/logs': typeof TTeamServersServerProxyLogsRoute
+  '/t/$team/applications/$application/deployments': typeof TTeamApplicationsApplicationDeploymentsIndexRoute
   '/t/$team/projects/$project/$env': typeof TTeamProjectsProjectEnvIndexRoute
+  '/t/$team/servers/$server/proxy': typeof TTeamServersServerProxyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/t/$team': typeof TTeamRouteRouteWithChildren
+  '/invitations/accept': typeof InvitationsAcceptRoute
   '/t/$team/$': typeof TTeamSplatRoute
   '/t/$team/': typeof TTeamIndexRoute
+  '/t/$team/applications/$application': typeof TTeamApplicationsApplicationRouteRouteWithChildren
+  '/t/$team/databases/$database': typeof TTeamDatabasesDatabaseRouteRouteWithChildren
+  '/t/$team/servers/$server': typeof TTeamServersServerRouteRouteWithChildren
+  '/t/$team/services/$service': typeof TTeamServicesServiceRouteRouteWithChildren
+  '/t/$team/integrations/registries': typeof TTeamIntegrationsRegistriesRoute
+  '/t/$team/integrations/s3': typeof TTeamIntegrationsS3Route
+  '/t/$team/integrations/sources': typeof TTeamIntegrationsSourcesRoute
+  '/t/$team/keys/tokens': typeof TTeamKeysTokensRoute
+  '/t/$team/notifications/deliveries': typeof TTeamNotificationsDeliveriesRoute
+  '/t/$team/notifications/events': typeof TTeamNotificationsEventsRoute
+  '/t/$team/settings/advanced': typeof TTeamSettingsAdvancedRoute
+  '/t/$team/settings/audit': typeof TTeamSettingsAuditRoute
+  '/t/$team/settings/email': typeof TTeamSettingsEmailRoute
+  '/t/$team/settings/oauth': typeof TTeamSettingsOauthRoute
+  '/t/$team/settings/updates': typeof TTeamSettingsUpdatesRoute
+  '/t/$team/settings/users': typeof TTeamSettingsUsersRoute
+  '/t/$team/team/approvals': typeof TTeamTeamApprovalsRoute
+  '/t/$team/team/audit': typeof TTeamTeamAuditRoute
+  '/t/$team/team/danger': typeof TTeamTeamDangerRoute
+  '/t/$team/team/groups': typeof TTeamTeamGroupsRoute
+  '/t/$team/team/members': typeof TTeamTeamMembersRoute
+  '/t/$team/team/roles': typeof TTeamTeamRolesRoute
+  '/t/$team/account/': typeof TTeamAccountIndexRoute
+  '/t/$team/integrations/': typeof TTeamIntegrationsIndexRoute
+  '/t/$team/keys/': typeof TTeamKeysIndexRoute
+  '/t/$team/monitoring/': typeof TTeamMonitoringIndexRoute
+  '/t/$team/notifications/': typeof TTeamNotificationsIndexRoute
   '/t/$team/projects/': typeof TTeamProjectsIndexRoute
+  '/t/$team/servers/': typeof TTeamServersIndexRoute
+  '/t/$team/settings/': typeof TTeamSettingsIndexRoute
+  '/t/$team/tags/': typeof TTeamTagsIndexRoute
+  '/t/$team/team/': typeof TTeamTeamIndexRoute
+  '/t/$team/terminal/': typeof TTeamTerminalIndexRoute
+  '/t/$team/variables/': typeof TTeamVariablesIndexRoute
+  '/t/$team/applications/$application/advanced': typeof TTeamApplicationsApplicationAdvancedRoute
+  '/t/$team/applications/$application/compose': typeof TTeamApplicationsApplicationComposeRoute
+  '/t/$team/applications/$application/danger': typeof TTeamApplicationsApplicationDangerRoute
+  '/t/$team/applications/$application/envs': typeof TTeamApplicationsApplicationEnvsRoute
+  '/t/$team/applications/$application/healthcheck': typeof TTeamApplicationsApplicationHealthcheckRoute
+  '/t/$team/applications/$application/limits': typeof TTeamApplicationsApplicationLimitsRoute
+  '/t/$team/applications/$application/logs': typeof TTeamApplicationsApplicationLogsRoute
+  '/t/$team/applications/$application/operations': typeof TTeamApplicationsApplicationOperationsRoute
+  '/t/$team/applications/$application/previews': typeof TTeamApplicationsApplicationPreviewsRoute
+  '/t/$team/applications/$application/scheduled-tasks': typeof TTeamApplicationsApplicationScheduledTasksRoute
+  '/t/$team/applications/$application/source': typeof TTeamApplicationsApplicationSourceRoute
+  '/t/$team/applications/$application/storages': typeof TTeamApplicationsApplicationStoragesRoute
+  '/t/$team/applications/$application/tags': typeof TTeamApplicationsApplicationTagsRoute
+  '/t/$team/applications/$application/terminal': typeof TTeamApplicationsApplicationTerminalRoute
+  '/t/$team/applications/$application/webhooks': typeof TTeamApplicationsApplicationWebhooksRoute
+  '/t/$team/databases/$database/backups': typeof TTeamDatabasesDatabaseBackupsRoute
+  '/t/$team/databases/$database/danger': typeof TTeamDatabasesDatabaseDangerRoute
+  '/t/$team/databases/$database/envs': typeof TTeamDatabasesDatabaseEnvsRoute
+  '/t/$team/databases/$database/import': typeof TTeamDatabasesDatabaseImportRoute
+  '/t/$team/databases/$database/logs': typeof TTeamDatabasesDatabaseLogsRoute
+  '/t/$team/databases/$database/operations': typeof TTeamDatabasesDatabaseOperationsRoute
+  '/t/$team/databases/$database/scheduled-tasks': typeof TTeamDatabasesDatabaseScheduledTasksRoute
+  '/t/$team/databases/$database/storages': typeof TTeamDatabasesDatabaseStoragesRoute
+  '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
+  '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
+  '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
+  '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
+  '/t/$team/servers/$server/ca-certificate': typeof TTeamServersServerCaCertificateRoute
+  '/t/$team/servers/$server/cleanup': typeof TTeamServersServerCleanupRoute
+  '/t/$team/servers/$server/cloudflare': typeof TTeamServersServerCloudflareRoute
+  '/t/$team/servers/$server/command': typeof TTeamServersServerCommandRoute
+  '/t/$team/servers/$server/danger': typeof TTeamServersServerDangerRoute
+  '/t/$team/servers/$server/destinations': typeof TTeamServersServerDestinationsRoute
+  '/t/$team/servers/$server/log-drains': typeof TTeamServersServerLogDrainsRoute
+  '/t/$team/servers/$server/metrics': typeof TTeamServersServerMetricsRoute
+  '/t/$team/servers/$server/packages': typeof TTeamServersServerPackagesRoute
+  '/t/$team/servers/$server/private-key': typeof TTeamServersServerPrivateKeyRoute
+  '/t/$team/servers/$server/resources': typeof TTeamServersServerResourcesRoute
+  '/t/$team/servers/$server/tasks': typeof TTeamServersServerTasksRoute
+  '/t/$team/servers/$server/terminal': typeof TTeamServersServerTerminalRoute
+  '/t/$team/services/$service/danger': typeof TTeamServicesServiceDangerRoute
+  '/t/$team/services/$service/domains': typeof TTeamServicesServiceDomainsRoute
+  '/t/$team/services/$service/envs': typeof TTeamServicesServiceEnvsRoute
+  '/t/$team/services/$service/logs': typeof TTeamServicesServiceLogsRoute
+  '/t/$team/services/$service/operations': typeof TTeamServicesServiceOperationsRoute
+  '/t/$team/services/$service/scheduled-tasks': typeof TTeamServicesServiceScheduledTasksRoute
+  '/t/$team/services/$service/tags': typeof TTeamServicesServiceTagsRoute
+  '/t/$team/services/$service/tasks': typeof TTeamServicesServiceTasksRoute
+  '/t/$team/services/$service/terminal': typeof TTeamServicesServiceTerminalRoute
+  '/t/$team/applications/$application/': typeof TTeamApplicationsApplicationIndexRoute
+  '/t/$team/databases/$database/': typeof TTeamDatabasesDatabaseIndexRoute
   '/t/$team/projects/$project/': typeof TTeamProjectsProjectIndexRoute
+  '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
+  '/t/$team/services/$service/': typeof TTeamServicesServiceIndexRoute
+  '/t/$team/applications/$application/deployments/$deployment': typeof TTeamApplicationsApplicationDeploymentsDeploymentRoute
   '/t/$team/projects/$project/$env/new': typeof TTeamProjectsProjectEnvNewRoute
   '/t/$team/projects/$project/$env/settings': typeof TTeamProjectsProjectEnvSettingsRoute
+  '/t/$team/servers/$server/proxy/certificates': typeof TTeamServersServerProxyCertificatesRoute
+  '/t/$team/servers/$server/proxy/dynamic': typeof TTeamServersServerProxyDynamicRoute
+  '/t/$team/servers/$server/proxy/logs': typeof TTeamServersServerProxyLogsRoute
+  '/t/$team/applications/$application/deployments/': typeof TTeamApplicationsApplicationDeploymentsIndexRoute
   '/t/$team/projects/$project/$env/': typeof TTeamProjectsProjectEnvIndexRoute
+  '/t/$team/servers/$server/proxy/': typeof TTeamServersServerProxyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/forgot-password'
     | '/login'
     | '/onboarding'
+    | '/register'
+    | '/reset-password'
     | '/setup'
+    | '/verify-email'
     | '/t/$team'
+    | '/invitations/accept'
     | '/t/$team/$'
     | '/t/$team/'
+    | '/t/$team/applications/$application'
+    | '/t/$team/databases/$database'
+    | '/t/$team/servers/$server'
+    | '/t/$team/services/$service'
+    | '/t/$team/integrations/registries'
+    | '/t/$team/integrations/s3'
+    | '/t/$team/integrations/sources'
+    | '/t/$team/keys/tokens'
+    | '/t/$team/notifications/deliveries'
+    | '/t/$team/notifications/events'
+    | '/t/$team/settings/advanced'
+    | '/t/$team/settings/audit'
+    | '/t/$team/settings/email'
+    | '/t/$team/settings/oauth'
+    | '/t/$team/settings/updates'
+    | '/t/$team/settings/users'
+    | '/t/$team/team/approvals'
+    | '/t/$team/team/audit'
+    | '/t/$team/team/danger'
+    | '/t/$team/team/groups'
+    | '/t/$team/team/members'
+    | '/t/$team/team/roles'
+    | '/t/$team/account/'
+    | '/t/$team/integrations/'
+    | '/t/$team/keys/'
+    | '/t/$team/monitoring/'
+    | '/t/$team/notifications/'
     | '/t/$team/projects/'
+    | '/t/$team/servers/'
+    | '/t/$team/settings/'
+    | '/t/$team/tags/'
+    | '/t/$team/team/'
+    | '/t/$team/terminal/'
+    | '/t/$team/variables/'
+    | '/t/$team/applications/$application/advanced'
+    | '/t/$team/applications/$application/compose'
+    | '/t/$team/applications/$application/danger'
+    | '/t/$team/applications/$application/envs'
+    | '/t/$team/applications/$application/healthcheck'
+    | '/t/$team/applications/$application/limits'
+    | '/t/$team/applications/$application/logs'
+    | '/t/$team/applications/$application/operations'
+    | '/t/$team/applications/$application/previews'
+    | '/t/$team/applications/$application/scheduled-tasks'
+    | '/t/$team/applications/$application/source'
+    | '/t/$team/applications/$application/storages'
+    | '/t/$team/applications/$application/tags'
+    | '/t/$team/applications/$application/terminal'
+    | '/t/$team/applications/$application/webhooks'
+    | '/t/$team/databases/$database/backups'
+    | '/t/$team/databases/$database/danger'
+    | '/t/$team/databases/$database/envs'
+    | '/t/$team/databases/$database/import'
+    | '/t/$team/databases/$database/logs'
+    | '/t/$team/databases/$database/operations'
+    | '/t/$team/databases/$database/scheduled-tasks'
+    | '/t/$team/databases/$database/storages'
+    | '/t/$team/databases/$database/tags'
+    | '/t/$team/databases/$database/tasks'
+    | '/t/$team/databases/$database/terminal'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
+    | '/t/$team/servers/$server/advanced'
+    | '/t/$team/servers/$server/ca-certificate'
+    | '/t/$team/servers/$server/cleanup'
+    | '/t/$team/servers/$server/cloudflare'
+    | '/t/$team/servers/$server/command'
+    | '/t/$team/servers/$server/danger'
+    | '/t/$team/servers/$server/destinations'
+    | '/t/$team/servers/$server/log-drains'
+    | '/t/$team/servers/$server/metrics'
+    | '/t/$team/servers/$server/packages'
+    | '/t/$team/servers/$server/private-key'
+    | '/t/$team/servers/$server/resources'
+    | '/t/$team/servers/$server/tasks'
+    | '/t/$team/servers/$server/terminal'
+    | '/t/$team/services/$service/danger'
+    | '/t/$team/services/$service/domains'
+    | '/t/$team/services/$service/envs'
+    | '/t/$team/services/$service/logs'
+    | '/t/$team/services/$service/operations'
+    | '/t/$team/services/$service/scheduled-tasks'
+    | '/t/$team/services/$service/tags'
+    | '/t/$team/services/$service/tasks'
+    | '/t/$team/services/$service/terminal'
+    | '/t/$team/applications/$application/'
+    | '/t/$team/databases/$database/'
     | '/t/$team/projects/$project/'
+    | '/t/$team/servers/$server/'
+    | '/t/$team/services/$service/'
+    | '/t/$team/applications/$application/deployments/$deployment'
     | '/t/$team/projects/$project/$env/new'
     | '/t/$team/projects/$project/$env/settings'
+    | '/t/$team/servers/$server/proxy/certificates'
+    | '/t/$team/servers/$server/proxy/dynamic'
+    | '/t/$team/servers/$server/proxy/logs'
+    | '/t/$team/applications/$application/deployments/'
     | '/t/$team/projects/$project/$env/'
+    | '/t/$team/servers/$server/proxy/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
     | '/login'
     | '/onboarding'
+    | '/register'
+    | '/reset-password'
     | '/setup'
+    | '/verify-email'
+    | '/invitations/accept'
     | '/t/$team/$'
     | '/t/$team'
+    | '/t/$team/integrations/registries'
+    | '/t/$team/integrations/s3'
+    | '/t/$team/integrations/sources'
+    | '/t/$team/keys/tokens'
+    | '/t/$team/notifications/deliveries'
+    | '/t/$team/notifications/events'
+    | '/t/$team/settings/advanced'
+    | '/t/$team/settings/audit'
+    | '/t/$team/settings/email'
+    | '/t/$team/settings/oauth'
+    | '/t/$team/settings/updates'
+    | '/t/$team/settings/users'
+    | '/t/$team/team/approvals'
+    | '/t/$team/team/audit'
+    | '/t/$team/team/danger'
+    | '/t/$team/team/groups'
+    | '/t/$team/team/members'
+    | '/t/$team/team/roles'
+    | '/t/$team/account'
+    | '/t/$team/integrations'
+    | '/t/$team/keys'
+    | '/t/$team/monitoring'
+    | '/t/$team/notifications'
     | '/t/$team/projects'
+    | '/t/$team/servers'
+    | '/t/$team/settings'
+    | '/t/$team/tags'
+    | '/t/$team/team'
+    | '/t/$team/terminal'
+    | '/t/$team/variables'
+    | '/t/$team/applications/$application/advanced'
+    | '/t/$team/applications/$application/compose'
+    | '/t/$team/applications/$application/danger'
+    | '/t/$team/applications/$application/envs'
+    | '/t/$team/applications/$application/healthcheck'
+    | '/t/$team/applications/$application/limits'
+    | '/t/$team/applications/$application/logs'
+    | '/t/$team/applications/$application/operations'
+    | '/t/$team/applications/$application/previews'
+    | '/t/$team/applications/$application/scheduled-tasks'
+    | '/t/$team/applications/$application/source'
+    | '/t/$team/applications/$application/storages'
+    | '/t/$team/applications/$application/tags'
+    | '/t/$team/applications/$application/terminal'
+    | '/t/$team/applications/$application/webhooks'
+    | '/t/$team/databases/$database/backups'
+    | '/t/$team/databases/$database/danger'
+    | '/t/$team/databases/$database/envs'
+    | '/t/$team/databases/$database/import'
+    | '/t/$team/databases/$database/logs'
+    | '/t/$team/databases/$database/operations'
+    | '/t/$team/databases/$database/scheduled-tasks'
+    | '/t/$team/databases/$database/storages'
+    | '/t/$team/databases/$database/tags'
+    | '/t/$team/databases/$database/tasks'
+    | '/t/$team/databases/$database/terminal'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
+    | '/t/$team/servers/$server/advanced'
+    | '/t/$team/servers/$server/ca-certificate'
+    | '/t/$team/servers/$server/cleanup'
+    | '/t/$team/servers/$server/cloudflare'
+    | '/t/$team/servers/$server/command'
+    | '/t/$team/servers/$server/danger'
+    | '/t/$team/servers/$server/destinations'
+    | '/t/$team/servers/$server/log-drains'
+    | '/t/$team/servers/$server/metrics'
+    | '/t/$team/servers/$server/packages'
+    | '/t/$team/servers/$server/private-key'
+    | '/t/$team/servers/$server/resources'
+    | '/t/$team/servers/$server/tasks'
+    | '/t/$team/servers/$server/terminal'
+    | '/t/$team/services/$service/danger'
+    | '/t/$team/services/$service/domains'
+    | '/t/$team/services/$service/envs'
+    | '/t/$team/services/$service/logs'
+    | '/t/$team/services/$service/operations'
+    | '/t/$team/services/$service/scheduled-tasks'
+    | '/t/$team/services/$service/tags'
+    | '/t/$team/services/$service/tasks'
+    | '/t/$team/services/$service/terminal'
+    | '/t/$team/applications/$application'
+    | '/t/$team/databases/$database'
     | '/t/$team/projects/$project'
+    | '/t/$team/servers/$server'
+    | '/t/$team/services/$service'
+    | '/t/$team/applications/$application/deployments/$deployment'
     | '/t/$team/projects/$project/$env/new'
     | '/t/$team/projects/$project/$env/settings'
+    | '/t/$team/servers/$server/proxy/certificates'
+    | '/t/$team/servers/$server/proxy/dynamic'
+    | '/t/$team/servers/$server/proxy/logs'
+    | '/t/$team/applications/$application/deployments'
     | '/t/$team/projects/$project/$env'
+    | '/t/$team/servers/$server/proxy'
   id:
     | '__root__'
     | '/'
+    | '/forgot-password'
     | '/login'
     | '/onboarding'
+    | '/register'
+    | '/reset-password'
     | '/setup'
+    | '/verify-email'
     | '/t/$team'
+    | '/invitations/accept'
     | '/t/$team/$'
     | '/t/$team/'
+    | '/t/$team/applications/$application'
+    | '/t/$team/databases/$database'
+    | '/t/$team/servers/$server'
+    | '/t/$team/services/$service'
+    | '/t/$team/integrations/registries'
+    | '/t/$team/integrations/s3'
+    | '/t/$team/integrations/sources'
+    | '/t/$team/keys/tokens'
+    | '/t/$team/notifications/deliveries'
+    | '/t/$team/notifications/events'
+    | '/t/$team/settings/advanced'
+    | '/t/$team/settings/audit'
+    | '/t/$team/settings/email'
+    | '/t/$team/settings/oauth'
+    | '/t/$team/settings/updates'
+    | '/t/$team/settings/users'
+    | '/t/$team/team/approvals'
+    | '/t/$team/team/audit'
+    | '/t/$team/team/danger'
+    | '/t/$team/team/groups'
+    | '/t/$team/team/members'
+    | '/t/$team/team/roles'
+    | '/t/$team/account/'
+    | '/t/$team/integrations/'
+    | '/t/$team/keys/'
+    | '/t/$team/monitoring/'
+    | '/t/$team/notifications/'
     | '/t/$team/projects/'
+    | '/t/$team/servers/'
+    | '/t/$team/settings/'
+    | '/t/$team/tags/'
+    | '/t/$team/team/'
+    | '/t/$team/terminal/'
+    | '/t/$team/variables/'
+    | '/t/$team/applications/$application/advanced'
+    | '/t/$team/applications/$application/compose'
+    | '/t/$team/applications/$application/danger'
+    | '/t/$team/applications/$application/envs'
+    | '/t/$team/applications/$application/healthcheck'
+    | '/t/$team/applications/$application/limits'
+    | '/t/$team/applications/$application/logs'
+    | '/t/$team/applications/$application/operations'
+    | '/t/$team/applications/$application/previews'
+    | '/t/$team/applications/$application/scheduled-tasks'
+    | '/t/$team/applications/$application/source'
+    | '/t/$team/applications/$application/storages'
+    | '/t/$team/applications/$application/tags'
+    | '/t/$team/applications/$application/terminal'
+    | '/t/$team/applications/$application/webhooks'
+    | '/t/$team/databases/$database/backups'
+    | '/t/$team/databases/$database/danger'
+    | '/t/$team/databases/$database/envs'
+    | '/t/$team/databases/$database/import'
+    | '/t/$team/databases/$database/logs'
+    | '/t/$team/databases/$database/operations'
+    | '/t/$team/databases/$database/scheduled-tasks'
+    | '/t/$team/databases/$database/storages'
+    | '/t/$team/databases/$database/tags'
+    | '/t/$team/databases/$database/tasks'
+    | '/t/$team/databases/$database/terminal'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
+    | '/t/$team/servers/$server/advanced'
+    | '/t/$team/servers/$server/ca-certificate'
+    | '/t/$team/servers/$server/cleanup'
+    | '/t/$team/servers/$server/cloudflare'
+    | '/t/$team/servers/$server/command'
+    | '/t/$team/servers/$server/danger'
+    | '/t/$team/servers/$server/destinations'
+    | '/t/$team/servers/$server/log-drains'
+    | '/t/$team/servers/$server/metrics'
+    | '/t/$team/servers/$server/packages'
+    | '/t/$team/servers/$server/private-key'
+    | '/t/$team/servers/$server/resources'
+    | '/t/$team/servers/$server/tasks'
+    | '/t/$team/servers/$server/terminal'
+    | '/t/$team/services/$service/danger'
+    | '/t/$team/services/$service/domains'
+    | '/t/$team/services/$service/envs'
+    | '/t/$team/services/$service/logs'
+    | '/t/$team/services/$service/operations'
+    | '/t/$team/services/$service/scheduled-tasks'
+    | '/t/$team/services/$service/tags'
+    | '/t/$team/services/$service/tasks'
+    | '/t/$team/services/$service/terminal'
+    | '/t/$team/applications/$application/'
+    | '/t/$team/databases/$database/'
     | '/t/$team/projects/$project/'
+    | '/t/$team/servers/$server/'
+    | '/t/$team/services/$service/'
+    | '/t/$team/applications/$application/deployments/$deployment'
     | '/t/$team/projects/$project/$env/new'
     | '/t/$team/projects/$project/$env/settings'
+    | '/t/$team/servers/$server/proxy/certificates'
+    | '/t/$team/servers/$server/proxy/dynamic'
+    | '/t/$team/servers/$server/proxy/logs'
+    | '/t/$team/applications/$application/deployments/'
     | '/t/$team/projects/$project/$env/'
+    | '/t/$team/servers/$server/proxy/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SetupRoute: typeof SetupRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   TTeamRouteRoute: typeof TTeamRouteRouteWithChildren
+  InvitationsAcceptRoute: typeof InvitationsAcceptRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -213,6 +1438,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -229,11 +1461,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/setup': {
       id: '/setup'
       path: '/setup'
       fullPath: '/setup'
       preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invitations/accept': {
+      id: '/invitations/accept'
+      path: '/invitations/accept'
+      fullPath: '/invitations/accept'
+      preLoaderRoute: typeof InvitationsAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/t/$team': {
@@ -257,12 +1517,439 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamSplatRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
+    '/t/$team/account/': {
+      id: '/t/$team/account/'
+      path: '/account'
+      fullPath: '/t/$team/account/'
+      preLoaderRoute: typeof TTeamAccountIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/applications/$application': {
+      id: '/t/$team/applications/$application'
+      path: '/applications/$application'
+      fullPath: '/t/$team/applications/$application'
+      preLoaderRoute: typeof TTeamApplicationsApplicationRouteRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/databases/$database': {
+      id: '/t/$team/databases/$database'
+      path: '/databases/$database'
+      fullPath: '/t/$team/databases/$database'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseRouteRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/integrations/': {
+      id: '/t/$team/integrations/'
+      path: '/integrations'
+      fullPath: '/t/$team/integrations/'
+      preLoaderRoute: typeof TTeamIntegrationsIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/integrations/registries': {
+      id: '/t/$team/integrations/registries'
+      path: '/integrations/registries'
+      fullPath: '/t/$team/integrations/registries'
+      preLoaderRoute: typeof TTeamIntegrationsRegistriesRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/integrations/s3': {
+      id: '/t/$team/integrations/s3'
+      path: '/integrations/s3'
+      fullPath: '/t/$team/integrations/s3'
+      preLoaderRoute: typeof TTeamIntegrationsS3RouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/integrations/sources': {
+      id: '/t/$team/integrations/sources'
+      path: '/integrations/sources'
+      fullPath: '/t/$team/integrations/sources'
+      preLoaderRoute: typeof TTeamIntegrationsSourcesRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/keys/': {
+      id: '/t/$team/keys/'
+      path: '/keys'
+      fullPath: '/t/$team/keys/'
+      preLoaderRoute: typeof TTeamKeysIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/keys/tokens': {
+      id: '/t/$team/keys/tokens'
+      path: '/keys/tokens'
+      fullPath: '/t/$team/keys/tokens'
+      preLoaderRoute: typeof TTeamKeysTokensRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/monitoring/': {
+      id: '/t/$team/monitoring/'
+      path: '/monitoring'
+      fullPath: '/t/$team/monitoring/'
+      preLoaderRoute: typeof TTeamMonitoringIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/notifications/': {
+      id: '/t/$team/notifications/'
+      path: '/notifications'
+      fullPath: '/t/$team/notifications/'
+      preLoaderRoute: typeof TTeamNotificationsIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/notifications/deliveries': {
+      id: '/t/$team/notifications/deliveries'
+      path: '/notifications/deliveries'
+      fullPath: '/t/$team/notifications/deliveries'
+      preLoaderRoute: typeof TTeamNotificationsDeliveriesRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/notifications/events': {
+      id: '/t/$team/notifications/events'
+      path: '/notifications/events'
+      fullPath: '/t/$team/notifications/events'
+      preLoaderRoute: typeof TTeamNotificationsEventsRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
     '/t/$team/projects/': {
       id: '/t/$team/projects/'
       path: '/projects'
       fullPath: '/t/$team/projects/'
       preLoaderRoute: typeof TTeamProjectsIndexRouteImport
       parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/servers/': {
+      id: '/t/$team/servers/'
+      path: '/servers'
+      fullPath: '/t/$team/servers/'
+      preLoaderRoute: typeof TTeamServersIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/servers/$server': {
+      id: '/t/$team/servers/$server'
+      path: '/servers/$server'
+      fullPath: '/t/$team/servers/$server'
+      preLoaderRoute: typeof TTeamServersServerRouteRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/services/$service': {
+      id: '/t/$team/services/$service'
+      path: '/services/$service'
+      fullPath: '/t/$team/services/$service'
+      preLoaderRoute: typeof TTeamServicesServiceRouteRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/settings/': {
+      id: '/t/$team/settings/'
+      path: '/settings'
+      fullPath: '/t/$team/settings/'
+      preLoaderRoute: typeof TTeamSettingsIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/settings/advanced': {
+      id: '/t/$team/settings/advanced'
+      path: '/settings/advanced'
+      fullPath: '/t/$team/settings/advanced'
+      preLoaderRoute: typeof TTeamSettingsAdvancedRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/settings/audit': {
+      id: '/t/$team/settings/audit'
+      path: '/settings/audit'
+      fullPath: '/t/$team/settings/audit'
+      preLoaderRoute: typeof TTeamSettingsAuditRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/settings/email': {
+      id: '/t/$team/settings/email'
+      path: '/settings/email'
+      fullPath: '/t/$team/settings/email'
+      preLoaderRoute: typeof TTeamSettingsEmailRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/settings/oauth': {
+      id: '/t/$team/settings/oauth'
+      path: '/settings/oauth'
+      fullPath: '/t/$team/settings/oauth'
+      preLoaderRoute: typeof TTeamSettingsOauthRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/settings/updates': {
+      id: '/t/$team/settings/updates'
+      path: '/settings/updates'
+      fullPath: '/t/$team/settings/updates'
+      preLoaderRoute: typeof TTeamSettingsUpdatesRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/settings/users': {
+      id: '/t/$team/settings/users'
+      path: '/settings/users'
+      fullPath: '/t/$team/settings/users'
+      preLoaderRoute: typeof TTeamSettingsUsersRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/tags/': {
+      id: '/t/$team/tags/'
+      path: '/tags'
+      fullPath: '/t/$team/tags/'
+      preLoaderRoute: typeof TTeamTagsIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/team/': {
+      id: '/t/$team/team/'
+      path: '/team'
+      fullPath: '/t/$team/team/'
+      preLoaderRoute: typeof TTeamTeamIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/team/approvals': {
+      id: '/t/$team/team/approvals'
+      path: '/team/approvals'
+      fullPath: '/t/$team/team/approvals'
+      preLoaderRoute: typeof TTeamTeamApprovalsRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/team/audit': {
+      id: '/t/$team/team/audit'
+      path: '/team/audit'
+      fullPath: '/t/$team/team/audit'
+      preLoaderRoute: typeof TTeamTeamAuditRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/team/danger': {
+      id: '/t/$team/team/danger'
+      path: '/team/danger'
+      fullPath: '/t/$team/team/danger'
+      preLoaderRoute: typeof TTeamTeamDangerRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/team/groups': {
+      id: '/t/$team/team/groups'
+      path: '/team/groups'
+      fullPath: '/t/$team/team/groups'
+      preLoaderRoute: typeof TTeamTeamGroupsRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/team/members': {
+      id: '/t/$team/team/members'
+      path: '/team/members'
+      fullPath: '/t/$team/team/members'
+      preLoaderRoute: typeof TTeamTeamMembersRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/team/roles': {
+      id: '/t/$team/team/roles'
+      path: '/team/roles'
+      fullPath: '/t/$team/team/roles'
+      preLoaderRoute: typeof TTeamTeamRolesRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/terminal/': {
+      id: '/t/$team/terminal/'
+      path: '/terminal'
+      fullPath: '/t/$team/terminal/'
+      preLoaderRoute: typeof TTeamTerminalIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/variables/': {
+      id: '/t/$team/variables/'
+      path: '/variables'
+      fullPath: '/t/$team/variables/'
+      preLoaderRoute: typeof TTeamVariablesIndexRouteImport
+      parentRoute: typeof TTeamRouteRoute
+    }
+    '/t/$team/applications/$application/': {
+      id: '/t/$team/applications/$application/'
+      path: '/'
+      fullPath: '/t/$team/applications/$application/'
+      preLoaderRoute: typeof TTeamApplicationsApplicationIndexRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/advanced': {
+      id: '/t/$team/applications/$application/advanced'
+      path: '/advanced'
+      fullPath: '/t/$team/applications/$application/advanced'
+      preLoaderRoute: typeof TTeamApplicationsApplicationAdvancedRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/compose': {
+      id: '/t/$team/applications/$application/compose'
+      path: '/compose'
+      fullPath: '/t/$team/applications/$application/compose'
+      preLoaderRoute: typeof TTeamApplicationsApplicationComposeRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/danger': {
+      id: '/t/$team/applications/$application/danger'
+      path: '/danger'
+      fullPath: '/t/$team/applications/$application/danger'
+      preLoaderRoute: typeof TTeamApplicationsApplicationDangerRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/envs': {
+      id: '/t/$team/applications/$application/envs'
+      path: '/envs'
+      fullPath: '/t/$team/applications/$application/envs'
+      preLoaderRoute: typeof TTeamApplicationsApplicationEnvsRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/healthcheck': {
+      id: '/t/$team/applications/$application/healthcheck'
+      path: '/healthcheck'
+      fullPath: '/t/$team/applications/$application/healthcheck'
+      preLoaderRoute: typeof TTeamApplicationsApplicationHealthcheckRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/limits': {
+      id: '/t/$team/applications/$application/limits'
+      path: '/limits'
+      fullPath: '/t/$team/applications/$application/limits'
+      preLoaderRoute: typeof TTeamApplicationsApplicationLimitsRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/logs': {
+      id: '/t/$team/applications/$application/logs'
+      path: '/logs'
+      fullPath: '/t/$team/applications/$application/logs'
+      preLoaderRoute: typeof TTeamApplicationsApplicationLogsRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/operations': {
+      id: '/t/$team/applications/$application/operations'
+      path: '/operations'
+      fullPath: '/t/$team/applications/$application/operations'
+      preLoaderRoute: typeof TTeamApplicationsApplicationOperationsRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/previews': {
+      id: '/t/$team/applications/$application/previews'
+      path: '/previews'
+      fullPath: '/t/$team/applications/$application/previews'
+      preLoaderRoute: typeof TTeamApplicationsApplicationPreviewsRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/scheduled-tasks': {
+      id: '/t/$team/applications/$application/scheduled-tasks'
+      path: '/scheduled-tasks'
+      fullPath: '/t/$team/applications/$application/scheduled-tasks'
+      preLoaderRoute: typeof TTeamApplicationsApplicationScheduledTasksRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/source': {
+      id: '/t/$team/applications/$application/source'
+      path: '/source'
+      fullPath: '/t/$team/applications/$application/source'
+      preLoaderRoute: typeof TTeamApplicationsApplicationSourceRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/storages': {
+      id: '/t/$team/applications/$application/storages'
+      path: '/storages'
+      fullPath: '/t/$team/applications/$application/storages'
+      preLoaderRoute: typeof TTeamApplicationsApplicationStoragesRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/tags': {
+      id: '/t/$team/applications/$application/tags'
+      path: '/tags'
+      fullPath: '/t/$team/applications/$application/tags'
+      preLoaderRoute: typeof TTeamApplicationsApplicationTagsRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/terminal': {
+      id: '/t/$team/applications/$application/terminal'
+      path: '/terminal'
+      fullPath: '/t/$team/applications/$application/terminal'
+      preLoaderRoute: typeof TTeamApplicationsApplicationTerminalRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/webhooks': {
+      id: '/t/$team/applications/$application/webhooks'
+      path: '/webhooks'
+      fullPath: '/t/$team/applications/$application/webhooks'
+      preLoaderRoute: typeof TTeamApplicationsApplicationWebhooksRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/databases/$database/': {
+      id: '/t/$team/databases/$database/'
+      path: '/'
+      fullPath: '/t/$team/databases/$database/'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseIndexRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/backups': {
+      id: '/t/$team/databases/$database/backups'
+      path: '/backups'
+      fullPath: '/t/$team/databases/$database/backups'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseBackupsRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/danger': {
+      id: '/t/$team/databases/$database/danger'
+      path: '/danger'
+      fullPath: '/t/$team/databases/$database/danger'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseDangerRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/envs': {
+      id: '/t/$team/databases/$database/envs'
+      path: '/envs'
+      fullPath: '/t/$team/databases/$database/envs'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseEnvsRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/import': {
+      id: '/t/$team/databases/$database/import'
+      path: '/import'
+      fullPath: '/t/$team/databases/$database/import'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseImportRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/logs': {
+      id: '/t/$team/databases/$database/logs'
+      path: '/logs'
+      fullPath: '/t/$team/databases/$database/logs'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseLogsRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/operations': {
+      id: '/t/$team/databases/$database/operations'
+      path: '/operations'
+      fullPath: '/t/$team/databases/$database/operations'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseOperationsRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/scheduled-tasks': {
+      id: '/t/$team/databases/$database/scheduled-tasks'
+      path: '/scheduled-tasks'
+      fullPath: '/t/$team/databases/$database/scheduled-tasks'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseScheduledTasksRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/storages': {
+      id: '/t/$team/databases/$database/storages'
+      path: '/storages'
+      fullPath: '/t/$team/databases/$database/storages'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseStoragesRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/tags': {
+      id: '/t/$team/databases/$database/tags'
+      path: '/tags'
+      fullPath: '/t/$team/databases/$database/tags'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseTagsRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/tasks': {
+      id: '/t/$team/databases/$database/tasks'
+      path: '/tasks'
+      fullPath: '/t/$team/databases/$database/tasks'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseTasksRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
+    '/t/$team/databases/$database/terminal': {
+      id: '/t/$team/databases/$database/terminal'
+      path: '/terminal'
+      fullPath: '/t/$team/databases/$database/terminal'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseTerminalRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
     }
     '/t/$team/projects/$project/': {
       id: '/t/$team/projects/$project/'
@@ -285,6 +1972,195 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamProjectsProjectSettingsRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
+    '/t/$team/servers/$server/': {
+      id: '/t/$team/servers/$server/'
+      path: '/'
+      fullPath: '/t/$team/servers/$server/'
+      preLoaderRoute: typeof TTeamServersServerIndexRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/advanced': {
+      id: '/t/$team/servers/$server/advanced'
+      path: '/advanced'
+      fullPath: '/t/$team/servers/$server/advanced'
+      preLoaderRoute: typeof TTeamServersServerAdvancedRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/ca-certificate': {
+      id: '/t/$team/servers/$server/ca-certificate'
+      path: '/ca-certificate'
+      fullPath: '/t/$team/servers/$server/ca-certificate'
+      preLoaderRoute: typeof TTeamServersServerCaCertificateRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/cleanup': {
+      id: '/t/$team/servers/$server/cleanup'
+      path: '/cleanup'
+      fullPath: '/t/$team/servers/$server/cleanup'
+      preLoaderRoute: typeof TTeamServersServerCleanupRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/cloudflare': {
+      id: '/t/$team/servers/$server/cloudflare'
+      path: '/cloudflare'
+      fullPath: '/t/$team/servers/$server/cloudflare'
+      preLoaderRoute: typeof TTeamServersServerCloudflareRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/command': {
+      id: '/t/$team/servers/$server/command'
+      path: '/command'
+      fullPath: '/t/$team/servers/$server/command'
+      preLoaderRoute: typeof TTeamServersServerCommandRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/danger': {
+      id: '/t/$team/servers/$server/danger'
+      path: '/danger'
+      fullPath: '/t/$team/servers/$server/danger'
+      preLoaderRoute: typeof TTeamServersServerDangerRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/destinations': {
+      id: '/t/$team/servers/$server/destinations'
+      path: '/destinations'
+      fullPath: '/t/$team/servers/$server/destinations'
+      preLoaderRoute: typeof TTeamServersServerDestinationsRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/log-drains': {
+      id: '/t/$team/servers/$server/log-drains'
+      path: '/log-drains'
+      fullPath: '/t/$team/servers/$server/log-drains'
+      preLoaderRoute: typeof TTeamServersServerLogDrainsRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/metrics': {
+      id: '/t/$team/servers/$server/metrics'
+      path: '/metrics'
+      fullPath: '/t/$team/servers/$server/metrics'
+      preLoaderRoute: typeof TTeamServersServerMetricsRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/packages': {
+      id: '/t/$team/servers/$server/packages'
+      path: '/packages'
+      fullPath: '/t/$team/servers/$server/packages'
+      preLoaderRoute: typeof TTeamServersServerPackagesRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/private-key': {
+      id: '/t/$team/servers/$server/private-key'
+      path: '/private-key'
+      fullPath: '/t/$team/servers/$server/private-key'
+      preLoaderRoute: typeof TTeamServersServerPrivateKeyRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/resources': {
+      id: '/t/$team/servers/$server/resources'
+      path: '/resources'
+      fullPath: '/t/$team/servers/$server/resources'
+      preLoaderRoute: typeof TTeamServersServerResourcesRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/tasks': {
+      id: '/t/$team/servers/$server/tasks'
+      path: '/tasks'
+      fullPath: '/t/$team/servers/$server/tasks'
+      preLoaderRoute: typeof TTeamServersServerTasksRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/terminal': {
+      id: '/t/$team/servers/$server/terminal'
+      path: '/terminal'
+      fullPath: '/t/$team/servers/$server/terminal'
+      preLoaderRoute: typeof TTeamServersServerTerminalRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/services/$service/': {
+      id: '/t/$team/services/$service/'
+      path: '/'
+      fullPath: '/t/$team/services/$service/'
+      preLoaderRoute: typeof TTeamServicesServiceIndexRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/services/$service/danger': {
+      id: '/t/$team/services/$service/danger'
+      path: '/danger'
+      fullPath: '/t/$team/services/$service/danger'
+      preLoaderRoute: typeof TTeamServicesServiceDangerRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/services/$service/domains': {
+      id: '/t/$team/services/$service/domains'
+      path: '/domains'
+      fullPath: '/t/$team/services/$service/domains'
+      preLoaderRoute: typeof TTeamServicesServiceDomainsRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/services/$service/envs': {
+      id: '/t/$team/services/$service/envs'
+      path: '/envs'
+      fullPath: '/t/$team/services/$service/envs'
+      preLoaderRoute: typeof TTeamServicesServiceEnvsRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/services/$service/logs': {
+      id: '/t/$team/services/$service/logs'
+      path: '/logs'
+      fullPath: '/t/$team/services/$service/logs'
+      preLoaderRoute: typeof TTeamServicesServiceLogsRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/services/$service/operations': {
+      id: '/t/$team/services/$service/operations'
+      path: '/operations'
+      fullPath: '/t/$team/services/$service/operations'
+      preLoaderRoute: typeof TTeamServicesServiceOperationsRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/services/$service/scheduled-tasks': {
+      id: '/t/$team/services/$service/scheduled-tasks'
+      path: '/scheduled-tasks'
+      fullPath: '/t/$team/services/$service/scheduled-tasks'
+      preLoaderRoute: typeof TTeamServicesServiceScheduledTasksRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/services/$service/tags': {
+      id: '/t/$team/services/$service/tags'
+      path: '/tags'
+      fullPath: '/t/$team/services/$service/tags'
+      preLoaderRoute: typeof TTeamServicesServiceTagsRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/services/$service/tasks': {
+      id: '/t/$team/services/$service/tasks'
+      path: '/tasks'
+      fullPath: '/t/$team/services/$service/tasks'
+      preLoaderRoute: typeof TTeamServicesServiceTasksRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/services/$service/terminal': {
+      id: '/t/$team/services/$service/terminal'
+      path: '/terminal'
+      fullPath: '/t/$team/services/$service/terminal'
+      preLoaderRoute: typeof TTeamServicesServiceTerminalRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
+    '/t/$team/applications/$application/deployments/': {
+      id: '/t/$team/applications/$application/deployments/'
+      path: '/deployments'
+      fullPath: '/t/$team/applications/$application/deployments/'
+      preLoaderRoute: typeof TTeamApplicationsApplicationDeploymentsIndexRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/applications/$application/deployments/$deployment': {
+      id: '/t/$team/applications/$application/deployments/$deployment'
+      path: '/deployments/$deployment'
+      fullPath: '/t/$team/applications/$application/deployments/$deployment'
+      preLoaderRoute: typeof TTeamApplicationsApplicationDeploymentsDeploymentRouteImport
+      parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
     '/t/$team/projects/$project/$env/': {
       id: '/t/$team/projects/$project/$env/'
       path: '/projects/$project/$env'
@@ -306,13 +2182,262 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamProjectsProjectEnvSettingsRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
+    '/t/$team/servers/$server/proxy/': {
+      id: '/t/$team/servers/$server/proxy/'
+      path: '/proxy'
+      fullPath: '/t/$team/servers/$server/proxy/'
+      preLoaderRoute: typeof TTeamServersServerProxyIndexRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/proxy/certificates': {
+      id: '/t/$team/servers/$server/proxy/certificates'
+      path: '/proxy/certificates'
+      fullPath: '/t/$team/servers/$server/proxy/certificates'
+      preLoaderRoute: typeof TTeamServersServerProxyCertificatesRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/proxy/dynamic': {
+      id: '/t/$team/servers/$server/proxy/dynamic'
+      path: '/proxy/dynamic'
+      fullPath: '/t/$team/servers/$server/proxy/dynamic'
+      preLoaderRoute: typeof TTeamServersServerProxyDynamicRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
+    '/t/$team/servers/$server/proxy/logs': {
+      id: '/t/$team/servers/$server/proxy/logs'
+      path: '/proxy/logs'
+      fullPath: '/t/$team/servers/$server/proxy/logs'
+      preLoaderRoute: typeof TTeamServersServerProxyLogsRouteImport
+      parentRoute: typeof TTeamServersServerRouteRoute
+    }
   }
 }
+
+interface TTeamApplicationsApplicationRouteRouteChildren {
+  TTeamApplicationsApplicationAdvancedRoute: typeof TTeamApplicationsApplicationAdvancedRoute
+  TTeamApplicationsApplicationComposeRoute: typeof TTeamApplicationsApplicationComposeRoute
+  TTeamApplicationsApplicationDangerRoute: typeof TTeamApplicationsApplicationDangerRoute
+  TTeamApplicationsApplicationEnvsRoute: typeof TTeamApplicationsApplicationEnvsRoute
+  TTeamApplicationsApplicationHealthcheckRoute: typeof TTeamApplicationsApplicationHealthcheckRoute
+  TTeamApplicationsApplicationLimitsRoute: typeof TTeamApplicationsApplicationLimitsRoute
+  TTeamApplicationsApplicationLogsRoute: typeof TTeamApplicationsApplicationLogsRoute
+  TTeamApplicationsApplicationOperationsRoute: typeof TTeamApplicationsApplicationOperationsRoute
+  TTeamApplicationsApplicationPreviewsRoute: typeof TTeamApplicationsApplicationPreviewsRoute
+  TTeamApplicationsApplicationScheduledTasksRoute: typeof TTeamApplicationsApplicationScheduledTasksRoute
+  TTeamApplicationsApplicationSourceRoute: typeof TTeamApplicationsApplicationSourceRoute
+  TTeamApplicationsApplicationStoragesRoute: typeof TTeamApplicationsApplicationStoragesRoute
+  TTeamApplicationsApplicationTagsRoute: typeof TTeamApplicationsApplicationTagsRoute
+  TTeamApplicationsApplicationTerminalRoute: typeof TTeamApplicationsApplicationTerminalRoute
+  TTeamApplicationsApplicationWebhooksRoute: typeof TTeamApplicationsApplicationWebhooksRoute
+  TTeamApplicationsApplicationIndexRoute: typeof TTeamApplicationsApplicationIndexRoute
+  TTeamApplicationsApplicationDeploymentsDeploymentRoute: typeof TTeamApplicationsApplicationDeploymentsDeploymentRoute
+  TTeamApplicationsApplicationDeploymentsIndexRoute: typeof TTeamApplicationsApplicationDeploymentsIndexRoute
+}
+
+const TTeamApplicationsApplicationRouteRouteChildren: TTeamApplicationsApplicationRouteRouteChildren =
+  {
+    TTeamApplicationsApplicationAdvancedRoute:
+      TTeamApplicationsApplicationAdvancedRoute,
+    TTeamApplicationsApplicationComposeRoute:
+      TTeamApplicationsApplicationComposeRoute,
+    TTeamApplicationsApplicationDangerRoute:
+      TTeamApplicationsApplicationDangerRoute,
+    TTeamApplicationsApplicationEnvsRoute:
+      TTeamApplicationsApplicationEnvsRoute,
+    TTeamApplicationsApplicationHealthcheckRoute:
+      TTeamApplicationsApplicationHealthcheckRoute,
+    TTeamApplicationsApplicationLimitsRoute:
+      TTeamApplicationsApplicationLimitsRoute,
+    TTeamApplicationsApplicationLogsRoute:
+      TTeamApplicationsApplicationLogsRoute,
+    TTeamApplicationsApplicationOperationsRoute:
+      TTeamApplicationsApplicationOperationsRoute,
+    TTeamApplicationsApplicationPreviewsRoute:
+      TTeamApplicationsApplicationPreviewsRoute,
+    TTeamApplicationsApplicationScheduledTasksRoute:
+      TTeamApplicationsApplicationScheduledTasksRoute,
+    TTeamApplicationsApplicationSourceRoute:
+      TTeamApplicationsApplicationSourceRoute,
+    TTeamApplicationsApplicationStoragesRoute:
+      TTeamApplicationsApplicationStoragesRoute,
+    TTeamApplicationsApplicationTagsRoute:
+      TTeamApplicationsApplicationTagsRoute,
+    TTeamApplicationsApplicationTerminalRoute:
+      TTeamApplicationsApplicationTerminalRoute,
+    TTeamApplicationsApplicationWebhooksRoute:
+      TTeamApplicationsApplicationWebhooksRoute,
+    TTeamApplicationsApplicationIndexRoute:
+      TTeamApplicationsApplicationIndexRoute,
+    TTeamApplicationsApplicationDeploymentsDeploymentRoute:
+      TTeamApplicationsApplicationDeploymentsDeploymentRoute,
+    TTeamApplicationsApplicationDeploymentsIndexRoute:
+      TTeamApplicationsApplicationDeploymentsIndexRoute,
+  }
+
+const TTeamApplicationsApplicationRouteRouteWithChildren =
+  TTeamApplicationsApplicationRouteRoute._addFileChildren(
+    TTeamApplicationsApplicationRouteRouteChildren,
+  )
+
+interface TTeamDatabasesDatabaseRouteRouteChildren {
+  TTeamDatabasesDatabaseBackupsRoute: typeof TTeamDatabasesDatabaseBackupsRoute
+  TTeamDatabasesDatabaseDangerRoute: typeof TTeamDatabasesDatabaseDangerRoute
+  TTeamDatabasesDatabaseEnvsRoute: typeof TTeamDatabasesDatabaseEnvsRoute
+  TTeamDatabasesDatabaseImportRoute: typeof TTeamDatabasesDatabaseImportRoute
+  TTeamDatabasesDatabaseLogsRoute: typeof TTeamDatabasesDatabaseLogsRoute
+  TTeamDatabasesDatabaseOperationsRoute: typeof TTeamDatabasesDatabaseOperationsRoute
+  TTeamDatabasesDatabaseScheduledTasksRoute: typeof TTeamDatabasesDatabaseScheduledTasksRoute
+  TTeamDatabasesDatabaseStoragesRoute: typeof TTeamDatabasesDatabaseStoragesRoute
+  TTeamDatabasesDatabaseTagsRoute: typeof TTeamDatabasesDatabaseTagsRoute
+  TTeamDatabasesDatabaseTasksRoute: typeof TTeamDatabasesDatabaseTasksRoute
+  TTeamDatabasesDatabaseTerminalRoute: typeof TTeamDatabasesDatabaseTerminalRoute
+  TTeamDatabasesDatabaseIndexRoute: typeof TTeamDatabasesDatabaseIndexRoute
+}
+
+const TTeamDatabasesDatabaseRouteRouteChildren: TTeamDatabasesDatabaseRouteRouteChildren =
+  {
+    TTeamDatabasesDatabaseBackupsRoute: TTeamDatabasesDatabaseBackupsRoute,
+    TTeamDatabasesDatabaseDangerRoute: TTeamDatabasesDatabaseDangerRoute,
+    TTeamDatabasesDatabaseEnvsRoute: TTeamDatabasesDatabaseEnvsRoute,
+    TTeamDatabasesDatabaseImportRoute: TTeamDatabasesDatabaseImportRoute,
+    TTeamDatabasesDatabaseLogsRoute: TTeamDatabasesDatabaseLogsRoute,
+    TTeamDatabasesDatabaseOperationsRoute:
+      TTeamDatabasesDatabaseOperationsRoute,
+    TTeamDatabasesDatabaseScheduledTasksRoute:
+      TTeamDatabasesDatabaseScheduledTasksRoute,
+    TTeamDatabasesDatabaseStoragesRoute: TTeamDatabasesDatabaseStoragesRoute,
+    TTeamDatabasesDatabaseTagsRoute: TTeamDatabasesDatabaseTagsRoute,
+    TTeamDatabasesDatabaseTasksRoute: TTeamDatabasesDatabaseTasksRoute,
+    TTeamDatabasesDatabaseTerminalRoute: TTeamDatabasesDatabaseTerminalRoute,
+    TTeamDatabasesDatabaseIndexRoute: TTeamDatabasesDatabaseIndexRoute,
+  }
+
+const TTeamDatabasesDatabaseRouteRouteWithChildren =
+  TTeamDatabasesDatabaseRouteRoute._addFileChildren(
+    TTeamDatabasesDatabaseRouteRouteChildren,
+  )
+
+interface TTeamServersServerRouteRouteChildren {
+  TTeamServersServerAdvancedRoute: typeof TTeamServersServerAdvancedRoute
+  TTeamServersServerCaCertificateRoute: typeof TTeamServersServerCaCertificateRoute
+  TTeamServersServerCleanupRoute: typeof TTeamServersServerCleanupRoute
+  TTeamServersServerCloudflareRoute: typeof TTeamServersServerCloudflareRoute
+  TTeamServersServerCommandRoute: typeof TTeamServersServerCommandRoute
+  TTeamServersServerDangerRoute: typeof TTeamServersServerDangerRoute
+  TTeamServersServerDestinationsRoute: typeof TTeamServersServerDestinationsRoute
+  TTeamServersServerLogDrainsRoute: typeof TTeamServersServerLogDrainsRoute
+  TTeamServersServerMetricsRoute: typeof TTeamServersServerMetricsRoute
+  TTeamServersServerPackagesRoute: typeof TTeamServersServerPackagesRoute
+  TTeamServersServerPrivateKeyRoute: typeof TTeamServersServerPrivateKeyRoute
+  TTeamServersServerResourcesRoute: typeof TTeamServersServerResourcesRoute
+  TTeamServersServerTasksRoute: typeof TTeamServersServerTasksRoute
+  TTeamServersServerTerminalRoute: typeof TTeamServersServerTerminalRoute
+  TTeamServersServerIndexRoute: typeof TTeamServersServerIndexRoute
+  TTeamServersServerProxyCertificatesRoute: typeof TTeamServersServerProxyCertificatesRoute
+  TTeamServersServerProxyDynamicRoute: typeof TTeamServersServerProxyDynamicRoute
+  TTeamServersServerProxyLogsRoute: typeof TTeamServersServerProxyLogsRoute
+  TTeamServersServerProxyIndexRoute: typeof TTeamServersServerProxyIndexRoute
+}
+
+const TTeamServersServerRouteRouteChildren: TTeamServersServerRouteRouteChildren =
+  {
+    TTeamServersServerAdvancedRoute: TTeamServersServerAdvancedRoute,
+    TTeamServersServerCaCertificateRoute: TTeamServersServerCaCertificateRoute,
+    TTeamServersServerCleanupRoute: TTeamServersServerCleanupRoute,
+    TTeamServersServerCloudflareRoute: TTeamServersServerCloudflareRoute,
+    TTeamServersServerCommandRoute: TTeamServersServerCommandRoute,
+    TTeamServersServerDangerRoute: TTeamServersServerDangerRoute,
+    TTeamServersServerDestinationsRoute: TTeamServersServerDestinationsRoute,
+    TTeamServersServerLogDrainsRoute: TTeamServersServerLogDrainsRoute,
+    TTeamServersServerMetricsRoute: TTeamServersServerMetricsRoute,
+    TTeamServersServerPackagesRoute: TTeamServersServerPackagesRoute,
+    TTeamServersServerPrivateKeyRoute: TTeamServersServerPrivateKeyRoute,
+    TTeamServersServerResourcesRoute: TTeamServersServerResourcesRoute,
+    TTeamServersServerTasksRoute: TTeamServersServerTasksRoute,
+    TTeamServersServerTerminalRoute: TTeamServersServerTerminalRoute,
+    TTeamServersServerIndexRoute: TTeamServersServerIndexRoute,
+    TTeamServersServerProxyCertificatesRoute:
+      TTeamServersServerProxyCertificatesRoute,
+    TTeamServersServerProxyDynamicRoute: TTeamServersServerProxyDynamicRoute,
+    TTeamServersServerProxyLogsRoute: TTeamServersServerProxyLogsRoute,
+    TTeamServersServerProxyIndexRoute: TTeamServersServerProxyIndexRoute,
+  }
+
+const TTeamServersServerRouteRouteWithChildren =
+  TTeamServersServerRouteRoute._addFileChildren(
+    TTeamServersServerRouteRouteChildren,
+  )
+
+interface TTeamServicesServiceRouteRouteChildren {
+  TTeamServicesServiceDangerRoute: typeof TTeamServicesServiceDangerRoute
+  TTeamServicesServiceDomainsRoute: typeof TTeamServicesServiceDomainsRoute
+  TTeamServicesServiceEnvsRoute: typeof TTeamServicesServiceEnvsRoute
+  TTeamServicesServiceLogsRoute: typeof TTeamServicesServiceLogsRoute
+  TTeamServicesServiceOperationsRoute: typeof TTeamServicesServiceOperationsRoute
+  TTeamServicesServiceScheduledTasksRoute: typeof TTeamServicesServiceScheduledTasksRoute
+  TTeamServicesServiceTagsRoute: typeof TTeamServicesServiceTagsRoute
+  TTeamServicesServiceTasksRoute: typeof TTeamServicesServiceTasksRoute
+  TTeamServicesServiceTerminalRoute: typeof TTeamServicesServiceTerminalRoute
+  TTeamServicesServiceIndexRoute: typeof TTeamServicesServiceIndexRoute
+}
+
+const TTeamServicesServiceRouteRouteChildren: TTeamServicesServiceRouteRouteChildren =
+  {
+    TTeamServicesServiceDangerRoute: TTeamServicesServiceDangerRoute,
+    TTeamServicesServiceDomainsRoute: TTeamServicesServiceDomainsRoute,
+    TTeamServicesServiceEnvsRoute: TTeamServicesServiceEnvsRoute,
+    TTeamServicesServiceLogsRoute: TTeamServicesServiceLogsRoute,
+    TTeamServicesServiceOperationsRoute: TTeamServicesServiceOperationsRoute,
+    TTeamServicesServiceScheduledTasksRoute:
+      TTeamServicesServiceScheduledTasksRoute,
+    TTeamServicesServiceTagsRoute: TTeamServicesServiceTagsRoute,
+    TTeamServicesServiceTasksRoute: TTeamServicesServiceTasksRoute,
+    TTeamServicesServiceTerminalRoute: TTeamServicesServiceTerminalRoute,
+    TTeamServicesServiceIndexRoute: TTeamServicesServiceIndexRoute,
+  }
+
+const TTeamServicesServiceRouteRouteWithChildren =
+  TTeamServicesServiceRouteRoute._addFileChildren(
+    TTeamServicesServiceRouteRouteChildren,
+  )
 
 interface TTeamRouteRouteChildren {
   TTeamSplatRoute: typeof TTeamSplatRoute
   TTeamIndexRoute: typeof TTeamIndexRoute
+  TTeamApplicationsApplicationRouteRoute: typeof TTeamApplicationsApplicationRouteRouteWithChildren
+  TTeamDatabasesDatabaseRouteRoute: typeof TTeamDatabasesDatabaseRouteRouteWithChildren
+  TTeamServersServerRouteRoute: typeof TTeamServersServerRouteRouteWithChildren
+  TTeamServicesServiceRouteRoute: typeof TTeamServicesServiceRouteRouteWithChildren
+  TTeamIntegrationsRegistriesRoute: typeof TTeamIntegrationsRegistriesRoute
+  TTeamIntegrationsS3Route: typeof TTeamIntegrationsS3Route
+  TTeamIntegrationsSourcesRoute: typeof TTeamIntegrationsSourcesRoute
+  TTeamKeysTokensRoute: typeof TTeamKeysTokensRoute
+  TTeamNotificationsDeliveriesRoute: typeof TTeamNotificationsDeliveriesRoute
+  TTeamNotificationsEventsRoute: typeof TTeamNotificationsEventsRoute
+  TTeamSettingsAdvancedRoute: typeof TTeamSettingsAdvancedRoute
+  TTeamSettingsAuditRoute: typeof TTeamSettingsAuditRoute
+  TTeamSettingsEmailRoute: typeof TTeamSettingsEmailRoute
+  TTeamSettingsOauthRoute: typeof TTeamSettingsOauthRoute
+  TTeamSettingsUpdatesRoute: typeof TTeamSettingsUpdatesRoute
+  TTeamSettingsUsersRoute: typeof TTeamSettingsUsersRoute
+  TTeamTeamApprovalsRoute: typeof TTeamTeamApprovalsRoute
+  TTeamTeamAuditRoute: typeof TTeamTeamAuditRoute
+  TTeamTeamDangerRoute: typeof TTeamTeamDangerRoute
+  TTeamTeamGroupsRoute: typeof TTeamTeamGroupsRoute
+  TTeamTeamMembersRoute: typeof TTeamTeamMembersRoute
+  TTeamTeamRolesRoute: typeof TTeamTeamRolesRoute
+  TTeamAccountIndexRoute: typeof TTeamAccountIndexRoute
+  TTeamIntegrationsIndexRoute: typeof TTeamIntegrationsIndexRoute
+  TTeamKeysIndexRoute: typeof TTeamKeysIndexRoute
+  TTeamMonitoringIndexRoute: typeof TTeamMonitoringIndexRoute
+  TTeamNotificationsIndexRoute: typeof TTeamNotificationsIndexRoute
   TTeamProjectsIndexRoute: typeof TTeamProjectsIndexRoute
+  TTeamServersIndexRoute: typeof TTeamServersIndexRoute
+  TTeamSettingsIndexRoute: typeof TTeamSettingsIndexRoute
+  TTeamTagsIndexRoute: typeof TTeamTagsIndexRoute
+  TTeamTeamIndexRoute: typeof TTeamTeamIndexRoute
+  TTeamTerminalIndexRoute: typeof TTeamTerminalIndexRoute
+  TTeamVariablesIndexRoute: typeof TTeamVariablesIndexRoute
   TTeamProjectsProjectNewRoute: typeof TTeamProjectsProjectNewRoute
   TTeamProjectsProjectSettingsRoute: typeof TTeamProjectsProjectSettingsRoute
   TTeamProjectsProjectIndexRoute: typeof TTeamProjectsProjectIndexRoute
@@ -324,7 +2449,42 @@ interface TTeamRouteRouteChildren {
 const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamSplatRoute: TTeamSplatRoute,
   TTeamIndexRoute: TTeamIndexRoute,
+  TTeamApplicationsApplicationRouteRoute:
+    TTeamApplicationsApplicationRouteRouteWithChildren,
+  TTeamDatabasesDatabaseRouteRoute:
+    TTeamDatabasesDatabaseRouteRouteWithChildren,
+  TTeamServersServerRouteRoute: TTeamServersServerRouteRouteWithChildren,
+  TTeamServicesServiceRouteRoute: TTeamServicesServiceRouteRouteWithChildren,
+  TTeamIntegrationsRegistriesRoute: TTeamIntegrationsRegistriesRoute,
+  TTeamIntegrationsS3Route: TTeamIntegrationsS3Route,
+  TTeamIntegrationsSourcesRoute: TTeamIntegrationsSourcesRoute,
+  TTeamKeysTokensRoute: TTeamKeysTokensRoute,
+  TTeamNotificationsDeliveriesRoute: TTeamNotificationsDeliveriesRoute,
+  TTeamNotificationsEventsRoute: TTeamNotificationsEventsRoute,
+  TTeamSettingsAdvancedRoute: TTeamSettingsAdvancedRoute,
+  TTeamSettingsAuditRoute: TTeamSettingsAuditRoute,
+  TTeamSettingsEmailRoute: TTeamSettingsEmailRoute,
+  TTeamSettingsOauthRoute: TTeamSettingsOauthRoute,
+  TTeamSettingsUpdatesRoute: TTeamSettingsUpdatesRoute,
+  TTeamSettingsUsersRoute: TTeamSettingsUsersRoute,
+  TTeamTeamApprovalsRoute: TTeamTeamApprovalsRoute,
+  TTeamTeamAuditRoute: TTeamTeamAuditRoute,
+  TTeamTeamDangerRoute: TTeamTeamDangerRoute,
+  TTeamTeamGroupsRoute: TTeamTeamGroupsRoute,
+  TTeamTeamMembersRoute: TTeamTeamMembersRoute,
+  TTeamTeamRolesRoute: TTeamTeamRolesRoute,
+  TTeamAccountIndexRoute: TTeamAccountIndexRoute,
+  TTeamIntegrationsIndexRoute: TTeamIntegrationsIndexRoute,
+  TTeamKeysIndexRoute: TTeamKeysIndexRoute,
+  TTeamMonitoringIndexRoute: TTeamMonitoringIndexRoute,
+  TTeamNotificationsIndexRoute: TTeamNotificationsIndexRoute,
   TTeamProjectsIndexRoute: TTeamProjectsIndexRoute,
+  TTeamServersIndexRoute: TTeamServersIndexRoute,
+  TTeamSettingsIndexRoute: TTeamSettingsIndexRoute,
+  TTeamTagsIndexRoute: TTeamTagsIndexRoute,
+  TTeamTeamIndexRoute: TTeamTeamIndexRoute,
+  TTeamTerminalIndexRoute: TTeamTerminalIndexRoute,
+  TTeamVariablesIndexRoute: TTeamVariablesIndexRoute,
   TTeamProjectsProjectNewRoute: TTeamProjectsProjectNewRoute,
   TTeamProjectsProjectSettingsRoute: TTeamProjectsProjectSettingsRoute,
   TTeamProjectsProjectIndexRoute: TTeamProjectsProjectIndexRoute,
@@ -339,10 +2499,15 @@ const TTeamRouteRouteWithChildren = TTeamRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SetupRoute: SetupRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   TTeamRouteRoute: TTeamRouteRouteWithChildren,
+  InvitationsAcceptRoute: InvitationsAcceptRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -20,12 +20,6 @@ function EnvironmentSettings() {
   return (
     <>
       <PageHeader
-        crumbs={[
-          { label: "Projets", to: `/t/${team}/projects` },
-          { label: data?.project.name ?? "…", to: `/t/${team}/projects/${project}` },
-          { label: data?.environment.name ?? "…", to: `/t/${team}/projects/${project}/${env}` },
-          { label: "Réglages" },
-        ]}
         title="Réglages de l'environnement"
       />
       {data && <EnvironmentForm key={data.environment.name + data.environment.description} team={team} project={project} environment={data.environment} />}
