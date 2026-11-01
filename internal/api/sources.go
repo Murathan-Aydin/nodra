@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand/v2"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -183,8 +184,11 @@ func (s *Server) createSource(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	if msg == "" && in.Type == git.GitHub && (g.AppID == 0 || g.PrivateKeyEnc == "" || g.WebhookSecretEnc == "") {
-		msg = "GitHub App : app_id, private_key et webhook_secret requis (ou utilisez la création automatique)"
+	// GitHub : soit une App complète, soit un brouillon (aucun identifiant) enregistré ensuite par manifeste
+	// ou à la main, comme dans Coolify.
+	draft := g.AppID == 0 && g.PrivateKeyEnc == "" && g.WebhookSecretEnc == ""
+	if msg == "" && in.Type == git.GitHub && !draft && (g.AppID == 0 || g.PrivateKeyEnc == "" || g.WebhookSecretEnc == "") {
+		msg = "GitHub App : app_id, private_key et webhook_secret requis ensemble (ou aucun pour l'enregistrer ensuite)"
 	}
 	if msg == "" && in.Type != git.GitHub && g.AccessTokenEnc == "" {
 		msg = "access_token requis"
@@ -348,13 +352,23 @@ func (s *Server) startGitHubManifest(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, msg)
 		return
 	}
-	state := s.newState(g)
 	created, err := s.Store.CreateGitSource(r.Context(), g)
 	if err != nil {
 		s.fail(w, err)
 		return
 	}
-	appName := strings.Trim(slugRe.ReplaceAllString(strings.ToLower("nodra-"+in.Name), "-"), "-")
+	s.writeManifest(w, r, created, in.Name, s.baseURL(r), git.ManifestOptions{Previews: true})
+}
+
+// writeManifest prépare l'enregistrement d'une source GitHub par manifeste : état à usage unique,
+// manifeste et adresse du formulaire GitHub à soumettre par le navigateur.
+func (s *Server) writeManifest(w http.ResponseWriter, r *http.Request, g *store.GitSource, name, endpoint string, opts git.ManifestOptions) {
+	state := s.newState(g)
+	if err := s.Store.UpdateGitSource(r.Context(), g); err != nil {
+		s.internal(w, err)
+		return
+	}
+	appName := strings.Trim(slugRe.ReplaceAllString(strings.ToLower("nodra-"+name), "-"), "-")
 	if len(appName) > 28 {
 		appName = appName[:28]
 	}
@@ -363,10 +377,143 @@ func (s *Server) startGitHubManifest(w http.ResponseWriter, r *http.Request) {
 	if g.Organization != "" {
 		action = g.HTMLURL + "/organizations/" + url.PathEscape(g.Organization) + "/settings/apps/new"
 	}
-	manifest, _ := json.Marshal(git.Manifest(appName, s.baseURL(r), created.ID, in.IsPublic))
-	s.auditTeam(r, "source.github_app.started", "git_source", created.ID, map[string]string{"app_name": appName})
-	writeJSON(w, http.StatusCreated, map[string]any{"source": sourceView(created), "form_action": action + "?state=" + url.QueryEscape(state),
+	manifest, _ := json.Marshal(git.Manifest(appName, endpoint, g.ID, g.IsPublic, opts))
+	s.auditTeam(r, "source.github_app.started", "git_source", g.ID, map[string]any{"app_name": appName, "endpoint": endpoint, "previews": opts.Previews})
+	writeJSON(w, http.StatusCreated, map[string]any{"source": sourceView(g), "form_action": action + "?state=" + url.QueryEscape(state),
 		"manifest": string(manifest)})
+}
+
+// instanceEndpoints : adresses de l'instance proposées pour les webhooks et retours de GitHub
+// (domaine de l'instance, IP publiques, adresse utilisée par le navigateur).
+func (s *Server) instanceEndpoints(r *http.Request) []map[string]string {
+	var out []map[string]string
+	add := func(label, u string) {
+		u = strings.TrimSuffix(u, "/")
+		for _, e := range out {
+			if e["url"] == u {
+				return
+			}
+		}
+		if validHTTPURL(u) {
+			out = append(out, map[string]string{"label": label, "url": u})
+		}
+	}
+	port := "8000"
+	if _, p, err := net.SplitHostPort(r.Host); err == nil {
+		port = p
+	}
+	if st, err := s.Store.InstanceSettings(r.Context()); err == nil {
+		if st.FQDN != nil && *st.FQDN != "" {
+			add("Domaine de l'instance", *st.FQDN)
+		}
+		if st.PublicIPv4 != "" {
+			add("IPv4 publique", "http://"+st.PublicIPv4+":"+port)
+		}
+		if st.PublicIPv6 != "" {
+			add("IPv6 publique", "http://["+st.PublicIPv6+"]:"+port)
+		}
+	}
+	add("Adresse actuelle", s.baseURL(r))
+	return out
+}
+
+// githubEndpoints : GET /sources/github/endpoints.
+func (s *Server) githubEndpoints(w http.ResponseWriter, r *http.Request) {
+	if !s.authorize(w, r, "source.manage", rbac.Scope{}) {
+		return
+	}
+	writeJSON(w, http.StatusOK, s.instanceEndpoints(r))
+}
+
+// sourceManifest : POST /sources/{id}/github/manifest — enregistre une App brouillon auprès de GitHub
+// avec les options choisies (adresse des webhooks, previews des pull requests).
+func (s *Server) sourceManifest(w http.ResponseWriter, r *http.Request) {
+	g, ok := s.teamSource(w, r, "source.manage")
+	if !ok {
+		return
+	}
+	var in struct {
+		Endpoint string `json:"endpoint"`
+		Previews *bool  `json:"previews"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	if g.Type != git.GitHub || g.AppID != 0 {
+		writeError(w, http.StatusConflict, "cette source n'est pas une GitHub App à enregistrer")
+		return
+	}
+	endpoint := strings.TrimSuffix(strings.TrimSpace(in.Endpoint), "/")
+	if endpoint == "" {
+		endpoint = s.baseURL(r)
+	}
+	if !validHTTPURL(endpoint) {
+		writeError(w, http.StatusUnprocessableEntity, "adresse de webhook invalide (URL http(s) attendue)")
+		return
+	}
+	s.writeManifest(w, r, g, g.Name, endpoint, git.ManifestOptions{Previews: in.Previews == nil || *in.Previews})
+}
+
+// testSource : POST /sources/{id}/test — vérifie l'accès à la forge (liste des dépôts).
+func (s *Server) testSource(w http.ResponseWriter, r *http.Request) {
+	g, ok := s.teamSource(w, r, "source.read")
+	if !ok {
+		return
+	}
+	src, err := s.gitSource(g)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	repos, err := git.Repos(r.Context(), src)
+	if err != nil {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "message": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "repositories": len(repos)})
+}
+
+// githubApp : GET /sources/{id}/github/app — description de l'App chez GitHub (permissions, événements).
+func (s *Server) githubApp(w http.ResponseWriter, r *http.Request) {
+	g, ok := s.teamSource(w, r, "source.read")
+	if !ok {
+		return
+	}
+	src, err := s.gitSource(g)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	info, err := git.App(r.Context(), src)
+	if err != nil {
+		s.forgeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, info)
+}
+
+// syncGitHubName : POST /sources/{id}/github/sync-name — reprend le nom et l'identifiant court de l'App chez GitHub.
+func (s *Server) syncGitHubName(w http.ResponseWriter, r *http.Request) {
+	g, ok := s.teamSource(w, r, "source.manage")
+	if !ok {
+		return
+	}
+	src, err := s.gitSource(g)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	info, err := git.App(r.Context(), src)
+	if err != nil {
+		s.forgeError(w, err)
+		return
+	}
+	g.Name, g.AppSlug = info.Name, info.Slug
+	if err := s.Store.UpdateGitSource(r.Context(), g); err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, sourceView(g))
 }
 
 // sourceForState charge la source d'un flux en cours et vérifie que l'utilisateur peut la gérer.

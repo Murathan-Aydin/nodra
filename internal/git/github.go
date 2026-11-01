@@ -141,8 +141,21 @@ func githubRepos(ctx context.Context, s Source) ([]Repo, error) {
 
 // --- Création d'une GitHub App par manifeste ---
 
-// Manifest construit le manifeste de création d'une GitHub App pointant vers l'instance.
-func Manifest(name, baseURL, sourceID string, public bool) map[string]any {
+// ManifestOptions : choix faits avant l'enregistrement de l'App (comme la page de la source de Coolify).
+type ManifestOptions struct {
+	// Previews : droits d'écriture sur les pull requests et événement pull_request (previews et commentaires).
+	Previews bool
+}
+
+// Manifest construit le manifeste de création d'une GitHub App pointant vers l'instance (baseURL :
+// adresse choisie pour les webhooks et les retours de GitHub).
+func Manifest(name, baseURL, sourceID string, public bool, opts ManifestOptions) map[string]any {
+	perms := map[string]string{"contents": "read", "metadata": "read", "emails": "read", "administration": "read"}
+	events := []string{"push"}
+	if opts.Previews {
+		perms["pull_requests"] = "write"
+		events = append(events, "pull_request")
+	}
 	return map[string]any{
 		"name":                     name,
 		"url":                      baseURL,
@@ -152,11 +165,41 @@ func Manifest(name, baseURL, sourceID string, public bool) map[string]any {
 		"setup_on_update":          true,
 		"public":                   public,
 		"request_oauth_on_install": false,
-		"default_permissions": map[string]string{
-			"contents": "read", "metadata": "read", "pull_requests": "write", "emails": "read", "administration": "read",
-		},
-		"default_events": []string{"push", "pull_request"},
+		"default_permissions":      perms,
+		"default_events":           events,
 	}
+}
+
+// AppInfo : description d'une GitHub App telle que GitHub la connaît (GET /app).
+type AppInfo struct {
+	Name        string            `json:"name"`
+	Slug        string            `json:"slug"`
+	HTMLURL     string            `json:"html_url"`
+	Permissions map[string]string `json:"permissions"`
+	Events      []string          `json:"events"`
+	Owner       struct {
+		Login string `json:"login"`
+	} `json:"owner"`
+}
+
+// App lit la description de l'App avec son JWT (nom, permissions accordées, événements).
+func App(ctx context.Context, s Source) (*AppInfo, error) {
+	if s.AppID == 0 || s.PrivateKey == "" {
+		return nil, errors.New("la GitHub App n'est pas encore enregistrée")
+	}
+	jwt, err := AppJWT(s.AppID, s.PrivateKey, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	_, b, err := do(ctx, "GET", s.APIURL+"/app", "Bearer "+jwt, nil)
+	if err != nil {
+		return nil, err
+	}
+	var out AppInfo
+	if err := json.Unmarshal(b, &out); err != nil {
+		return nil, errors.New("réponse inattendue de GitHub")
+	}
+	return &out, nil
 }
 
 // AppCredentials : identifiants renvoyés par GitHub à la conversion d'un manifeste.

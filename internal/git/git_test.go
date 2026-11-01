@@ -141,9 +141,16 @@ func TestGitHubApp(t *testing.T) {
 	if err != nil || creds.ID != 99 || creds.WebhookSecret != "ws" || creds.Owner.Login != "acme" {
 		t.Fatalf("conversion : %+v %v", creds, err)
 	}
-	m := Manifest("nodra-x", "https://nodra.example.com", "id", false)
+	m := Manifest("nodra-x", "https://nodra.example.com", "id", false, ManifestOptions{Previews: true})
 	if m["hook_attributes"].(map[string]any)["url"] != "https://nodra.example.com/webhooks/github" {
 		t.Fatal("URL de webhook du manifeste")
+	}
+	if m["default_permissions"].(map[string]string)["pull_requests"] != "write" || len(m["default_events"].([]string)) != 2 {
+		t.Fatal("previews : droits sur les pull requests et événement pull_request attendus")
+	}
+	m = Manifest("nodra-x", "https://nodra.example.com", "id", false, ManifestOptions{})
+	if _, ok := m["default_permissions"].(map[string]string)["pull_requests"]; ok || len(m["default_events"].([]string)) != 1 {
+		t.Fatal("sans previews : ni droit sur les pull requests ni événement pull_request")
 	}
 }
 

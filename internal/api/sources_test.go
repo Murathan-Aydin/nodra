@@ -41,6 +41,8 @@ func fakeGHE(t *testing.T, pemKey string) *httptest.Server {
 			fmt.Fprintf(w, `{"token":"ghs_x","expires_at":%q}`, time.Now().Add(time.Hour).Format(time.RFC3339))
 		case r.URL.Path == "/api/v3/installation/repositories":
 			fmt.Fprint(w, `{"repositories":[{"full_name":"acme/web","name":"web","private":true,"default_branch":"main"}]}`)
+		case r.Method == "GET" && r.URL.Path == "/api/v3/app" && strings.HasPrefix(r.Header.Get("Authorization"), "Bearer "):
+			fmt.Fprint(w, `{"name":"Nodra Acme renommée","slug":"nodra-acme","permissions":{"contents":"read","pull_requests":"write"},"events":["push","pull_request"]}`)
 		case r.URL.Path == "/api/v3/repos/acme/web/branches":
 			fmt.Fprint(w, `[{"name":"main"}]`)
 		default:
@@ -177,4 +179,75 @@ func TestSources(t *testing.T) {
 	}
 	expect(t, "renommage", alice.do("PATCH", base+"/sources/"+gl["id"].(string), map[string]any{"name": "GitLab.com"}, nil), 200)
 	expect(t, "suppression", alice.do("DELETE", base+"/sources/"+gl["id"].(string), nil, nil), 204)
+}
+
+// TestGitHubAppDraft : création en deux temps comme Coolify (brouillon, puis manifeste avec options),
+// adresses proposées, test de connexion, description de l'App et synchronisation du nom.
+func TestGitHubAppDraft(t *testing.T) {
+	e := newTestEnv(t)
+	alice, _ := register(t, e, "alice@example.com")
+	var acme store.Team
+	expect(t, "Acme", alice.do("POST", "/teams", map[string]string{"name": "Acme"}, &acme), 201)
+	base := "/teams/" + acme.ID
+	k, _ := rsa.GenerateKey(rand.Reader, 2048)
+	pemKey := string(pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)}))
+	ghe := fakeGHE(t, pemKey)
+
+	// Brouillon : aucun identifiant ; des identifiants partiels restent refusés.
+	expect(t, "identifiants partiels", alice.do("POST", base+"/sources", map[string]any{"type": "github", "name": "x", "app_id": 1}, nil), 422)
+	var draft map[string]any
+	expect(t, "brouillon", alice.do("POST", base+"/sources", map[string]any{"type": "github", "name": "Acme", "html_url": ghe.URL, "organization": "acme"}, &draft), 201)
+	sid := draft["id"].(string)
+	if draft["configured"] != false || draft["api_url"] != ghe.URL+"/api/v3" {
+		t.Fatalf("brouillon : %v", draft)
+	}
+
+	var endpoints []map[string]string
+	expect(t, "adresses", alice.do("GET", base+"/sources/github/endpoints", nil, &endpoints), 200)
+	if len(endpoints) == 0 || endpoints[len(endpoints)-1]["label"] != "Adresse actuelle" {
+		t.Fatalf("adresses : %v", endpoints)
+	}
+
+	// Manifeste avec une adresse choisie et sans previews.
+	var started struct {
+		FormAction string `json:"form_action"`
+		Manifest   string `json:"manifest"`
+	}
+	expect(t, "adresse invalide", alice.do("POST", base+"/sources/"+sid+"/github/manifest", map[string]any{"endpoint": "ftp://x"}, nil), 422)
+	expect(t, "manifeste", alice.do("POST", base+"/sources/"+sid+"/github/manifest", map[string]any{"endpoint": "https://hooks.example.com/", "previews": false}, &started), 201)
+	if !strings.HasPrefix(started.FormAction, ghe.URL+"/organizations/acme/settings/apps/new?state=") {
+		t.Fatalf("formulaire : %s", started.FormAction)
+	}
+	var m map[string]any
+	_ = json.Unmarshal([]byte(started.Manifest), &m)
+	if m["hook_attributes"].(map[string]any)["url"] != "https://hooks.example.com/webhooks/github" || len(m["default_events"].([]any)) != 1 {
+		t.Fatalf("manifeste : %v", m)
+	}
+
+	// Enregistrement terminé (retour de GitHub), puis installation.
+	alice.http.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	state, _ := url.QueryUnescape(started.FormAction[strings.Index(started.FormAction, "state=")+6:])
+	resp, err := alice.http.Get(alice.base + "/sources/github/callback?code=CODE&state=" + url.QueryEscape(state))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	expect(t, "déjà enregistrée", alice.do("POST", base+"/sources/"+sid+"/github/manifest", map[string]any{}, nil), 409)
+	expect(t, "installation", alice.do("PATCH", base+"/sources/"+sid, map[string]any{"installation_id": 77}, nil), 200)
+
+	var test map[string]any
+	expect(t, "test de connexion", alice.do("POST", base+"/sources/"+sid+"/test", nil, &test), 200)
+	if test["ok"] != true || test["repositories"].(float64) != 1 {
+		t.Fatalf("test : %v", test)
+	}
+	var app git.AppInfo
+	expect(t, "description de l'App", alice.do("GET", base+"/sources/"+sid+"/github/app", nil, &app), 200)
+	if app.Permissions["pull_requests"] != "write" || len(app.Events) != 2 {
+		t.Fatalf("App : %+v", app)
+	}
+	var synced map[string]any
+	expect(t, "synchronisation du nom", alice.do("POST", base+"/sources/"+sid+"/github/sync-name", nil, &synced), 200)
+	if synced["name"] != "Nodra Acme renommée" {
+		t.Fatalf("nom : %v", synced)
+	}
 }

@@ -8,6 +8,8 @@ import { projectQueries, teamQueries, teamsQuery } from "@/lib/queries"
 import { resourceStatus } from "@/lib/status"
 import type { ResourceSummary } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { Pill } from "@/components/task-status"
+import { sourceState, sourcesQuery } from "@/features/integrations/github-app"
 
 // Fil d'Ariane de la barre du haut, repris de Coolify (resources/views/components/top-breadcrumb.blade.php) :
 // équipe / projet ⇅ / environnement ⇅ / ressource ⇅ + statut, déduits de l'URL.
@@ -50,6 +52,8 @@ export function TopBreadcrumb({ team }: { team: string }) {
   const envResources = resources.filter((r) => r.environment_id === envId).sort((a, b) => a.name.localeCompare(b.name))
 
   const servers = useQuery({ ...teamQueries.servers(team), enabled: !!params.server }).data ?? []
+  const sources = useQuery({ ...sourcesQuery(team), enabled: !!params.source }).data ?? []
+  const currentSource = sources.find((s) => s.id === params.source)
   const currentServer = servers.find((sv) => sv.id === params.server)
   const section = !projectId ? sectionLabel(pathname, team) : ""
   const currentTeam = teams.find((t) => t.id === team)
@@ -70,6 +74,15 @@ export function TopBreadcrumb({ team }: { team: string }) {
           <Separator />
           <span className="flex h-8 min-w-0 items-center truncate px-2 font-semibold opacity-70">{section}</span>
         </>
+      )}
+
+      {currentSource && (
+        <BreadcrumbSwitcher
+          title="Sources"
+          label={currentSource.name}
+          items={sources.map((s) => ({ label: s.name, href: `/t/${team}/integrations/sources/${s.id}`, active: s.id === currentSource.id }))}
+          meta={<Pill {...sourceState(currentSource)} />}
+        />
       )}
 
       {currentServer && (

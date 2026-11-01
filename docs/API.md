@@ -253,8 +253,13 @@ Types : **GitHub App** (github.com ou GitHub Enterprise Server), **GitLab** (git
 | Méthode | Route | Permission | Description |
 |---|---|---|---|
 | GET | `/sources` | `source.read` | Liste (sans secrets) |
-| POST | `/sources` | `source.manage` | GitHub : `{type: "github", name, app_id, private_key, webhook_secret, installation_id?, client_id?, client_secret?, html_url?, api_url?, organization?}` ; GitLab/Gitea : `{type, name, access_token, html_url?, api_url?}` (`api_url` déduite : `/api/v3`, `/api/v4`, `/api/v1`) |
+| POST | `/sources` | `source.manage` | GitHub : `{type: "github", name, app_id, private_key, webhook_secret, installation_id?, client_id?, client_secret?, html_url?, api_url?, organization?}` ou brouillon `{type: "github", name, html_url?, api_url?, organization?}` (enregistré ensuite par `/sources/{id}/github/manifest` ou en complétant les identifiants) ; GitLab/Gitea : `{type, name, access_token, html_url?, api_url?}` (`api_url` déduite : `/api/v3`, `/api/v4`, `/api/v1`) |
 | POST | `/sources/github/manifest` | `source.manage` | `{name, organization?, html_url?, is_public?}` → `201 {source, form_action, manifest}` : le front soumet un formulaire POST vers `form_action` avec le champ `manifest` |
+| GET | `/sources/github/endpoints` | `source.manage` | Adresses de l'instance proposées pour les webhooks de GitHub `[{label, url}]` (domaine, IP publiques, adresse actuelle) |
+| POST | `/sources/{id}/github/manifest` | `source.manage` | GitHub App brouillon (créée par `POST /sources` sans identifiants) : `{endpoint?, previews?: true}` → `201 {source, form_action, manifest}` ; `previews: false` retire les droits sur les pull requests et l'événement `pull_request` ; `409` si l'App est déjà enregistrée |
+| POST | `/sources/{id}/test` | `source.read` | Teste l'accès à la forge → `{ok, repositories}` ou `{ok: false, message}` |
+| GET | `/sources/{id}/github/app` | `source.read` | Description de l'App chez GitHub `{name, slug, html_url, permissions, events, owner}` |
+| POST | `/sources/{id}/github/sync-name` | `source.manage` | Reprend le nom et l'identifiant court de l'App chez GitHub → `Source` |
 | GET | `/sources/{id}` | `source.read` | |
 | PATCH | `/sources/{id}` | `source.manage` | Champs partiels ; un secret vide (`""`) l'efface |
 | DELETE | `/sources/{id}` | `source.manage` | `409` si des applications l'utilisent |

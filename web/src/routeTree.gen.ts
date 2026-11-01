@@ -84,7 +84,7 @@ import { Route as TTeamDatabasesDatabaseTagsRouteImport } from './routes/t/$team
 import { Route as TTeamDatabasesDatabaseTasksRouteImport } from './routes/t/$team/databases/$database/tasks'
 import { Route as TTeamDatabasesDatabaseTerminalRouteImport } from './routes/t/$team/databases/$database/terminal'
 import { Route as TTeamIntegrationsSourcesIndexRouteImport } from './routes/t/$team/integrations/sources/index'
-import { Route as TTeamIntegrationsSourcesSourceRouteImport } from './routes/t/$team/integrations/sources/$source'
+import { Route as TTeamIntegrationsSourcesSourceRouteRouteImport } from './routes/t/$team/integrations/sources/$source/route'
 import { Route as TTeamProjectsProjectIndexRouteImport } from './routes/t/$team/projects/$project/index'
 import { Route as TTeamProjectsProjectNewRouteImport } from './routes/t/$team/projects/$project/new'
 import { Route as TTeamProjectsProjectSettingsRouteImport } from './routes/t/$team/projects/$project/settings'
@@ -115,6 +115,10 @@ import { Route as TTeamServicesServiceTasksRouteImport } from './routes/t/$team/
 import { Route as TTeamServicesServiceTerminalRouteImport } from './routes/t/$team/services/$service/terminal'
 import { Route as TTeamApplicationsApplicationDeploymentsIndexRouteImport } from './routes/t/$team/applications/$application/deployments/index'
 import { Route as TTeamApplicationsApplicationDeploymentsDeploymentRouteImport } from './routes/t/$team/applications/$application/deployments/$deployment'
+import { Route as TTeamIntegrationsSourcesSourceIndexRouteImport } from './routes/t/$team/integrations/sources/$source/index'
+import { Route as TTeamIntegrationsSourcesSourceDangerRouteImport } from './routes/t/$team/integrations/sources/$source/danger'
+import { Route as TTeamIntegrationsSourcesSourcePermissionsRouteImport } from './routes/t/$team/integrations/sources/$source/permissions'
+import { Route as TTeamIntegrationsSourcesSourceResourcesRouteImport } from './routes/t/$team/integrations/sources/$source/resources'
 import { Route as TTeamProjectsProjectEnvIndexRouteImport } from './routes/t/$team/projects/$project/$env/index'
 import { Route as TTeamProjectsProjectEnvNewRouteImport } from './routes/t/$team/projects/$project/$env/new'
 import { Route as TTeamProjectsProjectEnvSettingsRouteImport } from './routes/t/$team/projects/$project/$env/settings'
@@ -533,8 +537,8 @@ const TTeamIntegrationsSourcesIndexRoute =
     path: '/integrations/sources/',
     getParentRoute: () => TTeamRouteRoute,
   } as any)
-const TTeamIntegrationsSourcesSourceRoute =
-  TTeamIntegrationsSourcesSourceRouteImport.update({
+const TTeamIntegrationsSourcesSourceRouteRoute =
+  TTeamIntegrationsSourcesSourceRouteRouteImport.update({
     id: '/integrations/sources/$source',
     path: '/integrations/sources/$source',
     getParentRoute: () => TTeamRouteRoute,
@@ -716,6 +720,30 @@ const TTeamApplicationsApplicationDeploymentsDeploymentRoute =
     path: '/deployments/$deployment',
     getParentRoute: () => TTeamApplicationsApplicationRouteRoute,
   } as any)
+const TTeamIntegrationsSourcesSourceIndexRoute =
+  TTeamIntegrationsSourcesSourceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TTeamIntegrationsSourcesSourceRouteRoute,
+  } as any)
+const TTeamIntegrationsSourcesSourceDangerRoute =
+  TTeamIntegrationsSourcesSourceDangerRouteImport.update({
+    id: '/danger',
+    path: '/danger',
+    getParentRoute: () => TTeamIntegrationsSourcesSourceRouteRoute,
+  } as any)
+const TTeamIntegrationsSourcesSourcePermissionsRoute =
+  TTeamIntegrationsSourcesSourcePermissionsRouteImport.update({
+    id: '/permissions',
+    path: '/permissions',
+    getParentRoute: () => TTeamIntegrationsSourcesSourceRouteRoute,
+  } as any)
+const TTeamIntegrationsSourcesSourceResourcesRoute =
+  TTeamIntegrationsSourcesSourceResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => TTeamIntegrationsSourcesSourceRouteRoute,
+  } as any)
 const TTeamProjectsProjectEnvIndexRoute =
   TTeamProjectsProjectEnvIndexRouteImport.update({
     id: '/projects/$project/$env/',
@@ -806,6 +834,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/team/': typeof TTeamTeamIndexRoute
   '/t/$team/terminal/': typeof TTeamTerminalIndexRoute
   '/t/$team/variables/': typeof TTeamVariablesIndexRoute
+  '/t/$team/integrations/sources/$source': typeof TTeamIntegrationsSourcesSourceRouteRouteWithChildren
   '/t/$team/applications/$application/advanced': typeof TTeamApplicationsApplicationAdvancedRoute
   '/t/$team/applications/$application/compose': typeof TTeamApplicationsApplicationComposeRoute
   '/t/$team/applications/$application/danger': typeof TTeamApplicationsApplicationDangerRoute
@@ -832,7 +861,6 @@ export interface FileRoutesByFullPath {
   '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
   '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
   '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
-  '/t/$team/integrations/sources/$source': typeof TTeamIntegrationsSourcesSourceRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
   '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
@@ -865,12 +893,16 @@ export interface FileRoutesByFullPath {
   '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
   '/t/$team/services/$service/': typeof TTeamServicesServiceIndexRoute
   '/t/$team/applications/$application/deployments/$deployment': typeof TTeamApplicationsApplicationDeploymentsDeploymentRoute
+  '/t/$team/integrations/sources/$source/danger': typeof TTeamIntegrationsSourcesSourceDangerRoute
+  '/t/$team/integrations/sources/$source/permissions': typeof TTeamIntegrationsSourcesSourcePermissionsRoute
+  '/t/$team/integrations/sources/$source/resources': typeof TTeamIntegrationsSourcesSourceResourcesRoute
   '/t/$team/projects/$project/$env/new': typeof TTeamProjectsProjectEnvNewRoute
   '/t/$team/projects/$project/$env/settings': typeof TTeamProjectsProjectEnvSettingsRoute
   '/t/$team/servers/$server/proxy/certificates': typeof TTeamServersServerProxyCertificatesRoute
   '/t/$team/servers/$server/proxy/dynamic': typeof TTeamServersServerProxyDynamicRoute
   '/t/$team/servers/$server/proxy/logs': typeof TTeamServersServerProxyLogsRoute
   '/t/$team/applications/$application/deployments/': typeof TTeamApplicationsApplicationDeploymentsIndexRoute
+  '/t/$team/integrations/sources/$source/': typeof TTeamIntegrationsSourcesSourceIndexRoute
   '/t/$team/projects/$project/$env/': typeof TTeamProjectsProjectEnvIndexRoute
   '/t/$team/servers/$server/proxy/': typeof TTeamServersServerProxyIndexRoute
 }
@@ -942,7 +974,6 @@ export interface FileRoutesByTo {
   '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
   '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
   '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
-  '/t/$team/integrations/sources/$source': typeof TTeamIntegrationsSourcesSourceRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
   '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
@@ -975,12 +1006,16 @@ export interface FileRoutesByTo {
   '/t/$team/servers/$server': typeof TTeamServersServerIndexRoute
   '/t/$team/services/$service': typeof TTeamServicesServiceIndexRoute
   '/t/$team/applications/$application/deployments/$deployment': typeof TTeamApplicationsApplicationDeploymentsDeploymentRoute
+  '/t/$team/integrations/sources/$source/danger': typeof TTeamIntegrationsSourcesSourceDangerRoute
+  '/t/$team/integrations/sources/$source/permissions': typeof TTeamIntegrationsSourcesSourcePermissionsRoute
+  '/t/$team/integrations/sources/$source/resources': typeof TTeamIntegrationsSourcesSourceResourcesRoute
   '/t/$team/projects/$project/$env/new': typeof TTeamProjectsProjectEnvNewRoute
   '/t/$team/projects/$project/$env/settings': typeof TTeamProjectsProjectEnvSettingsRoute
   '/t/$team/servers/$server/proxy/certificates': typeof TTeamServersServerProxyCertificatesRoute
   '/t/$team/servers/$server/proxy/dynamic': typeof TTeamServersServerProxyDynamicRoute
   '/t/$team/servers/$server/proxy/logs': typeof TTeamServersServerProxyLogsRoute
   '/t/$team/applications/$application/deployments': typeof TTeamApplicationsApplicationDeploymentsIndexRoute
+  '/t/$team/integrations/sources/$source': typeof TTeamIntegrationsSourcesSourceIndexRoute
   '/t/$team/projects/$project/$env': typeof TTeamProjectsProjectEnvIndexRoute
   '/t/$team/servers/$server/proxy': typeof TTeamServersServerProxyIndexRoute
 }
@@ -1032,6 +1067,7 @@ export interface FileRoutesById {
   '/t/$team/team/': typeof TTeamTeamIndexRoute
   '/t/$team/terminal/': typeof TTeamTerminalIndexRoute
   '/t/$team/variables/': typeof TTeamVariablesIndexRoute
+  '/t/$team/integrations/sources/$source': typeof TTeamIntegrationsSourcesSourceRouteRouteWithChildren
   '/t/$team/applications/$application/advanced': typeof TTeamApplicationsApplicationAdvancedRoute
   '/t/$team/applications/$application/compose': typeof TTeamApplicationsApplicationComposeRoute
   '/t/$team/applications/$application/danger': typeof TTeamApplicationsApplicationDangerRoute
@@ -1058,7 +1094,6 @@ export interface FileRoutesById {
   '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
   '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
   '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
-  '/t/$team/integrations/sources/$source': typeof TTeamIntegrationsSourcesSourceRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
   '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
@@ -1091,12 +1126,16 @@ export interface FileRoutesById {
   '/t/$team/servers/$server/': typeof TTeamServersServerIndexRoute
   '/t/$team/services/$service/': typeof TTeamServicesServiceIndexRoute
   '/t/$team/applications/$application/deployments/$deployment': typeof TTeamApplicationsApplicationDeploymentsDeploymentRoute
+  '/t/$team/integrations/sources/$source/danger': typeof TTeamIntegrationsSourcesSourceDangerRoute
+  '/t/$team/integrations/sources/$source/permissions': typeof TTeamIntegrationsSourcesSourcePermissionsRoute
+  '/t/$team/integrations/sources/$source/resources': typeof TTeamIntegrationsSourcesSourceResourcesRoute
   '/t/$team/projects/$project/$env/new': typeof TTeamProjectsProjectEnvNewRoute
   '/t/$team/projects/$project/$env/settings': typeof TTeamProjectsProjectEnvSettingsRoute
   '/t/$team/servers/$server/proxy/certificates': typeof TTeamServersServerProxyCertificatesRoute
   '/t/$team/servers/$server/proxy/dynamic': typeof TTeamServersServerProxyDynamicRoute
   '/t/$team/servers/$server/proxy/logs': typeof TTeamServersServerProxyLogsRoute
   '/t/$team/applications/$application/deployments/': typeof TTeamApplicationsApplicationDeploymentsIndexRoute
+  '/t/$team/integrations/sources/$source/': typeof TTeamIntegrationsSourcesSourceIndexRoute
   '/t/$team/projects/$project/$env/': typeof TTeamProjectsProjectEnvIndexRoute
   '/t/$team/servers/$server/proxy/': typeof TTeamServersServerProxyIndexRoute
 }
@@ -1149,6 +1188,7 @@ export interface FileRouteTypes {
     | '/t/$team/team/'
     | '/t/$team/terminal/'
     | '/t/$team/variables/'
+    | '/t/$team/integrations/sources/$source'
     | '/t/$team/applications/$application/advanced'
     | '/t/$team/applications/$application/compose'
     | '/t/$team/applications/$application/danger'
@@ -1175,7 +1215,6 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/tags'
     | '/t/$team/databases/$database/tasks'
     | '/t/$team/databases/$database/terminal'
-    | '/t/$team/integrations/sources/$source'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
     | '/t/$team/servers/$server/advanced'
@@ -1208,12 +1247,16 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/'
     | '/t/$team/services/$service/'
     | '/t/$team/applications/$application/deployments/$deployment'
+    | '/t/$team/integrations/sources/$source/danger'
+    | '/t/$team/integrations/sources/$source/permissions'
+    | '/t/$team/integrations/sources/$source/resources'
     | '/t/$team/projects/$project/$env/new'
     | '/t/$team/projects/$project/$env/settings'
     | '/t/$team/servers/$server/proxy/certificates'
     | '/t/$team/servers/$server/proxy/dynamic'
     | '/t/$team/servers/$server/proxy/logs'
     | '/t/$team/applications/$application/deployments/'
+    | '/t/$team/integrations/sources/$source/'
     | '/t/$team/projects/$project/$env/'
     | '/t/$team/servers/$server/proxy/'
   fileRoutesByTo: FileRoutesByTo
@@ -1285,7 +1328,6 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/tags'
     | '/t/$team/databases/$database/tasks'
     | '/t/$team/databases/$database/terminal'
-    | '/t/$team/integrations/sources/$source'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
     | '/t/$team/servers/$server/advanced'
@@ -1318,12 +1360,16 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server'
     | '/t/$team/services/$service'
     | '/t/$team/applications/$application/deployments/$deployment'
+    | '/t/$team/integrations/sources/$source/danger'
+    | '/t/$team/integrations/sources/$source/permissions'
+    | '/t/$team/integrations/sources/$source/resources'
     | '/t/$team/projects/$project/$env/new'
     | '/t/$team/projects/$project/$env/settings'
     | '/t/$team/servers/$server/proxy/certificates'
     | '/t/$team/servers/$server/proxy/dynamic'
     | '/t/$team/servers/$server/proxy/logs'
     | '/t/$team/applications/$application/deployments'
+    | '/t/$team/integrations/sources/$source'
     | '/t/$team/projects/$project/$env'
     | '/t/$team/servers/$server/proxy'
   id:
@@ -1374,6 +1420,7 @@ export interface FileRouteTypes {
     | '/t/$team/team/'
     | '/t/$team/terminal/'
     | '/t/$team/variables/'
+    | '/t/$team/integrations/sources/$source'
     | '/t/$team/applications/$application/advanced'
     | '/t/$team/applications/$application/compose'
     | '/t/$team/applications/$application/danger'
@@ -1400,7 +1447,6 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/tags'
     | '/t/$team/databases/$database/tasks'
     | '/t/$team/databases/$database/terminal'
-    | '/t/$team/integrations/sources/$source'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
     | '/t/$team/servers/$server/advanced'
@@ -1433,12 +1479,16 @@ export interface FileRouteTypes {
     | '/t/$team/servers/$server/'
     | '/t/$team/services/$service/'
     | '/t/$team/applications/$application/deployments/$deployment'
+    | '/t/$team/integrations/sources/$source/danger'
+    | '/t/$team/integrations/sources/$source/permissions'
+    | '/t/$team/integrations/sources/$source/resources'
     | '/t/$team/projects/$project/$env/new'
     | '/t/$team/projects/$project/$env/settings'
     | '/t/$team/servers/$server/proxy/certificates'
     | '/t/$team/servers/$server/proxy/dynamic'
     | '/t/$team/servers/$server/proxy/logs'
     | '/t/$team/applications/$application/deployments/'
+    | '/t/$team/integrations/sources/$source/'
     | '/t/$team/projects/$project/$env/'
     | '/t/$team/servers/$server/proxy/'
   fileRoutesById: FileRoutesById
@@ -1987,7 +2037,7 @@ declare module '@tanstack/react-router' {
       id: '/t/$team/integrations/sources/$source'
       path: '/integrations/sources/$source'
       fullPath: '/t/$team/integrations/sources/$source'
-      preLoaderRoute: typeof TTeamIntegrationsSourcesSourceRouteImport
+      preLoaderRoute: typeof TTeamIntegrationsSourcesSourceRouteRouteImport
       parentRoute: typeof TTeamRouteRoute
     }
     '/t/$team/projects/$project/': {
@@ -2199,6 +2249,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/t/$team/applications/$application/deployments/$deployment'
       preLoaderRoute: typeof TTeamApplicationsApplicationDeploymentsDeploymentRouteImport
       parentRoute: typeof TTeamApplicationsApplicationRouteRoute
+    }
+    '/t/$team/integrations/sources/$source/': {
+      id: '/t/$team/integrations/sources/$source/'
+      path: '/'
+      fullPath: '/t/$team/integrations/sources/$source/'
+      preLoaderRoute: typeof TTeamIntegrationsSourcesSourceIndexRouteImport
+      parentRoute: typeof TTeamIntegrationsSourcesSourceRouteRoute
+    }
+    '/t/$team/integrations/sources/$source/danger': {
+      id: '/t/$team/integrations/sources/$source/danger'
+      path: '/danger'
+      fullPath: '/t/$team/integrations/sources/$source/danger'
+      preLoaderRoute: typeof TTeamIntegrationsSourcesSourceDangerRouteImport
+      parentRoute: typeof TTeamIntegrationsSourcesSourceRouteRoute
+    }
+    '/t/$team/integrations/sources/$source/permissions': {
+      id: '/t/$team/integrations/sources/$source/permissions'
+      path: '/permissions'
+      fullPath: '/t/$team/integrations/sources/$source/permissions'
+      preLoaderRoute: typeof TTeamIntegrationsSourcesSourcePermissionsRouteImport
+      parentRoute: typeof TTeamIntegrationsSourcesSourceRouteRoute
+    }
+    '/t/$team/integrations/sources/$source/resources': {
+      id: '/t/$team/integrations/sources/$source/resources'
+      path: '/resources'
+      fullPath: '/t/$team/integrations/sources/$source/resources'
+      preLoaderRoute: typeof TTeamIntegrationsSourcesSourceResourcesRouteImport
+      parentRoute: typeof TTeamIntegrationsSourcesSourceRouteRoute
     }
     '/t/$team/projects/$project/$env/': {
       id: '/t/$team/projects/$project/$env/'
@@ -2440,6 +2518,30 @@ const TTeamServicesServiceRouteRouteWithChildren =
     TTeamServicesServiceRouteRouteChildren,
   )
 
+interface TTeamIntegrationsSourcesSourceRouteRouteChildren {
+  TTeamIntegrationsSourcesSourceDangerRoute: typeof TTeamIntegrationsSourcesSourceDangerRoute
+  TTeamIntegrationsSourcesSourcePermissionsRoute: typeof TTeamIntegrationsSourcesSourcePermissionsRoute
+  TTeamIntegrationsSourcesSourceResourcesRoute: typeof TTeamIntegrationsSourcesSourceResourcesRoute
+  TTeamIntegrationsSourcesSourceIndexRoute: typeof TTeamIntegrationsSourcesSourceIndexRoute
+}
+
+const TTeamIntegrationsSourcesSourceRouteRouteChildren: TTeamIntegrationsSourcesSourceRouteRouteChildren =
+  {
+    TTeamIntegrationsSourcesSourceDangerRoute:
+      TTeamIntegrationsSourcesSourceDangerRoute,
+    TTeamIntegrationsSourcesSourcePermissionsRoute:
+      TTeamIntegrationsSourcesSourcePermissionsRoute,
+    TTeamIntegrationsSourcesSourceResourcesRoute:
+      TTeamIntegrationsSourcesSourceResourcesRoute,
+    TTeamIntegrationsSourcesSourceIndexRoute:
+      TTeamIntegrationsSourcesSourceIndexRoute,
+  }
+
+const TTeamIntegrationsSourcesSourceRouteRouteWithChildren =
+  TTeamIntegrationsSourcesSourceRouteRoute._addFileChildren(
+    TTeamIntegrationsSourcesSourceRouteRouteChildren,
+  )
+
 interface TTeamRouteRouteChildren {
   TTeamSplatRoute: typeof TTeamSplatRoute
   TTeamIndexRoute: typeof TTeamIndexRoute
@@ -2477,7 +2579,7 @@ interface TTeamRouteRouteChildren {
   TTeamTeamIndexRoute: typeof TTeamTeamIndexRoute
   TTeamTerminalIndexRoute: typeof TTeamTerminalIndexRoute
   TTeamVariablesIndexRoute: typeof TTeamVariablesIndexRoute
-  TTeamIntegrationsSourcesSourceRoute: typeof TTeamIntegrationsSourcesSourceRoute
+  TTeamIntegrationsSourcesSourceRouteRoute: typeof TTeamIntegrationsSourcesSourceRouteRouteWithChildren
   TTeamProjectsProjectNewRoute: typeof TTeamProjectsProjectNewRoute
   TTeamProjectsProjectSettingsRoute: typeof TTeamProjectsProjectSettingsRoute
   TTeamIntegrationsSourcesIndexRoute: typeof TTeamIntegrationsSourcesIndexRoute
@@ -2526,7 +2628,8 @@ const TTeamRouteRouteChildren: TTeamRouteRouteChildren = {
   TTeamTeamIndexRoute: TTeamTeamIndexRoute,
   TTeamTerminalIndexRoute: TTeamTerminalIndexRoute,
   TTeamVariablesIndexRoute: TTeamVariablesIndexRoute,
-  TTeamIntegrationsSourcesSourceRoute: TTeamIntegrationsSourcesSourceRoute,
+  TTeamIntegrationsSourcesSourceRouteRoute:
+    TTeamIntegrationsSourcesSourceRouteRouteWithChildren,
   TTeamProjectsProjectNewRoute: TTeamProjectsProjectNewRoute,
   TTeamProjectsProjectSettingsRoute: TTeamProjectsProjectSettingsRoute,
   TTeamIntegrationsSourcesIndexRoute: TTeamIntegrationsSourcesIndexRoute,
