@@ -86,9 +86,10 @@ func (s *Server) publicInstance(w http.ResponseWriter, r *http.Request) {
 	// needs_setup : aucun compte, le premier inscrit deviendra administrateur de l'instance.
 	// onboarding : configuration guidée encore proposée (une seule fois, après le premier compte).
 	// localhost : install.sh a préparé l'accès SSH à l'hôte (serveur « Cette machine »).
+	// api_enabled : les jetons API sont acceptés (webhooks de déploiement depuis une CI).
 	writeJSON(w, http.StatusOK, map[string]any{"name": i.InstanceName, "registration_enabled": i.RegistrationEnabled || users == 0,
 		"version": version.Version, "oauth_providers": s.enabledOAuth(r.Context()), "needs_setup": users == 0,
-		"onboarding": pending && users > 0, "localhost": s.Localhost.KeyFile != ""})
+		"onboarding": pending && users > 0, "localhost": s.Localhost.KeyFile != "", "api_enabled": i.APIEnabled})
 }
 
 // completeOnboarding : configuration guidée terminée ou passée ; elle n'est plus jamais proposée.

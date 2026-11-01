@@ -83,6 +83,7 @@ import { Route as TTeamDatabasesDatabaseStoragesRouteImport } from './routes/t/$
 import { Route as TTeamDatabasesDatabaseTagsRouteImport } from './routes/t/$team/databases/$database/tags'
 import { Route as TTeamDatabasesDatabaseTasksRouteImport } from './routes/t/$team/databases/$database/tasks'
 import { Route as TTeamDatabasesDatabaseTerminalRouteImport } from './routes/t/$team/databases/$database/terminal'
+import { Route as TTeamDatabasesDatabaseWebhooksRouteImport } from './routes/t/$team/databases/$database/webhooks'
 import { Route as TTeamIntegrationsSourcesIndexRouteImport } from './routes/t/$team/integrations/sources/index'
 import { Route as TTeamIntegrationsSourcesSourceRouteRouteImport } from './routes/t/$team/integrations/sources/$source/route'
 import { Route as TTeamProjectsProjectIndexRouteImport } from './routes/t/$team/projects/$project/index'
@@ -113,6 +114,7 @@ import { Route as TTeamServicesServiceScheduledTasksRouteImport } from './routes
 import { Route as TTeamServicesServiceTagsRouteImport } from './routes/t/$team/services/$service/tags'
 import { Route as TTeamServicesServiceTasksRouteImport } from './routes/t/$team/services/$service/tasks'
 import { Route as TTeamServicesServiceTerminalRouteImport } from './routes/t/$team/services/$service/terminal'
+import { Route as TTeamServicesServiceWebhooksRouteImport } from './routes/t/$team/services/$service/webhooks'
 import { Route as TTeamApplicationsApplicationDeploymentsIndexRouteImport } from './routes/t/$team/applications/$application/deployments/index'
 import { Route as TTeamApplicationsApplicationDeploymentsDeploymentRouteImport } from './routes/t/$team/applications/$application/deployments/$deployment'
 import { Route as TTeamIntegrationsSourcesSourceIndexRouteImport } from './routes/t/$team/integrations/sources/$source/index'
@@ -531,6 +533,12 @@ const TTeamDatabasesDatabaseTerminalRoute =
     path: '/terminal',
     getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
   } as any)
+const TTeamDatabasesDatabaseWebhooksRoute =
+  TTeamDatabasesDatabaseWebhooksRouteImport.update({
+    id: '/webhooks',
+    path: '/webhooks',
+    getParentRoute: () => TTeamDatabasesDatabaseRouteRoute,
+  } as any)
 const TTeamIntegrationsSourcesIndexRoute =
   TTeamIntegrationsSourcesIndexRouteImport.update({
     id: '/integrations/sources/',
@@ -708,6 +716,12 @@ const TTeamServicesServiceTerminalRoute =
     path: '/terminal',
     getParentRoute: () => TTeamServicesServiceRouteRoute,
   } as any)
+const TTeamServicesServiceWebhooksRoute =
+  TTeamServicesServiceWebhooksRouteImport.update({
+    id: '/webhooks',
+    path: '/webhooks',
+    getParentRoute: () => TTeamServicesServiceRouteRoute,
+  } as any)
 const TTeamApplicationsApplicationDeploymentsIndexRoute =
   TTeamApplicationsApplicationDeploymentsIndexRouteImport.update({
     id: '/deployments/',
@@ -861,6 +875,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
   '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
   '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
+  '/t/$team/databases/$database/webhooks': typeof TTeamDatabasesDatabaseWebhooksRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
   '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
@@ -886,6 +901,7 @@ export interface FileRoutesByFullPath {
   '/t/$team/services/$service/tags': typeof TTeamServicesServiceTagsRoute
   '/t/$team/services/$service/tasks': typeof TTeamServicesServiceTasksRoute
   '/t/$team/services/$service/terminal': typeof TTeamServicesServiceTerminalRoute
+  '/t/$team/services/$service/webhooks': typeof TTeamServicesServiceWebhooksRoute
   '/t/$team/applications/$application/': typeof TTeamApplicationsApplicationIndexRoute
   '/t/$team/databases/$database/': typeof TTeamDatabasesDatabaseIndexRoute
   '/t/$team/integrations/sources/': typeof TTeamIntegrationsSourcesIndexRoute
@@ -974,6 +990,7 @@ export interface FileRoutesByTo {
   '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
   '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
   '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
+  '/t/$team/databases/$database/webhooks': typeof TTeamDatabasesDatabaseWebhooksRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
   '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
@@ -999,6 +1016,7 @@ export interface FileRoutesByTo {
   '/t/$team/services/$service/tags': typeof TTeamServicesServiceTagsRoute
   '/t/$team/services/$service/tasks': typeof TTeamServicesServiceTasksRoute
   '/t/$team/services/$service/terminal': typeof TTeamServicesServiceTerminalRoute
+  '/t/$team/services/$service/webhooks': typeof TTeamServicesServiceWebhooksRoute
   '/t/$team/applications/$application': typeof TTeamApplicationsApplicationIndexRoute
   '/t/$team/databases/$database': typeof TTeamDatabasesDatabaseIndexRoute
   '/t/$team/integrations/sources': typeof TTeamIntegrationsSourcesIndexRoute
@@ -1094,6 +1112,7 @@ export interface FileRoutesById {
   '/t/$team/databases/$database/tags': typeof TTeamDatabasesDatabaseTagsRoute
   '/t/$team/databases/$database/tasks': typeof TTeamDatabasesDatabaseTasksRoute
   '/t/$team/databases/$database/terminal': typeof TTeamDatabasesDatabaseTerminalRoute
+  '/t/$team/databases/$database/webhooks': typeof TTeamDatabasesDatabaseWebhooksRoute
   '/t/$team/projects/$project/new': typeof TTeamProjectsProjectNewRoute
   '/t/$team/projects/$project/settings': typeof TTeamProjectsProjectSettingsRoute
   '/t/$team/servers/$server/advanced': typeof TTeamServersServerAdvancedRoute
@@ -1119,6 +1138,7 @@ export interface FileRoutesById {
   '/t/$team/services/$service/tags': typeof TTeamServicesServiceTagsRoute
   '/t/$team/services/$service/tasks': typeof TTeamServicesServiceTasksRoute
   '/t/$team/services/$service/terminal': typeof TTeamServicesServiceTerminalRoute
+  '/t/$team/services/$service/webhooks': typeof TTeamServicesServiceWebhooksRoute
   '/t/$team/applications/$application/': typeof TTeamApplicationsApplicationIndexRoute
   '/t/$team/databases/$database/': typeof TTeamDatabasesDatabaseIndexRoute
   '/t/$team/integrations/sources/': typeof TTeamIntegrationsSourcesIndexRoute
@@ -1215,6 +1235,7 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/tags'
     | '/t/$team/databases/$database/tasks'
     | '/t/$team/databases/$database/terminal'
+    | '/t/$team/databases/$database/webhooks'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
     | '/t/$team/servers/$server/advanced'
@@ -1240,6 +1261,7 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service/tags'
     | '/t/$team/services/$service/tasks'
     | '/t/$team/services/$service/terminal'
+    | '/t/$team/services/$service/webhooks'
     | '/t/$team/applications/$application/'
     | '/t/$team/databases/$database/'
     | '/t/$team/integrations/sources/'
@@ -1328,6 +1350,7 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/tags'
     | '/t/$team/databases/$database/tasks'
     | '/t/$team/databases/$database/terminal'
+    | '/t/$team/databases/$database/webhooks'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
     | '/t/$team/servers/$server/advanced'
@@ -1353,6 +1376,7 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service/tags'
     | '/t/$team/services/$service/tasks'
     | '/t/$team/services/$service/terminal'
+    | '/t/$team/services/$service/webhooks'
     | '/t/$team/applications/$application'
     | '/t/$team/databases/$database'
     | '/t/$team/integrations/sources'
@@ -1447,6 +1471,7 @@ export interface FileRouteTypes {
     | '/t/$team/databases/$database/tags'
     | '/t/$team/databases/$database/tasks'
     | '/t/$team/databases/$database/terminal'
+    | '/t/$team/databases/$database/webhooks'
     | '/t/$team/projects/$project/new'
     | '/t/$team/projects/$project/settings'
     | '/t/$team/servers/$server/advanced'
@@ -1472,6 +1497,7 @@ export interface FileRouteTypes {
     | '/t/$team/services/$service/tags'
     | '/t/$team/services/$service/tasks'
     | '/t/$team/services/$service/terminal'
+    | '/t/$team/services/$service/webhooks'
     | '/t/$team/applications/$application/'
     | '/t/$team/databases/$database/'
     | '/t/$team/integrations/sources/'
@@ -2026,6 +2052,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamDatabasesDatabaseTerminalRouteImport
       parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
     }
+    '/t/$team/databases/$database/webhooks': {
+      id: '/t/$team/databases/$database/webhooks'
+      path: '/webhooks'
+      fullPath: '/t/$team/databases/$database/webhooks'
+      preLoaderRoute: typeof TTeamDatabasesDatabaseWebhooksRouteImport
+      parentRoute: typeof TTeamDatabasesDatabaseRouteRoute
+    }
     '/t/$team/integrations/sources/': {
       id: '/t/$team/integrations/sources/'
       path: '/integrations/sources'
@@ -2236,6 +2269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTeamServicesServiceTerminalRouteImport
       parentRoute: typeof TTeamServicesServiceRouteRoute
     }
+    '/t/$team/services/$service/webhooks': {
+      id: '/t/$team/services/$service/webhooks'
+      path: '/webhooks'
+      fullPath: '/t/$team/services/$service/webhooks'
+      preLoaderRoute: typeof TTeamServicesServiceWebhooksRouteImport
+      parentRoute: typeof TTeamServicesServiceRouteRoute
+    }
     '/t/$team/applications/$application/deployments/': {
       id: '/t/$team/applications/$application/deployments/'
       path: '/deployments'
@@ -2408,6 +2448,7 @@ interface TTeamDatabasesDatabaseRouteRouteChildren {
   TTeamDatabasesDatabaseTagsRoute: typeof TTeamDatabasesDatabaseTagsRoute
   TTeamDatabasesDatabaseTasksRoute: typeof TTeamDatabasesDatabaseTasksRoute
   TTeamDatabasesDatabaseTerminalRoute: typeof TTeamDatabasesDatabaseTerminalRoute
+  TTeamDatabasesDatabaseWebhooksRoute: typeof TTeamDatabasesDatabaseWebhooksRoute
   TTeamDatabasesDatabaseIndexRoute: typeof TTeamDatabasesDatabaseIndexRoute
 }
 
@@ -2426,6 +2467,7 @@ const TTeamDatabasesDatabaseRouteRouteChildren: TTeamDatabasesDatabaseRouteRoute
     TTeamDatabasesDatabaseTagsRoute: TTeamDatabasesDatabaseTagsRoute,
     TTeamDatabasesDatabaseTasksRoute: TTeamDatabasesDatabaseTasksRoute,
     TTeamDatabasesDatabaseTerminalRoute: TTeamDatabasesDatabaseTerminalRoute,
+    TTeamDatabasesDatabaseWebhooksRoute: TTeamDatabasesDatabaseWebhooksRoute,
     TTeamDatabasesDatabaseIndexRoute: TTeamDatabasesDatabaseIndexRoute,
   }
 
@@ -2495,6 +2537,7 @@ interface TTeamServicesServiceRouteRouteChildren {
   TTeamServicesServiceTagsRoute: typeof TTeamServicesServiceTagsRoute
   TTeamServicesServiceTasksRoute: typeof TTeamServicesServiceTasksRoute
   TTeamServicesServiceTerminalRoute: typeof TTeamServicesServiceTerminalRoute
+  TTeamServicesServiceWebhooksRoute: typeof TTeamServicesServiceWebhooksRoute
   TTeamServicesServiceIndexRoute: typeof TTeamServicesServiceIndexRoute
 }
 
@@ -2510,6 +2553,7 @@ const TTeamServicesServiceRouteRouteChildren: TTeamServicesServiceRouteRouteChil
     TTeamServicesServiceTagsRoute: TTeamServicesServiceTagsRoute,
     TTeamServicesServiceTasksRoute: TTeamServicesServiceTasksRoute,
     TTeamServicesServiceTerminalRoute: TTeamServicesServiceTerminalRoute,
+    TTeamServicesServiceWebhooksRoute: TTeamServicesServiceWebhooksRoute,
     TTeamServicesServiceIndexRoute: TTeamServicesServiceIndexRoute,
   }
 

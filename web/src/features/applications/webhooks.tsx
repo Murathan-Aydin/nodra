@@ -8,6 +8,7 @@ import { SettingsCard } from "@/components/page"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { get, post } from "@/lib/api"
+import { DeployWebhookCard } from "@/features/resources/deploy-webhook"
 import { resourceApi, resourceKey, type ResourceRef } from "@/features/resources/resource"
 
 type Hooks = { secret: string; urls: { github: string; gitlab: string; gitea: string; bitbucket: string; deploy: string } }
@@ -31,8 +32,9 @@ export function WebhooksTab({ resource }: { resource: ResourceRef }) {
   const h = hooks.data
   return (
     <div className="space-y-6">
+      <DeployWebhookCard resource={resource} />
       <SettingsCard
-        title="Déploiement depuis une CI"
+        title="Déploiement depuis une CI (secret de l'application)"
         description="GET ou POST avec le secret en en-tête X-Nodra-Secret (ou ?secret=). ?force=1 reconstruit, ?commit=<sha> déploie ce commit."
         actions={
           <Button size="sm" variant="outline" onClick={() => setRotating(true)}>

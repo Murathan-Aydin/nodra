@@ -24,7 +24,7 @@ func TestInstanceAdmin(t *testing.T) {
 	bob, bobID := register(t, e, "bob@example.com")
 
 	expect(t, "instance publique", anon.do("GET", "/instance", nil, &pub), 200)
-	if pub["name"] != "Nodra" || pub["registration_enabled"] != true || pub["version"] != "dev" || pub["needs_setup"] != false || pub["onboarding"] != true {
+	if pub["name"] != "Nodra" || pub["registration_enabled"] != true || pub["version"] != "dev" || pub["needs_setup"] != false || pub["onboarding"] != true || pub["api_enabled"] != true {
 		t.Fatalf("instance : %v", pub)
 	}
 	// Configuration guidée : proposée une seule fois, close par l'administrateur.

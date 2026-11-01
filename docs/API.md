@@ -18,7 +18,7 @@ Derrière un reverse proxy, définir `NODRA_TRUST_PROXY=true` pour utiliser l'IP
 | Méthode | Route | Réponse |
 |---|---|---|
 | GET | `/health` | `200 {"status":"ok"}` ou `503 {"status":"degraded","database":"down"}` |
-| GET | `/instance` | `200 {name, registration_enabled, version, oauth_providers: [{provider, name}], needs_setup, localhost}` (public, pour la page de connexion). `needs_setup` : aucun compte, le premier inscrit devient administrateur (inscription toujours ouverte dans ce cas) ; `onboarding` : configuration guidée encore proposée (une seule fois, après le premier compte, jusqu'à `POST /admin/onboarding/complete`, administrateur d'instance, `204`) ; `localhost` : accès SSH à l'hôte préparé par `install.sh` (serveur « Cette machine » créé à la première inscription) |
+| GET | `/instance` | `200 {name, registration_enabled, version, oauth_providers: [{provider, name}], needs_setup, localhost, api_enabled}` (public, pour la page de connexion). `needs_setup` : aucun compte, le premier inscrit devient administrateur (inscription toujours ouverte dans ce cas) ; `onboarding` : configuration guidée encore proposée (une seule fois, après le premier compte, jusqu'à `POST /admin/onboarding/complete`, administrateur d'instance, `204`) ; `localhost` : accès SSH à l'hôte préparé par `install.sh` (serveur « Cette machine » créé à la première inscription) |
 
 ## Auth (`/auth`)
 

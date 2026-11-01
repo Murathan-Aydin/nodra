@@ -5,6 +5,7 @@ export interface Instance {
   version: string
   registration_enabled: boolean
   oauth_providers: { provider: string; name: string }[]
+  api_enabled?: boolean
   /** Aucun compte : le premier inscrit devient administrateur. */
   needs_setup: boolean
   /** Configuration guidée encore proposée (une seule fois, après le premier compte). */

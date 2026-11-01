@@ -61,7 +61,7 @@ export function resourceMenu(r: ResourceRef): NavMenu {
       groups: [
         { items: [general, item("Domaines", GlobeIcon, "/domains"), envs] },
         { items: [logs, terminal, item("Historique", HistoryIcon, "/tasks")] },
-        { items: [scheduled, operations, tags] },
+        { items: [scheduled, item("Webhooks", WebhookIcon, "/webhooks"), operations, tags] },
         { items: [danger] },
       ],
     }
@@ -72,7 +72,7 @@ export function resourceMenu(r: ResourceRef): NavMenu {
       groups: [
         { items: [general, envs, storages, item("Sauvegardes", DatabaseBackupIcon, "/backups"), item("Importer un dump", UploadIcon, "/import")] },
         { items: [logs, terminal, item("Historique", HistoryIcon, "/tasks")] },
-        { items: [scheduled, operations, tags] },
+        { items: [scheduled, item("Webhooks", WebhookIcon, "/webhooks"), operations, tags] },
         { items: [danger] },
       ],
     }
