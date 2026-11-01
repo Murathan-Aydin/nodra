@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { toast } from "sonner"
+import { CopyIcon } from "lucide-react"
+import { CloneEnvironmentDialog } from "@/features/projects/clone-environment"
 import { Field } from "@/components/field"
 import { PageHeader, Section } from "@/components/page"
 import { Button } from "@/components/ui/button"
@@ -17,11 +19,18 @@ export const Route = createFileRoute("/t/$team/projects/$project/$env/settings")
 function EnvironmentSettings() {
   const { team, project, env } = Route.useParams()
   const data = useQuery(projectQueries.environment(team, project, env)).data
+  const [cloning, setCloning] = useState(false)
   return (
     <>
       <PageHeader
         title="Réglages de l'environnement"
+        actions={
+          <Button variant="outline" onClick={() => setCloning(true)}>
+            <CopyIcon /> Cloner l'environnement
+          </Button>
+        }
       />
+      {data && <CloneEnvironmentDialog team={team} project={project} environment={data.environment} open={cloning} onOpenChange={setCloning} />}
       {data && <EnvironmentForm key={data.environment.name + data.environment.description} team={team} project={project} environment={data.environment} />}
     </>
   )

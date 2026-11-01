@@ -18,20 +18,23 @@ function Project() {
     return (
         <>
             <PageHeader
-                crumbs={[{ label: "Projets", to: `/t/${team}/projects` }, { label: data?.project.name ?? "…" }]}
-                title={data?.project.name ?? <Skeleton className="h-8 w-48" />}
-                description={data?.project.description || "Environnements du projet."}
-                actions={
-                    <>
-                        <Button size="sm" variant="outline" onClick={() => setCreating(true)}>
-                            <PlusIcon /> Environnement
-                        </Button>
-                        <Button size="sm" variant="ghost" asChild>
-                            <Link to="/t/$team/projects/$project/settings" params={{ team, project }}>
-                                <SettingsIcon /> Réglages
+                title={
+                    data ? (
+                        <>
+                            {data.project.name}
+                            <Link to="/t/$team/projects/$project/settings" params={{ team, project }} title="Réglages du projet" className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
+                                <SettingsIcon className="size-4" />
                             </Link>
-                        </Button>
-                    </>
+                        </>
+                    ) : (
+                        <Skeleton className="h-8 w-48" />
+                    )
+                }
+                description={data ? data.project.description || `${data.environments.length} environnement${data.environments.length > 1 ? "s" : ""} dans ce projet` : undefined}
+                actions={
+                    <Button onClick={() => setCreating(true)}>
+                        <PlusIcon /> Nouvel environnement
+                    </Button>
                 }
             />
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

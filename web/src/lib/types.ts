@@ -94,6 +94,7 @@ export interface ResourceSummary {
   project_name: string
   server_id: string
   domains: string[] | null
+  tags?: { id: string; name: string; color: string }[] | null
 }
 
 export interface Deployment {
