@@ -10,12 +10,13 @@ export type Crumb = { label: string; to?: string }
  */
 export function PageHeader({ title, description, actions }: { /** @deprecated ignoré : le fil d'Ariane est dans la barre du haut. */ crumbs?: Crumb[]; title?: ReactNode; description?: ReactNode; actions?: ReactNode }) {
   return (
-    <header className="mb-6 space-y-2">
-      <div className="flex flex-wrap items-center gap-3">
+    <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0 space-y-2">
         <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight [text-shadow:0_1px_8px_rgb(0_0_0/0.25)]">{title}</h1>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {description && <p className="text-sm font-medium text-foreground/85 [text-shadow:0_1px_2px_rgb(0_0_0/0.6),0_1px_10px_rgb(0_0_0/0.5)]">{description}</p>}
       </div>
-      {description && <p className="text-sm font-medium text-foreground/85 [text-shadow:0_1px_2px_rgb(0_0_0/0.6),0_1px_10px_rgb(0_0_0/0.5)]">{description}</p>}
+      {/* Boutons de la page à droite, comme les en-têtes du fork. */}
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </header>
   )
 }
